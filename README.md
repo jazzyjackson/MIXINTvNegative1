@@ -1,2 +1,0 @@
-# poly-int
-Polymorphic Interpreter
