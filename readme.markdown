@@ -1,7 +1,7 @@
-# poly-int
-Polymorphic Interpreter
+# Poly-Int
+### Polymorphic Interpreter
 
-An extensible and remixable space for cooperating with your network.
+### An extensible and remixable space for cooperating with your network.
 
 Cooperating may include:
 - Uploading and modifying media on a shared, versioned filesystem
@@ -52,9 +52,5 @@ My perspective is that interfaces are pretty easy to copy, and they're the part 
 ### logs
 ### spiders
 
-You could very quickly write some HTML to serve up some content 
-
-Maybe the workspace definition can include 
-
 Adding functionality:
-Functionality may come in the form of a program in any language kept in the spiders direct, to be executed on command for any user, or as new definitions for custom components, or a combination thereof: custom elements that rely on some back end functionality
+Functionality may come in the form of a program in any language kept in the spiders directory, to be executed on command for any user, or as new definitions for custom components, or a combination thereof: custom elements that rely on some back end functionality.
