@@ -20,7 +20,19 @@ Your network may include:
 
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, participants in the same room can use this shared online space with or without any connection to the wider internet.
 
-A configuration graph (figtree for short) describes the layout of a workspace, which arranges HTML custom elements in the window and describes the attributes for each element. One attribute might be a source to pull content from (img, link, audio, and video tags make use of this already to load media, custom elements may be programmed to accept any filetype) - so the content of a workspace is kept separate from the presentation layer (layout, style, and interactivity via HTML, CSS, and JS). This figtree can exist as a file kept for different participants and projects, or it can be passed into the URL as a query string, producing your requested layout and content without having to keep the file on the server.
+### GUI-Blocks
+The web interface is comprised of HTML custom elements defined in the **gui-blocks** directory - each block provides different functionality: one is a terminal emulator, one is a code editor. An interface can consist of a single block - such as presenting a markdown document, a custom video player, or a slideshow - or it can be an arrangment of many blocks that make up a workspace of editors, file trees, and media players. 
+
+### Operator.js
+The web interface is coupled with a nodejs server that provides a minimal connector to the services of the computer its running on. GET requests serve files, POST requests execute commands in a sub-process, PUT requests save request bodies directly to disk and DELETE requests 
+
+### Switchboard.js
+To provide access with varying degrees of priveledge (are you root? or are you a nobody?), a nodejs process called **switchboard** creates unix users with specified permissions for each participant and starts an **operator** __as that new user__, so all requests to read, write, delete, and execute files are handled by the operating system. 
+
+### FigJam.js
+A configuration graph (figtree for short) describes the layout of a workspace, which arranges HTML custom elements in the window and describes the attributes for each element. One attribute might be a source to pull content from (img, link, audio, and video tags make use of this already to load media, custom elements may be programmed to accept any filetype) - so the content of a workspace is kept separate from the presentation layer (layout, style, and interactivity via HTML, CSS, and JS). 
+
+This figtree can exist as a file kept for different participants and projects, or it can be passed into the URL as a query string, producing your requested layout and content without having to keep the file on the server.
 
 Try out some example workspaces:
 coltenj.com/?fig=markdownEditor.json
