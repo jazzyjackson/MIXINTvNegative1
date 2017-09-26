@@ -1,0 +1,37 @@
+This is my multi-lingual notebook replacement
+Doesn't include a way to configure presentation of output... as that would be tough to squeeze into the bash script
+This one is meant to be simple, not-so-custom.
+You can always have figbranches to describe more sophisticated 
+Actually maybe this is the same block - the .bashdown file will be transmutated into a figbranch of codemirror and showdown... and maybe hides the menus by default, or makes them really subtle, or visible when active element, something like that.
+
+Right right right so thread-block is a component that is instantiated with figtree - and additional blocks are appended to the figtree in memory...src is .json
+
+Mashup between bash and markdown
+extends thread-block ??
+
+src is a bash script, names of markdown files are commented out, names of programs start with ./
+This file should probably be restricted to this super-limited syntax, maybe call it a .bashdown
+It will be split on new line into an array, the array is then iterated to create child blocks with their src. 
+OK new plan: .bashdown is read, transformed into a flat figtree of codemirrors and showdowns
+
+the bash script can be executed of course
+but when bashdown-block pulls the plain text, it then creates codemirrors and 
+
+somehow, when executables save to disk, the result can be referenced by an adjacent block. 
+Maybe any codemirror block has the option to 'append sibling' any type of block. 
+Oh the result will be a read-block which POSTs the pathname anyway, so, yeah there will be an option for 'what block to use to present output'
+but there also needs to be an option for... after the POST request finishes, do you want to just read the output? 
+great, readblock (which you can save if you want to)
+or should a new block be instantiated ?
+So the point is, you can point a bashdown block at a bashcript and it will generate the figtree to render a threadblock (which just kindly alters 
+ThreadBlock - source can be JSON or .bashdown ? hm, I think it would be nice to be able to inherit style...
+Yep yep, blocks that extend other blocks can just reference the repo as being 'upstream', so I can pull changes. 
+I want a little bash script to clone a repo, delete the class and replace it with a new template file with the class declared and all so its ready to go. 
+The new sibling needs an attribute that references the codemirror that generated it, so on subsequent runs, you can replace it.
+
+
+Provides shortcuts to 'create comment' and 'create executable', which inserts a new name 
+
+Really just a container for a chain of showdown blocks and markdown blocks
+
+( this whole thing may end up just being a really elaborate way to write bash scripts, but, so be it)
