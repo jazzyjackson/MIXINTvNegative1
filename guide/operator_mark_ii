@@ -1,0 +1,30 @@
+Original operator/switchboard is a nice tiny package that handles GET/POST/PUT/DELETE requests, which was pretty cool but I was already starting to bolt on functionality by serving figtrees on the condition that the pathname ends in /
+
+So instead of trying to be clever and having a tiny little hash table,
+I'll create a server that has specified conditions, which can include
+
+if(request.method == 'PUT') return await req.streamfile && req.close
+if(request.method == 'DELETE') return deleteFile && req.close
+
+but also stuff like
+
+if(request.url.slice(-1) = '/') return req.streamFigTree
+if(request.headers.accept = 'text/event-stream') return req.subscribe(request.url)
+or maybe instead I can do a big nested ternary that will move on to the next condition until something returns true.
+This is kind of interesting because instead of committing to a single return value, I could move onto 
+
+http.createServer((req, res) =>
+  request.url.slice(-1) == '/' ? serveFigTreeFrom(req, res)           :
+  request.method == 'PUT'      ? trySavingToDsik(req, res)            :
+  request.method == 'DELETE'   ? tryDeletingFile(request.url)         :
+  req.send(500, "I tried everything, but I don't know what you want") ;
+  
+function serveFigTreeFrom(request,response){
+  do things
+  return truly(response.end())
+}
+
+// a hilarious dumb alias that returns true no matter what its called with. Useful for exiting a nesting ternary.
+const truly = () => true  
+
+Maybe I just wanted a server that was a single expression OK? I thought it'd be cool, so what if the call stack is a little tall it doesn't hurt nobody
