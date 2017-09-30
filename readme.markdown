@@ -47,9 +47,13 @@ coltenj.com/figtrees/chatInStyle.json
 
 The logical conclusion of chunked response streams and custom elements. I can pull the data necessary to build elements on the fly and then pull up whatever content I want from any source.
 
+I also want to avoid re-implementing functioanlity that's been built into unix machines for decades. So I'm using bash builtins, coreutils, and the features of the TCP/IP stack whenever I can.
+
 Public and Private chat channels a la Slack can be replicated by appending messages to a file and using tail 
 
-Filesharing a la DropBox can be replicated with a 'file manager' element of your choosing and PUTing and GETing files 
+Filesharing a la DropBox can be replicated with a 'file manager' element of your choosing and PUTing and GETing files and writing/reading to disk.
+
+Adding events to a personal calendar has been built into unix since the 70s. 
 
 My perspective is that interfaces are pretty easy to copy, and they're the part that makes a difference in what capabilites your computer gives you. The hard part of replicating all these services is the web server part - and especially serving thousands to millions of requests per day, and building software that can accomdate dozens to hundreds of full time contributors. The frameworks that accomodate these use cases require specialization and present a barrier to entry to learning how to build applications.
 
