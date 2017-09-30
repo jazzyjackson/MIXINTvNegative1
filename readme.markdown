@@ -18,16 +18,29 @@ Your network may include:
 - coworkers and business partners
 - physical computers you control
 
-When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, participants in the same room can use this shared online space with or without any connection to the wider internet.
+When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on the same local network with or without any connection to the wider internet.
+
+# Operator.js
+Operator.js will connect your calls - fulfilling network requests in one of six ways:
+ - A GET request to a file path will stream the file from disk to the caller
+ - A GET request to a directory (ending in '/') is returned by generating the workspace/web application described by a 'figtree' (see below)
+ - a PUT request to a file path will stream data from a caller to the operator's disk
+ - a DELETE request does what you think
+ - a POST request creates a child process in a shell of its own and pipes the stdio between the operator and caller (aka server and client)
+ - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
+ _See annotated code in guide/operator.js_
+
+
+# Switchboard.js
+Now, it might seem crazy to just expose a computer's filesystem and system shells to the network - but this is how mainframe timeshare systems have worked for decades: you let anyone call the machine up, but assign them a userid with appropriate permissions. So anyone can make a request to remove files (rm -rf) or Poweroff the machine, but if they don't have permissions, their request is politely declined. This layer of protection and precise management of who can and can't modify the system is built into the various Unixes, so whether you're on Linux or MacOSX or Windows Subsystem for Linux (Windows 10), Switchboard.js can generate permissions profiles for the participants of your network. You're given control of who has permission to view and add files to your machine, and all requests are handled by a child processes running as that account.
+_More info and annotated code in guide/switchboard.js_
+
+# Figtree.js
+
 
 ### GUI-Blocks
 The web interface is comprised of HTML custom elements defined in the **gui-blocks** directory - each block provides different functionality: one is a terminal emulator, one is a code editor. An interface can consist of a single block - such as presenting a markdown document, a custom video player, or a slideshow - or it can be an arrangment of many blocks that make up a workspace of editors, file trees, and media players. 
 
-### Operator.js
-The web interface is coupled with a nodejs server that provides a minimal connector to the services of the computer its running on. GET requests serve files, POST requests execute commands in a sub-process, PUT requests save request bodies directly to disk and DELETE requests 
-
-### Switchboard.js
-To provide access with varying degrees of priveledge (are you root? or are you a nobody?), a nodejs process called **switchboard** creates unix users with specified permissions for each participant and starts an **operator** __as that new user__, so all requests to read, write, delete, and execute files are handled by the operating system. 
 
 ### FigJam.js
 A configuration graph (figtree for short) describes the layout of a workspace, which arranges HTML custom elements in the window and describes the attributes for each element. One attribute might be a source to pull content from (img, link, audio, and video tags make use of this already to load media, custom elements may be programmed to accept any filetype) - so the content of a workspace is kept separate from the presentation layer (layout, style, and interactivity via HTML, CSS, and JS). 
@@ -43,8 +56,8 @@ Take a look at the configuration file by simply requesting it:
 coltenj.com/figtrees/markdownEditor.json
 coltenj.com/figtrees/chatInStyle.json
 
-(see guide/figjam and guide/figurl for how this works)
 
+# other ways of putting it 
 The logical conclusion of chunked response streams and custom elements. I can pull the data necessary to build elements on the fly and then pull up whatever content I want from any source.
 
 I also want to avoid re-implementing functioanlity that's been built into unix machines for decades. So I'm using bash builtins, coreutils, and the features of the TCP/IP stack whenever I can.
