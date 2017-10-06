@@ -1,30 +1,17 @@
-Original operator/switchboard is a nice tiny package that handles GET/POST/PUT/DELETE requests, which was pretty cool but I was already starting to bolt on functionality by serving figtrees on the condition that the pathname ends in /
-
-So instead of trying to be clever and having a tiny little hash table,
-I'll create a server that has specified conditions, which can include
-
-if(request.method == 'PUT') return await req.streamfile && req.close
-if(request.method == 'DELETE') return deleteFile && req.close
-
-but also stuff like
-
-if(request.url.slice(-1) = '/') return req.streamFigTree
-if(request.headers.accept = 'text/event-stream') return req.subscribe(request.url)
-or maybe instead I can do a big nested ternary that will move on to the next condition until something returns true.
-This is kind of interesting because instead of committing to a single return value, I could move onto 
-
-http.createServer((req, res) =>
-  request.url.slice(-1) == '/' ? serveFigTreeFrom(req, res)           :
-  request.method == 'PUT'      ? trySavingToDsik(req, res)            :
-  request.method == 'DELETE'   ? tryDeletingFile(request.url)         :
-  req.send(500, "I tried everything, but I don't know what you want") ;
-  
-function serveFigTreeFrom(request,response){
-  do things
-  return truly(response.end())
-}
-
-// a hilarious dumb alias that returns true no matter what its called with. Useful for exiting a nesting ternary.
-const truly = () => true  
-
-Maybe I just wanted a server that was a single expression OK? I thought it'd be cool, so what if the call stack is a little tall it doesn't hurt nobody
+ This program provides instructions to a node serer on how to respond to network requests
+ The request method, url, and headers may be inspected to determine what data to send back
+ if a GET request was made to a directory, find a figtree in that directory (or its parents) for instructions on how to build a new workspace
+ if a GET request is made to a static file, stream that file from disk to client (pipe fs.createReadStream to response)
+ if a POST request is made, (attempt to) execute the query and pipe the child process to the response. Permissions errors are returned to client.
+ if a DELETE request is made, (attempt to) delete the file specified. Permissions errors are returned to client.
+ if a PUT request is made, (attempt to) write request body to disk. Permissions error yada yada.
+ doesnt care what version of node is running
+ its just detecting request headers and 
+ oh maybe pipe transforms don't work in 0.6.0 or something. like the transform interface is different
+ but shouldn't matter as long as it aint called\
+ and bones.html 
+ operator might check an environment variable
+ and return bones.html for all get requests if figtree can't run
+ oh try to run figtree but if it throws an error then return 
+ actually maybe figtree can do that process.versions.node
+ give up and stream bones.html if 'await' isn't a thing
