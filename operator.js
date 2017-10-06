@@ -2,26 +2,36 @@
 var figjam     = require('./figjam')
 var bookkeeper = require('./bookkeeper')
 var fs         = require('fs')
+var exec       = require('child_process').exec
+var os         = require('os')
 var key, cert
-var SSL_READY  = trySSL(key, cert)       /* try to read key and certificate from disk. enable HTTPS if true */
-
-require(SSL_READY ? 'https' : 'http')   /* check if private key and certificate were read properly and start server  */
-.createServer(SSL_READY && {key, cert}) /* if SSL_READY is null, then the boolean gaurd will return null             */
-.on('request', function(req,res){       /* on receiving a network request, inspect request properties to respond     */
-                                        /* via recursive ternary - continue until some condition is found to be true */
-  req.headers.accept.match(/text\/event-stream/i)      ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-  req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/) ? figjam(req,res)             : /* url path w/ trailing slash */
-  req.method == 'GET'                                  ? streamFile(req,res)         :
-  req.method == 'POST'                                 ? streamSubprocess(req,res)   :
-  req.method == 'PUT'                                  ? saveBody(req,res)           :
-  req.method == 'DELETE'                               ? deleteFile(req,res)         :
-  res.end(req.method + ' ' + req.url + "\nDoesn't look like anything to me")                                        ;
-                                        /* start listening on port 3000 unless another number was passed as argument */
-})                                      /* once the server is listening, print the port number to stdout             */
-.listen(process.argv[2] || 3000)        /* switchboard will request port 0, which assigns a random, unused port      */
+/* try to read key and certificate from disk and enable HTTPS if true */
+var SSL_READY  = trySSL(key, cert)       
+/* check if private key and certificate were read properly and start server  */
+require(SSL_READY ? 'https' : 'http')
+.createServer(SSL_READY && {key, cert})
+.on('request', function(req,res){       
+    /* on receiving a network request, inspect request properties to determine response  */
+    /* via recursive ternary - continue until some condition is found to be true         */
+    req.headers.accept.match(/text\/event-stream/i)      ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
+    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/) ? figjam(req,res)             : /* url path w/ trailing slash */
+    req.method == 'GET'                                  ? streamFile(req,res)         :
+    req.method == 'POST'                                 ? streamSubprocess(req,res)   :
+    req.method == 'PUT'                                  ? saveBody(req,res)           :
+    req.method == 'DELETE'                               ? deleteFile(req,res)         :
+    res.end(req.method + ' ' + req.url + "\nDoesn't look like anything to me")         ;
+})                                      
+.listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
+/* start listening on port 3000 unless another number was passed as argument */
+/* once the server is listening, print the port number to stdout             */
+/* switchboard will request port 0, which assigns a random, unused port      */
 
 /************************************* Function definitions to fulfill requests **************************************/
+function subscibeToEvents(request, response){
+
+}
+
 function streamFile(request, response){
     fs.createReadStream(request.url.split('?')[0].slice(1))
     .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
@@ -29,12 +39,20 @@ function streamFile(request, response){
 }
 
 function saveBody(request, response){
-  console.log("saveBody")
-  return false  
+    request.pipe(fs.createWriteStream('.' + request.url, 'utf8'))
+    .on('finish', () => { response.writeHead(201); response.end() })
+    .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
 }
 
 function streamSubProcess(request, response){
-  return false  
+    exec(decodeURIComponent(request.url.split('/').slice(-1)), {
+        cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
+    })
+    .on('error', err => { 
+        response.writeHead(500); 
+        response.end(JSON.stringify(err)) 
+    })
+    .stdio.forEach(io => io.pipe(response))
 }
 
 function deleteFile(request, response){

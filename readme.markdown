@@ -28,6 +28,24 @@ Operator.js will connect your calls - fulfilling network requests in one of six 
  - a DELETE request does what you think
  - a POST request creates a child process in a shell of its own and pipes the stdio between the operator and caller (aka server and client)
  - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
+ 
+ ```js
+ require(SSL_READY ? 'https' : 'http')
+.createServer(SSL_READY && {key, cert})
+.on('request', function(req,res){       
+    /* on receiving a network request, inspect request properties to determine response  */
+    /* via recursive ternary - continue until some condition is found to be true         */
+    req.headers.accept.match(/text\/event-stream/i)      ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
+    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/) ? figjam(req,res)             : /* url path w/ trailing slash */
+    req.method == 'GET'                                  ? streamFile(req,res)         :
+    req.method == 'POST'                                 ? streamSubprocess(req,res)   :
+    req.method == 'PUT'                                  ? saveBody(req,res)           :
+    req.method == 'DELETE'                               ? deleteFile(req,res)         :
+    res.end(req.method + ' ' + req.url + "\nDoesn't look like anything to me")         ;
+})                                      
+.listen(process.argv[2] || 3000)       
+.on('listening', function(){ console.log(this.address().port) })
+```
  _See annotated code in guide/operator.js_
 
 
