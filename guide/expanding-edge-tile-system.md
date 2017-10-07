@@ -41,3 +41,14 @@ convo and shell are obvious
 
 but yeah giant text blocks 
 (They may have their own way of handling child components, that's cool too)
+
+multiplexer should allow submodules to enter fullscreen (Hey I can add functions to all classes huh. or just. proto-block.prototype.actions etc)
+
+https://manu.ninja/webgl-3d-model-viewer-using-three-js
+
+anyway enter fullscreen
+escape returns
+
+just easy stuff
+
+

@@ -7,18 +7,19 @@ var os         = require('os')
 var key, cert
 /* try to read key and certificate from disk and enable HTTPS if true */
 var SSL_READY  = trySSL(key, cert)       
-/* check if private key and certificate were read properly and start server  */
+/* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key, cert})
 .on('request', function(req,res){       
-    /* on receiving a network request, inspect request properties to determine response  */
-    /* via recursive ternary - continue until some condition is found to be true         */
-    req.headers.accept.match(/text\/event-stream/i)      ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/) ? figjam(req,res)             : /* url path w/ trailing slash */
-    req.method == 'GET'                                  ? streamFile(req,res)         :
-    req.method == 'POST'                                 ? streamSubprocess(req,res)   :
-    req.method == 'PUT'                                  ? saveBody(req,res)           :
-    req.method == 'DELETE'                               ? deleteFile(req,res)         :
+    /* on receiving a network request, inspect request properties to determine response   */
+    /* via recursive ternary - continue until some condition is found to be true          */
+    req.headers.accept.match(/text\/event-stream/i)       ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
+    req.headers.accept.match(/application\/octet-stream/) ? pipeProcess(req,res)        : /* fetch with binary data */
+    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/)  ? figjam(req,res)             : /* url path w/ trailing slash */
+    req.method == 'GET'                                   ? streamFile(req,res)         :
+    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
+    req.method == 'PUT'                                   ? saveBody(req,res)           :
+    req.method == 'DELETE'                                ? deleteFile(req,res)         :
     res.end(req.method + ' ' + req.url + "\nDoesn't look like anything to me")         ;
 })                                      
 .listen(process.argv[2] || 3000)       
@@ -45,14 +46,18 @@ function saveBody(request, response){
 }
 
 function streamSubProcess(request, response){
-    exec(decodeURIComponent(request.url.split('/').slice(-1)), {
+    console.log(decodeURIComponent(request.url.split('?')[1]))
+    subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
         cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
     })
-    .on('error', err => { 
+    subprocess.on('error', err => { 
         response.writeHead(500); 
         response.end(JSON.stringify(err)) 
     })
-    .stdio.forEach(io => io.pipe(response))
+    subprocess.stdout.on('data', data => {
+        response.write("event: stdout" + "\n" + "data:" + JSON.stringify(data)) //JSON stringify does a pretty good job of escaping things
+    })
+    subprocess.stderr.pipe(response)
 }
 
 function deleteFile(request, response){

@@ -27,6 +27,17 @@ Optionally you can choose to pull the last x bytes from the file
 
 When you cd out of a directory, people can see where you went and can follow you, if they have permission
 
+I think there's a way... to poll the server for who is tailing this convo file
+yeah for sure
+whose reading this convo right now?
+these users: ...
+
+So having an event source for users entering and leaving (untailing)
+will be useful notification IRC style
+I guess people might appreciate if I used IRC protocol
+but I don't know that's another piece of software
+you can write an IRC client yourself if you want
+
 chatroom block 
 chatbot conversations are separate network requests
 human conversations are tail streaming, just a subtle difference to signal the nature of the interaction

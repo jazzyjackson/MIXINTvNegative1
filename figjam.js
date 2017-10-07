@@ -10,9 +10,9 @@ var fs = require('fs')
 
 function respondFromFigTree(request, response){
   if(parseInt(process.env.USES_BONES) || process.versions.node < 8 || true){
+    response.setHeader('content-type', 'text/html; charset=utf-8;')
     return fs.createReadStream('simplefig.html')
              .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
              .pipe(response)
   }
 }
-

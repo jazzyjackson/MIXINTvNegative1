@@ -1,5 +1,5 @@
 # Poly-Int
-### Polymorphic Interpreter
+## Polymorphic Interpreter
 
 ### An extensible and remixable space for cooperating with your network.
 
@@ -11,12 +11,8 @@ Cooperating may include:
 Your network may include:
 - close friends and family
 - your local wifi router
-- distant acquiantences 
+- co-workers and acquaintences
 - transoceanic fiber optics
-- strangers with a common interest
-- low-cost cloud infrastructure
-- coworkers and business partners
-- physical computers you control
 
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on the same local network with or without any connection to the wider internet.
 
@@ -28,7 +24,7 @@ Operator.js will connect your calls - fulfilling network requests in one of six 
  - a DELETE request does what you think
  - a POST request creates a child process in a shell of its own and pipes the stdio between the operator and caller (aka server and client)
  - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
- 
+
  ```js
  require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key, cert})
@@ -89,6 +85,11 @@ Adding events to a personal calendar has been built into unix since the 70s.
 My perspective is that interfaces are pretty easy to copy, and they're the part that makes a difference in what capabilites your computer gives you. The hard part of replicating all these services is the web server part - and especially serving thousands to millions of requests per day, and building software that can accomdate dozens to hundreds of full time contributors. The frameworks that accomodate these use cases require specialization and present a barrier to entry to learning how to build applications.
 
 Poly Interpreter aims to provide an interactive timeshare application to dozens to hundreds of participants per day, not millions, so I get to have a much smaller, easier to inspect codebase with the intention of being modifiable by individuals, whether hacking away at stylesheets to make it look the way you want, or bolting on new functionality in web assembly, I want to make it obvious how everything works, so you can get it to work for you.
+
+poly interpreter is a self-modifying environment for the iterative design of containerized applications
+
+any language can be used to perform back-end logic
+tying in back end api's from the front-end is as easy as POSTing a command
 
 ### operator.js
 ### switchboard.js

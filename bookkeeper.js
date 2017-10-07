@@ -1,3 +1,5 @@
 module.exports = {
-  log: function(){}
+  log: function(object2log){
+    console.log(object2log)
+  }
 }

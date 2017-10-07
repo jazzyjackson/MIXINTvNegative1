@@ -4,9 +4,23 @@
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=">
   </head>
   <body>
-    <header>I am but a simple fig</header>
-    <form prompt="→">
-        <input placeholder="what do you say" autofocus="true"></input>
+    <header>EventSource Test</header>
+    <form id="cmd" prompt="→">
+        <input type="text" placeholder="what do you say" autofocus="true"></input>
+        <button type="submit">submit</button>
     </form>
+    <script>
+        var cmd = document.getElementById("cmd")
+        cmd.addEventListener('submit',(event) => {
+            console.log(event)
+            event.preventDefault()
+            var value = event.target.firstElementChild.value
+            event.target.firstElementChild.value = ''
+            fetch(`?echo ${value} >> newfile.txt`, {
+                method: "POST"
+            })
+            .then(response => response.text())
+        })
+    </script>
   </body>
 </html>

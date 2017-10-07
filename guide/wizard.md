@@ -20,6 +20,11 @@ on raspberry pi
 is it there?
 hahahhaha duh
 
+yeah definitely needs to broadcast its own little numbers station
+decide what else you want to play over audio out
+but by default
+just say the IP address on repeat
+
 so anyway it installs itself and boots and with your help installs updates
 like sure it could run a bash script too
 
