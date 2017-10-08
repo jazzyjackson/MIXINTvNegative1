@@ -20,7 +20,7 @@ require(SSL_READY ? 'https' : 'http')
     req.method == 'POST'                                  ? streamSubProcess(req,res)   :
     req.method == 'PUT'                                   ? saveBody(req,res)           :
     req.method == 'DELETE'                                ? deleteFile(req,res)         :
-    res.end(req.method + ' ' + req.url + "\nDoesn't look like anything to me")         ;
+    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
 })                                      
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })

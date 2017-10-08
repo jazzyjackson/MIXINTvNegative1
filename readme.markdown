@@ -69,7 +69,10 @@ coltenj.com/?figurl=head%shell%init=welcome.txts;lkasjdf;lkjsadf
 Take a look at the configuration file by simply requesting it:
 coltenj.com/figtrees/markdownEditor.json
 coltenj.com/figtrees/chatInStyle.json
+### Compatibility
+If you started PolyInt on a machine with an old NodeJS version (Node 0.10.0 is the latest in many older linux distros), a limited set of features will still work fine, and I'm working on some bash scripts to help upgrade node on different architectures, stay tuned
 
+you can also set an environment flag called "retrograde" to serve an html/css/js document that doesn't use any new features from the past 10 years if you want to target Internet Explorer 6 and son on.
 
 # other ways of putting it 
 The logical conclusion of chunked response streams and custom elements. I can pull the data necessary to build elements on the fly and then pull up whatever content I want from any source.
