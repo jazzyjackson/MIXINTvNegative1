@@ -2,9 +2,6 @@
 // like webpack without the pack
 // still gzipped on the fly
 
-//parseInt(undefined) is NaN and Boolean(NaN) is false
-//so USES_BONES can be unset, or it can be set to 0, or anything that's not a real number, to not use bones.html 
-//anyway if you want to force using bones.html just run "USES_BONES=1 node operator"
 module.exports = respondFromFigTree
 var fs = require('fs'),
     path = require('path'),
@@ -36,15 +33,28 @@ var defaultFig = {
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     "blocks": ["proto","menu","read","message"],
     "body": {
-        "become-block": {}
+        "become-block": {
+            "width":"400px",
+            "height":"300px",
+            "style":"background:pink;",
+            "childNodes": {
+                "div": [{
+                    "childNodes": {
+                        "ul":{
+                            "childNodes": {
+                                "li":[{},{},{}]
+                            }
+                        }
+                    }
+                },{},{}]
+            }
+        }
     }
 }
 
 
 function respondFromFigTree(request, response){
-    
-    response.setHeader && response.setHeader('content-type', 'text/html; charset=utf-8;')
-    
+        
     if(parseInt(process.env.RETROGRADE) || process.versions.node < 8){
         return fs.createReadStream('retrograde.html')
                  .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
@@ -59,11 +69,7 @@ function respondFromFigTree(request, response){
     
     async function figjam(){
         let fig = await parseFig()
-        // Set is an ordered iterable with unique keys. So we set it with the default list, 
-        // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
 
-        // if incoming figtree is empty, use the default body
-        let body = fig.body || defaultFig.body
         response.write(`<html><head>\n`)
         for(var tagName in defaultFig.head){
             buildTag(tagName, defaultFig.head[tagName])
@@ -72,7 +78,9 @@ function respondFromFigTree(request, response){
             buildTag(tagName, fig.head[tagName])            
         }
 
-        response.write(`<block-templates>\n`)        
+
+        // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
+        // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
         let requisiteBlocks = new Set(defaultFig.blocks)
         fig.blocks.forEach(block => {
             requisiteBlocks.add(block)
@@ -80,11 +88,15 @@ function respondFromFigTree(request, response){
         for(var block of requisiteBlocks){
             await buildBlockTemplate(block)
         }
-        response.write(`</block-templates>\n`)
+
         response.write(`</head>\n`)
         response.write(`<body>\n`)
         // recursively build tags in body
-
+        // if incoming figtree is empty, use the default body        
+        var body = Object.keys(fig.body).length > 0 ? fig.body : defaultFig.body
+        for(var tagName in body){
+            buildTag(tagName, body[tagName])            
+        }
         // buildBlockClasses
         response.end(`</body></html>`)
 
@@ -101,16 +113,32 @@ function respondFromFigTree(request, response){
         response.write(`</template>\n`)
     }
     
-    async function buildTag(tagName, tagObject){
+    function buildTag(tagName, tagObject){
+        // list of elements that should be 
+        
+        var voidElements = ["area","base","br","col","embed","hr","img","input","keygen","link","meta","param","source","track","wbr"]
+
         if(Array.isArray(tagObject)){
             tagObject.map(tagObjectElement => buildTag(tagName,tagObjectElement))
         } else {
+            /* if theres a childNodes property, extract it and delete it before iterating through other attributes */
+            var childNodes = tagObject.childNodes || {} // return empty object if property doesn't exist. for for-each-in ing
+            delete tagObject.childNodes
+
             response.write(`<${tagName} `)
-            for(attribute in tagObject){
+            for(var attribute in tagObject){
                 response.write(`${attribute}="${tagObject[attribute]}" `)
             }
-            response.write(`></${tagName}>\n`)
+            response.write(`>\n`)                
             
+            if(!voidElements.includes(tagName)){
+                /* only check for children and write closing tag for normal elements */
+                /* void elements can not have closing tag */                             
+                for(var childName in childNodes){
+                    buildTag(childName, childNodes[childName])
+                }
+                response.write(`</${tagName}>\n`)
+            }
         }
     }
     
