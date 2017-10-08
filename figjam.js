@@ -1,102 +1,111 @@
-// requries node 8+ in order to await the streaming of files in order
-// like webpack without the pack
-// still gzipped on the fly
-
-module.exports = respondFromFigTree
-var fs = require('fs'),
-    path = require('path'),
-    util = require('util')
-
-var defaultFig = {
-    "head": {
-        "link": {
+/* a figtree is a nested object describing the HTML graph of a document to be rendered when a directory is requested     */
+/* The top level properties are head: [array], block: [array], and body: [array]                                         */
+/* head and body are arrays of objects of the form {tagName: {attribute: value, attribute: value}}                       */
+/* blocks is an array of strings listing, in order, the class names of custom components to stream as dependencies       */
+/* a template tag will be rendered for each, encapsulating the css and html for an element                               */
+/* this template tag will include attributes keeping track of what source code was available, like:                      */ 
+/* <template renders="become-block" has-html="true" has-css="true" has-js="true">                                        */
+/* if a node has childNodes, that property is also an array of objects to describe those HTML Elements to be rendered    */
+/* {tagName: {a: v, a: v, childNodes:[{tagName: {a: v, a:v}},{tagName: {a: v, a:v}}]}}                                   */
+/* note that attribute/value (a/v) are named by you, "childNodes" is the key that figjam.js uses to recurse, so use that */
+let defaultFig = {
+    "head": [
+        {"meta":{
+            /* force the browser to scale the body to the device width, helps with mobile screens */
+            "name":"viewport",
+            "content":"width=device-width, initial-scale=1"
+        }},
+        {"meta":{
+            /* let the browser know there's utf8 going on */
+            "charset":"UTF-8"
+        }},
+        {"meta":{
+            // let the web interface know who this is, just for filling in attributes for 'who'
+            "data-identity": process.env.user
+        }},
+        {"meta":{
+            // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
+            "process-identity": process.pid
+        }},
+        {"link": {
             /* base64 representation of a blank favicon to prevent the browser from asking for nonexistent file */
             "rel":"icon",
             "type":"image/x-icon",
             "href": "data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
-        },
-        "meta": [{
-            /* force the browser to scale the body to the device width, helps with mobile screens */
-            "name":"viewport",
-            "content":"width=device-width, initial-scale=1"
-        },{
-            /* let the browser know there's utf8 going on */
-            "charset":"UTF-8"
-        },{
-            // let the web interface know who this is, just for filling in attributes for 'who'
-            "data-identity": process.env.user
-        },{
-            // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
-            "process-identity": process.pid
-        }]
-    },
+        }}
+    ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
-    "blocks": ["proto","menu","read","message"],
-    "body": {
-        "become-block": {
-            "width":"400px",
-            "height":"300px",
-            "style":"background:pink;display:block;",
-            "childNodes": {
-                "div": [{
-                    "childNodes": {
-                        "ul":{
-                            "childNodes": {
-                                "li":[{"textContent":"1"},{"textContent":"2"},{"textContent":"3"}]
-                            }
-                        }
-                    }
-                },{},{}]
-            }
-        }
-    }
+    "blocks": ["proto","menu","read","message","convo","shell"],
+    "body": [
+        {"shell-block": {
+            "tabIndex": 0
+        }}
+    ]
 }
 
+const fs = require('fs')
+const path = require('path')
+const util = require('util')
+const rootDirectory = '.' // this might change when we start operator in different places around the computer. maybe it will draw from environemnt variable?
 
-function respondFromFigTree(request, response){
+module.exports = async function(request, response){
     response.setMaxListeners(50) // I might open a bunch of files at once, no big deal
-    /* if the previous if block didn't fire and return, then we assume we're on node > 8 */
-    /* now we can start using es6y stuff, promisfy and async/await and arrow functions */
+    
     let readFile = util.promisify(fs.readFile)
-    let rootDirectory = '.'
-    figjam()
-    
-    async function figjam(){
-        let fig = await parseFig()
+    let fig = await parseFig()
+    let buildErrors = []
+    response.write(`<!DOCTYPE html><html><head>\n`)
+    defaultFig.head.forEach(streamNodes)
+    fig.head.forEach(streamNodes)
 
-        response.write(`<html><head>\n`)
-        for(var tagName in defaultFig.head){
-            buildTag(tagName, defaultFig.head[tagName])
-        }
-        for(var tagName in fig.head){
-            buildTag(tagName, fig.head[tagName])            
-        }
-
-
-        // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
-        // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
-        let requisiteBlocks = new Set(defaultFig.blocks)
-        fig.blocks.forEach(block => {
-            requisiteBlocks.add(block)
-        })
-        for(var block of requisiteBlocks){
-            await buildBlockTemplate(block)
-        }
-
-        response.write(`</head>\n`)
-        response.write(`<body>\n`)
-        // recursively build tags in body
-        // if incoming figtree is empty, use the default body        
-        var body = Object.keys(fig.body).length > 0 ? fig.body : defaultFig.body
-        for(var tagName in body){
-            buildTag(tagName, body[tagName])            
-        }
-        // buildBlockClasses
-        response.end(`</body></html>`)
-
+    // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
+    // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
+    let requisiteBlocks = new Set(defaultFig.blocks)
+    fig.blocks.forEach(block => requisiteBlocks.add(block))
+    for(var block of requisiteBlocks){
+        await streamBlockTemplate(block)
     }
+    response.write(`</head>\n`)
+    response.write(`<body>\n`)
+    // recursively build tags in body
+    // if incoming figtree is empty, use the default body        
+    var body = fig.body.length > 0 ? fig.body : defaultFig.body
+    body.forEach(streamNodes)
+    response.write(`<script>\n`)
+    for(var block of requisiteBlocks){
+        await streamBlockClass(block)
+        response.write('\n')
+    }
+    response.write(`</script>`)
+    if(buildErrors.length){
+        response.write(`<build-errors style="display: none">\n`)
+        buildErrors.forEach(error => {
+            streamNodes({"build-error":{textContent: util.inspect(error), style: "display: block; white-space: pre; border: 1px solid red;"}})
+        })
+        response.write(`</build-errors>\n`)
+    }
+
+    response.write(`</body></html>`) ? response.end() 
+                                     : response.once('drain', () => response.end())
     
-    async function buildBlockTemplate(blockName){
+
+    /********************* and all the helper functions ***********************/
+
+    function promise2pipe(filename){
+        return new Promise((resolve, reject) => 
+            fs.createReadStream(filename)
+            .on('end', resolve)
+            .on('error', readError => resolve(buildErrors.push(readError)))
+            .pipe(response, {end: false}))
+    }
+
+    async function streamBlockClass(blockName){
+        var classFile = path.join(rootDirectory, 'gui-blocks', blockName, 'class.js')
+        await promise2pipe(classFile)
+    }
+
+    async function streamBlockTemplate(blockName){
+        // 'this' will be bound to the HTTP Response object, write back to client
         var templateFile = path.join(rootDirectory, 'gui-blocks', blockName, 'template.html')
         var styleFile =  path.join(rootDirectory, 'gui-blocks', blockName, 'style.css')
         response.write(`<template renders="${blockName}-block" filename="${templateFile}">\n`)
@@ -104,50 +113,48 @@ function respondFromFigTree(request, response){
         await promise2pipe(styleFile)
         response.write(`</style>\n`)
         await promise2pipe(templateFile)
-        response.write(`</template>\n`)
+        response.write(`</template>\n`) 
     }
-    
-    function buildTag(tagName, tagObject){
-        // list of elements that should be 
+    /* streamNodes should probably be upgraded to async and resolve after the buffer is drained, to scale up */
+    function streamNodes(nodeDescription){
+        // 'this' will be bound to the HTTP Response object, write back to client
+        let tagName = Object.keys(nodeDescription)[0]
+        let tagObject = nodeDescription[tagName]
         
         var voidElements = ["area","base","br","col","embed","hr","img","input","keygen","link","meta","param","source","track","wbr"]
-
-        if(Array.isArray(tagObject)){
-            tagObject.map(tagObjectElement => buildTag(tagName,tagObjectElement))
-        } else {
-            response.write(`<${tagName} `)
-
-            attributes = Object.keys(tagObject).filter(attribute => !['childNodes','textContent'].includes(attribute))
-            for(var attribute of attributes){
-                response.write(`${attribute}="${tagObject[attribute]}" `)
-            }
-            response.write(`>\n`)                
-            
-            if(!voidElements.includes(tagName)){
-                /* only check for children and write closing tag for normal elements */
-                /* void elements can not have closing tag */   
-                var childNodes = tagObject.childNodes || {}
-                // if there's textContent, write it before closing the tag.
-                tagObject.textContent && response.write(tagObject.textContent)
-                for(var childName in childNodes){
-                    buildTag(childName, childNodes[childName])
-                }
-                response.write(`</${tagName}>\n`)
-            }
+        response.write(`<${tagName}`)
+    
+        attributes = Object.keys(tagObject).filter(attribute => !['childNodes','textContent'].includes(attribute))
+        for(var attribute of attributes){
+            response.write(` ${attribute}="${tagObject[attribute]}"`)
+        }
+        response.write(`>\n`)                
+        
+        if(!voidElements.includes(tagName)){
+            /* only check for children and write closing tag for normal elements */
+            /* void elements can not have closing tag */   
+            var childNodes = tagObject.childNodes || []
+            // if there's textContent, write it before closing the tag.
+            tagObject.textContent && response.write(tagObject.textContent)
+            childNodes.forEach(streamNodes)
+            response.write(`</${tagName}>\n`)
         }
     }
-    
+
     async function parseFig(){
         /* first figure out if I was handed a figtree filename or a figurl URLEncoded JSON */
         /* try to parse one of those, and return the result, or the error, or empty        */
         var figtreeMatch = request.url.match(/figtree=(.*?)(?:$|&)/)
         var figUrlMatch  = request.url.match(/figurl=(.*?)(?:$|&)/)
         var figtree = {
-            head: {},
+            head: [],
             blocks: [],
-            body: {}
+            body: []
         }
 
+        /* since I'm Object assigning the incoming figtree with empty arrays, and appending the both heads and both blocks, */
+        /* an incoming figtree might just describe its body if the default config is fulfills requirements */
+    
         try {
             if(figtreeMatch){
                 figtreeFilename = decodeURIComponent(figtreeMatch[1])
@@ -157,24 +164,12 @@ function respondFromFigTree(request, response){
                 Object.assign(figtree, JSON.parse(figurl))
             }
         } catch(figParseError){
+            buildErrors.push(figParseError)
             /* maybe the file isn't there, or the URI was malformed, or the JSON was malfromed */
-            figtree.head.meta = {
-                "name": "figParseError",
-                "content": util.inspect(figParseError)
-            }
         }
         return figtree
     }
-
-    function promise2pipe(filename){
-        return new Promise((resolve, reject) => {
-            fs.createReadStream(filename)
-                .on('end', resolve)
-                .on('error', error => {
-                    /* if the file doesn't exist that's fine, keep going */
-                    error.code == 'ENOENT' ? resolve() : reject(error)
-                })
-                .pipe(response, {end: false})
-        })
-    }
 }
+
+
+

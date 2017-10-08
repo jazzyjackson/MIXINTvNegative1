@@ -1,9 +1,11 @@
-class MenuBlock extends HTMLElement {
+class MenuBlock extends ProtoBlock {
   constructor(){
       super()
   }
 
   connectedCallback(){
+      console.log(this)
+      this.init()
       this.attachListeners()
       let menuList = document.createElement('ul')
       let parentBlock = this.parentElement
