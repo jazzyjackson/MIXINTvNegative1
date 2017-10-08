@@ -3,7 +3,7 @@ var bookkeeper = require('./bookkeeper')
 var fs         = require('fs')
 var exec       = require('child_process').exec
 var os         = require('os')
-var figjam     = loadFigJam()
+var figjam     = chooseFigJam()
 var key, cert
 /* try to read key and certificate from disk and enable HTTPS if true */
 var SSL_READY  = trySSL(key, cert)       
@@ -77,7 +77,7 @@ function trySSL(key, cert){
     }
 }
 
-function loadFigJam(){
+function chooseFigJam(){
     if(parseInt(process.env.RETROGRADE) || parseInt(process.versions.node) < 8){
         return function(request, response){
             fs.createReadStream('retrograde.html')

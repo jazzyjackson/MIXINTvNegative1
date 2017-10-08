@@ -36,7 +36,7 @@ var defaultFig = {
         "become-block": {
             "width":"400px",
             "height":"300px",
-            "style":"background:pink;",
+            "style":"background:pink;display:block;",
             "childNodes": {
                 "div": [{
                     "childNodes": {
@@ -115,19 +115,19 @@ function respondFromFigTree(request, response){
         if(Array.isArray(tagObject)){
             tagObject.map(tagObjectElement => buildTag(tagName,tagObjectElement))
         } else {
-            /* if theres a childNodes property, extract it and delete it before iterating through other attributes */
-            var childNodes = tagObject.childNodes || {} // return empty object if property doesn't exist. for for-each-in ing
-            delete tagObject.childNodes
-
             response.write(`<${tagName} `)
-            for(var attribute in tagObject){
+
+            attributes = Object.keys(tagObject).filter(attribute => attribute != 'childNodes')
+            for(var attribute of attributes){
                 response.write(`${attribute}="${tagObject[attribute]}" `)
             }
             response.write(`>\n`)                
             
             if(!voidElements.includes(tagName)){
                 /* only check for children and write closing tag for normal elements */
-                /* void elements can not have closing tag */                             
+                /* void elements can not have closing tag */   
+                var childNodes = tagObject.childNodes || {}
+
                 for(var childName in childNodes){
                     buildTag(childName, childNodes[childName])
                 }
