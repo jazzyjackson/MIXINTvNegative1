@@ -42,7 +42,7 @@ var defaultFig = {
                     "childNodes": {
                         "ul":{
                             "childNodes": {
-                                "li":[{},{},{}]
+                                "li":[{"textContent":"1"},{"textContent":"2"},{"textContent":"3"}]
                             }
                         }
                     }
@@ -54,7 +54,7 @@ var defaultFig = {
 
 
 function respondFromFigTree(request, response){
-
+    response.setMaxListeners(50) // I might open a bunch of files at once, no big deal
     /* if the previous if block didn't fire and return, then we assume we're on node > 8 */
     /* now we can start using es6y stuff, promisfy and async/await and arrow functions */
     let readFile = util.promisify(fs.readFile)
@@ -117,7 +117,7 @@ function respondFromFigTree(request, response){
         } else {
             response.write(`<${tagName} `)
 
-            attributes = Object.keys(tagObject).filter(attribute => attribute != 'childNodes')
+            attributes = Object.keys(tagObject).filter(attribute => !['childNodes','textContent'].includes(attribute))
             for(var attribute of attributes){
                 response.write(`${attribute}="${tagObject[attribute]}" `)
             }
@@ -127,7 +127,8 @@ function respondFromFigTree(request, response){
                 /* only check for children and write closing tag for normal elements */
                 /* void elements can not have closing tag */   
                 var childNodes = tagObject.childNodes || {}
-
+                // if there's textContent, write it before closing the tag.
+                tagObject.textContent && response.write(tagObject.textContent)
                 for(var childName in childNodes){
                     buildTag(childName, childNodes[childName])
                 }
@@ -153,13 +154,13 @@ function respondFromFigTree(request, response){
                 Object.assign(figtree, JSON.parse(await readFile(figtreeFilename)))
             } else if(figUrlMatch){
                 figurl = decodeURIComponent(figUrlMatch[1])
-                Object.assign(figtree, JSON.prase(figurl))
+                Object.assign(figtree, JSON.parse(figurl))
             }
         } catch(figParseError){
             /* maybe the file isn't there, or the URI was malformed, or the JSON was malfromed */
             figtree.head.meta = {
                 "name": "figParseError",
-                "content": util.inpsect(figParseError)
+                "content": util.inspect(figParseError)
             }
         }
         return figtree
