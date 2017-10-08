@@ -1,15 +1,15 @@
 #!/usr/local/bin/node
-var figjam     = require('./figjam')
 var bookkeeper = require('./bookkeeper')
 var fs         = require('fs')
 var exec       = require('child_process').exec
 var os         = require('os')
+var figjam     = loadFigJam()
 var key, cert
 /* try to read key and certificate from disk and enable HTTPS if true */
 var SSL_READY  = trySSL(key, cert)       
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
-.createServer(SSL_READY && {key, cert})
+.createServer(SSL_READY && {key: key, cert: cert})
 .on('request', function(req,res){       
     /* on receiving a network request, inspect request properties to determine response   */
     /* via recursive ternary - continue until some condition is found to be true          */
@@ -35,14 +35,14 @@ function subscibeToEvents(request, response){
 
 function streamFile(request, response){
     fs.createReadStream(request.url.split('?')[0].slice(1))
-    .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
+    .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
     .pipe(response)
 }
 
 function saveBody(request, response){
     request.pipe(fs.createWriteStream('.' + request.url, 'utf8'))
-    .on('finish', () => { response.writeHead(201); response.end() })
-    .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
+    .on('finish', function(){ response.writeHead(201); response.end() })
+    .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
 }
 
 function streamSubProcess(request, response){
@@ -50,11 +50,11 @@ function streamSubProcess(request, response){
     subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
         cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
     })
-    subprocess.on('error', err => { 
+    subprocess.on('error', function(err){ 
         response.writeHead(500); 
         response.end(JSON.stringify(err)) 
     })
-    subprocess.stdout.on('data', data => {
+    subprocess.stdout.on('data', function(data){
         response.write("event: stdout" + "\n" + "data:" + JSON.stringify(data)) //JSON stringify does a pretty good job of escaping things
     })
     subprocess.stderr.pipe(response)
@@ -72,7 +72,19 @@ function trySSL(key, cert){
         cert = fs.readFileSync('cert')
         return true // only sets SSL_READY if reading both files went off without a hitch
     } catch(SSL_ERROR){
-        bookkeeper.log({SSL_ERROR})
+        bookkeeper.log({SSL_ERROR: SSL_ERROR})
         return false
+    }
+}
+
+function loadFigJam(){
+    if(parseInt(process.env.RETROGRADE) || parseInt(process.versions.node) < 8){
+        return function(request, response){
+            fs.createReadStream('retrograde.html')
+            .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
+            .pipe(response)
+        }
+    } else {
+        return require('./figjam')
     }
 }

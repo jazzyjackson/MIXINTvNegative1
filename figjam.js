@@ -54,12 +54,6 @@ var defaultFig = {
 
 
 function respondFromFigTree(request, response){
-        
-    if(parseInt(process.env.RETROGRADE) || process.versions.node < 8){
-        return fs.createReadStream('retrograde.html')
-                 .on('error', err => { response.writeHead(500); response.end( JSON.stringify(err)) })
-                 .pipe(response)
-    }
 
     /* if the previous if block didn't fire and return, then we assume we're on node > 8 */
     /* now we can start using es6y stuff, promisfy and async/await and arrow functions */
