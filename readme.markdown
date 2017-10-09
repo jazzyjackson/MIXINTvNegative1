@@ -26,21 +26,28 @@ Operator.js will connect your calls - fulfilling network requests in one of six 
  - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
 
  ```js
- require(SSL_READY ? 'https' : 'http')
-.createServer(SSL_READY && {key, cert})
+/* try to read key and certificate from disk and enable HTTPS if true */
+var SSL_READY  = trySSL(key, cert)       
+/* check if private key and certificate were read properly and start server  */ 
+require(SSL_READY ? 'https' : 'http')
+.createServer(SSL_READY && {key: key, cert: cert})
 .on('request', function(req,res){       
-    /* on receiving a network request, inspect request properties to determine response  */
-    /* via recursive ternary - continue until some condition is found to be true         */
-    req.headers.accept.match(/text\/event-stream/i)      ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/) ? figjam(req,res)             : /* url path w/ trailing slash */
-    req.method == 'GET'                                  ? streamFile(req,res)         :
-    req.method == 'POST'                                 ? streamSubprocess(req,res)   :
-    req.method == 'PUT'                                  ? saveBody(req,res)           :
-    req.method == 'DELETE'                               ? deleteFile(req,res)         :
-    res.end(req.method + ' ' + req.url + "\nDoesn't look like anything to me")         ;
+    /* on receiving a network request, inspect request properties to determine response   */
+    /* via recursive ternary - continue until some condition is found to be true          */
+    req.headers.accept.match(/text\/event-stream/i)       ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
+    req.headers.accept.match(/application\/octet-stream/) ? pipeProcess(req,res)        : /* fetch with binary data */
+    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/)  ? figjam(req,res)             : /* url path w/ trailing slash */
+    req.method == 'GET'                                   ? streamFile(req,res)         :
+    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
+    req.method == 'PUT'                                   ? saveBody(req,res)           :
+    req.method == 'DELETE'                                ? deleteFile(req,res)         :
+    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
 })                                      
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
+/* start listening on port 3000 unless another number was passed as argument */
+/* once the server is listening, print the port number to stdout             */
+/* switchboard will request port 0, which assigns a random, unused port      */
 ```
  _See annotated code in guide/operator.js_
 
