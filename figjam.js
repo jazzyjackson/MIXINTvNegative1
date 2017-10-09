@@ -32,13 +32,17 @@ let defaultFig = {
             "rel":"icon",
             "type":"image/x-icon",
             "href": "data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
+        }},
+        {"style": {
+            "textContent": "* {margin: 0; padding: 0; box-sizing: border-box;} body {overflow: hidden;}"
         }}
     ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
-    "blocks": ["proto","menu","read","message","convo","shell"],
+    /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
+    "blocks": ["proto","directory","become"],
     "body": [
-        {"shell-block": {
-            "tabIndex": 0
+        {"directory-block": {
+
         }}
     ]
 }
@@ -51,16 +55,16 @@ const rootDirectory = '.' // this might change when we start operator in differe
 module.exports = async function(request, response){
     response.setMaxListeners(50) // I might open a bunch of files at once, no big deal
     
-    let readFile = util.promisify(fs.readFile)
-    let fig = await parseFig()
-    let buildErrors = []
+    var readFile = util.promisify(fs.readFile)
+    var fig = await parseFig()
+    var buildErrors = []
     response.write(`<!DOCTYPE html><html><head>\n`)
     defaultFig.head.forEach(streamNodes)
     fig.head.forEach(streamNodes)
 
     // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
     // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
-    let requisiteBlocks = new Set(defaultFig.blocks)
+    var requisiteBlocks = new Set(defaultFig.blocks)
     fig.blocks.forEach(block => requisiteBlocks.add(block))
     for(var block of requisiteBlocks){
         await streamBlockTemplate(block)
@@ -78,9 +82,9 @@ module.exports = async function(request, response){
     }
     response.write(`</script>`)
     if(buildErrors.length){
-        response.write(`<build-errors style="display: none">\n`)
+        response.write(`<build-errors>\n`)
         buildErrors.forEach(error => {
-            streamNodes({"build-error":{textContent: util.inspect(error), style: "display: block; white-space: pre; border: 1px solid red;"}})
+            streamNodes({"build-error": error})
         })
         response.write(`</build-errors>\n`)
     }
@@ -102,6 +106,9 @@ module.exports = async function(request, response){
     async function streamBlockClass(blockName){
         var classFile = path.join(rootDirectory, 'gui-blocks', blockName, 'class.js')
         await promise2pipe(classFile)
+        /* follow up class definitioin with element registration */
+        /* e.g. customElements.define('read-block', ReadBlock) */
+        response.write(`\ncustomElements.define('${blockName}-block', ${blockName.charAt(0).toUpperCase() + blockName.slice(1) + "Block"})\n`)
     }
 
     async function streamBlockTemplate(blockName){
@@ -118,8 +125,8 @@ module.exports = async function(request, response){
     /* streamNodes should probably be upgraded to async and resolve after the buffer is drained, to scale up */
     function streamNodes(nodeDescription){
         // 'this' will be bound to the HTTP Response object, write back to client
-        let tagName = Object.keys(nodeDescription)[0]
-        let tagObject = nodeDescription[tagName]
+        var tagName = Object.keys(nodeDescription)[0]
+        var tagObject = nodeDescription[tagName]
         
         var voidElements = ["area","base","br","col","embed","hr","img","input","keygen","link","meta","param","source","track","wbr"]
         response.write(`<${tagName}`)
@@ -170,6 +177,3 @@ module.exports = async function(request, response){
         return figtree
     }
 }
-
-
-

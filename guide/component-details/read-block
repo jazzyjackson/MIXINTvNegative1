@@ -1,0 +1,6 @@
+Two different case for executing code on server
+Expect an immediate response? Send a post request.
+Expect asynchronous bytes forever? Subscribe to an event source.
+
+It's OK to use event source with programs that exit immediately too.
+I think all my javascript to grab data within the interface will be via eventsource

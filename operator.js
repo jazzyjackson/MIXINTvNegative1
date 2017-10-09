@@ -29,9 +29,6 @@ require(SSL_READY ? 'https' : 'http')
 /* switchboard will request port 0, which assigns a random, unused port      */
 
 /************************************* Function definitions to fulfill requests **************************************/
-function subscibeToEvents(request, response){
-
-}
 
 function streamFile(request, response){
     fs.createReadStream(request.url.split('?')[0].slice(1))
@@ -46,31 +43,56 @@ function saveBody(request, response){
 }
 
 function streamSubProcess(request, response){
-    console.log(decodeURIComponent(request.url.split('?')[1]))
-    subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
+    response.setHeader('Content-Type', 'application/octet-stream')
+    response.setHeader('Trailer', 'Exit-Code')
+    var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
         cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
     })
     subprocess.on('error', function(err){ 
         response.writeHead(500); 
         response.end(JSON.stringify(err)) 
     })
+    /* I had a curious data drop out, I wonder if stderr piped a null byte and closed the connection early */
+    /* lets not allow stdio to close connection, wait until process exits, As a bonus, I get to send the exit code */
+    subprocess.stdout.pipe(response, {end: false})
+    subprocess.stderr.pipe(response, {end: false})
+    subprocess.on('close', (code,signal) => {
+        /* OK fine, trailers aren't really supported by anyone right now, maybe they'll be in HTTP2 */
+        response.addTrailers({'Exit-Code': code || signal})
+        response.end()
+    })
+}
+
+function subscibeToEvents(request, response){
+    var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
+        cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
+    })
+    subprocess.on('error', function(err){
+        response.write("event: err" + "\n" + "data:" + JSON.stringify(err)) //JSON stringify does a pretty good job of escaping things
+    })
     subprocess.stdout.on('data', function(data){
         response.write("event: stdout" + "\n" + "data:" + JSON.stringify(data)) //JSON stringify does a pretty good job of escaping things
     })
-    subprocess.stderr.pipe(response)
+    subprocess.stderr.on('data', function(data){
+        response.write("event: stderr" + "\n" + "data:" + JSON.stringify(data)) //JSON stringify does a pretty good job of escaping things
+    })
 }
 
 function deleteFile(request, response){
-  return false  
+    fs.unlink('.' + request.url, function(err){ 
+        response.writeHead( err ? 500 : 204); 
+        response.end(JSON.stringify(err))
+    })
 }
 
 function trySSL(key, cert){
     /* force HTTP server and skip reading files */
     if(process.env.DISABLE_SSL) return false
     try {
+        /* blocking, but only once at start up */
         key = fs.readFileSync('key')
         cert = fs.readFileSync('cert')
-        return true // only sets SSL_READY if reading both files went off without a hitch
+        return true // only sets SSL_READY if reading both files succeeded
     } catch(SSL_ERROR){
         bookkeeper.log({SSL_ERROR: SSL_ERROR})
         return false
@@ -78,6 +100,9 @@ function trySSL(key, cert){
 }
 
 function chooseFigJam(){
+    /* figjam does a kind of webpack-y thing and streams all the files in order over a single request */
+    /* but its an async/await situation compatible with node 8+, so check if we want to use it here */
+    /* otherwise just return retrograde.html instead of building pages at time of request */
     if(parseInt(process.env.RETROGRADE) || parseInt(process.versions.node) < 8){
         return function(request, response){
             fs.createReadStream('retrograde.html')
