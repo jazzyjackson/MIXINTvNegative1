@@ -1,0 +1,28 @@
+:host {
+  position: absolute;
+  display: block;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+}
+
+header {
+  text-align: center;
+}
+
+ul {
+  list-style: none;
+  display: block;
+  margin: 0 auto;
+  padding: 0;
+  width: 75%;
+}
+
+li {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  margin: 3px;
+  padding: 3px;
+}

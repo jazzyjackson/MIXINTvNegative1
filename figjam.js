@@ -39,9 +39,9 @@ let defaultFig = {
     ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
-    "blocks": ["proto","directory","become"],
+    "blocks": ["proto","directory","become","hsplit","vsplit","thread"],
     "body": [
-        {"directory-block": {
+        {"become-block": {
 
         }}
     ]

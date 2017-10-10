@@ -78,10 +78,8 @@ class ProtoBlock extends HTMLElement {
             this.initialized = 'pending'             
             /* but only calls it once if initialized flag isn't already set */
             this.attachShadow({mode: 'open'})
-            console.log(this)
             this.shadowRoot.appendChild(document.querySelector(`[renders="${this.tagName.toLowerCase()}"]`).content.cloneNode(true))  
             this.id = 'block' + String(Math.random()).slice(-4) + String(Date.now()).slice(-4) //random id for convenience. random number + time to reduce likelihood of collisions
-            this.props = this.options
             /* call in reverse order to invoke base class connectedCallback first. */
             this.superClassChain.reverse().forEach(superClass => {
                 /* this also expected connectedCallback to exist on every class, so just connectedCallback(){init()} if you don't need to do anything, just keep it as a template */

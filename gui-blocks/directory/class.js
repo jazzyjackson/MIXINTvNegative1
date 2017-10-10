@@ -5,9 +5,6 @@ class DirectoryBlock extends ProtoBlock {
 
     connectedCallback(){
         this.init() /* initialize everything that would occur in the connectedCallback of superclasses */
-        this.host = this.getRootNode().host
-        console.log("THIS", this)
-        console.log("HOST", this.host)
         this.header = this.shadowRoot.querySelector('header')
         this.fileList = this.shadowRoot.querySelector('file-list')
         this.fileList.setAttribute('mode', 'icon' || 'detail' ) /* switch these to change default display mode */
@@ -22,17 +19,13 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     fetchDirectory(){
-        console.log('fetching')
         this.props = {lastUpdate: Date.now()} 
         fetch(this.props.pathname + '?' + 'ls --all --format=verbose --group-directories-first --human-readable --time-style=long-iso', {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
         })
-        .then(response => {
-            console.log(response)
-            return response.text()
-        })
+        .then(response => response.text())
         .then(ls_output => {
             let lines = ls_output.split('\n')
             this.props = {size: lines[0]}
@@ -66,6 +59,7 @@ class DirectoryBlock extends ProtoBlock {
                 this.fileList.appendChild(newBlock)
                 if(directoryFlag){
                     newBlock.addEventListener('dblclick', event => {
+                        console.log(event)
                         let currentPath = this.props.pathname
                         let newDirectory = event.target.textContent
                         let newPath = newDirectory == '..' ? currentPath.split('/').slice(0,-2).join('/') + '/' :
@@ -81,7 +75,7 @@ class DirectoryBlock extends ProtoBlock {
     makeDirectorySibling(pathname){
         let newBlock = new DirectoryBlock
         newBlock.props = {pathname}
-        this.parentElement.appendChild(newBlock)
+        this.replaceWith(newBlock)
     }
 
     
