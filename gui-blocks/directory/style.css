@@ -12,6 +12,9 @@ header {
     background: black;
     color: white;
     padding: 3px;
+}
+
+* {
     font-family: monospace;
 }
 

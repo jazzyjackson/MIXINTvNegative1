@@ -8,8 +8,18 @@
   background: white;
 }
 
+* {
+  font-family: monospace;
+}
+
 header {
   text-align: center;
+  margin: 9px;
+}
+
+header em {
+  border: 0.5px solid rgba(0,0,0,0.6);
+  padding: 1px 3px;
 }
 
 ul {

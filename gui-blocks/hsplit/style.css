@@ -7,9 +7,7 @@
   height: 100%;
   background: white;
 }
-:host > *{
-  border:1px solid lightgray;
-}
+
 
 
 :host > *:nth-child(even) {
@@ -24,6 +22,7 @@
   top: 0;
   width: 50%;
   height: 100%;
+  border-left: 1px solid lightgray;
 }
 
 
