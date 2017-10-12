@@ -34,14 +34,14 @@ require(SSL_READY ? 'https' : 'http')
 .on('request', function(req,res){       
     /* on receiving a network request, inspect request properties to determine response   */
     /* via recursive ternary - continue until some condition is found to be true          */
-    req.headers.accept.match(/text\/event-stream/i)       ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-    req.headers.accept.match(/application\/octet-stream/) ? pipeProcess(req,res)        : /* fetch with binary data */
-    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/)  ? figjam(req,res)             : /* url path w/ trailing slash */
-    req.method == 'GET'                                   ? streamFile(req,res)         :
-    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
-    req.method == 'PUT'                                   ? saveBody(req,res)           :
-    req.method == 'DELETE'                                ? deleteFile(req,res)         :
-    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
+    req.headers.accept.match(/text\/event-stream/i) ? subscibeToEvents(req,res) : /* from new EventSource (SSE) */
+    req.headers.accept.match(/application\/octet-stream/) ? pipeProcess(req,res) : /* fetch with binary data */
+    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/)  ? figjam(req,res) : /* url path w/ trailing slash */
+    req.method == 'GET' ? streamFile(req,res) :
+    req.method == 'POST' ? streamSubProcess(req,res) :
+    req.method == 'PUT' ? saveBody(req,res) :
+    req.method == 'DELETE' ? deleteFile(req,res) :
+    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me") ;
 })                                      
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
