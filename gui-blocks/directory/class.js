@@ -4,18 +4,15 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     connectedCallback(){
-        this.init() /* initialize everything that would occur in the connectedCallback of superclasses */
-        this.header = this.shadowRoot.querySelector('header')
-        this.fileList = this.shadowRoot.querySelector('file-list')
-        this.fileList.setAttribute('mode', 'icon' || 'detail' ) /* switch these to change default display mode */
-        /* if pathname attribute wasn't set before being connected, set it as the current pathname */
-
-        this.addEventListener('init', ()=>{
-            /* things that should only happen once */
+        if(this.hasntBeenInitializedYet()){
+            this.header = this.shadowRoot.querySelector('header')
+            this.fileList = this.shadowRoot.querySelector('file-list')
+            this.fileList.setAttribute('mode', 'icon' || 'detail' ) /* switch these to change default display mode */
+            /* if pathname attribute wasn't set before being connected, set it as the current pathname */
             this.getAttribute('pathname') || this.setAttribute('pathname', location.pathname)
             this.header.textContent = this.props.pathname
             if(!this.props.lastUpdate) this.fetchDirectory()
-        })
+        }
     }
 
     fetchDirectory(){
@@ -65,18 +62,16 @@ class DirectoryBlock extends ProtoBlock {
                         let newPath = newDirectory == '..' ? currentPath.split('/').slice(0,-2).join('/') + '/' :
                                       newDirectory == '.'  ? currentPath                                        :
                                       currentPath + newDirectory + '/'                                          ;
-                        this.makeDirectorySibling(newPath)
+                        this.replaceWithNewDirectory(newPath)
                     })
                 }
             })
         })
     }
 
-    makeDirectorySibling(pathname){
+    replaceWithNewDirectory(pathname){
         let newBlock = new DirectoryBlock
         newBlock.props = {pathname}
         this.replaceWith(newBlock)
     }
-
-    
 }

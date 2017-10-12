@@ -3,21 +3,14 @@ class BecomeBlock extends ProtoBlock {
         super()
     }
 
-    connectedCallback(){
-        this.init()
-
-        this.addEventListener('init', () => {
-            /* This is a little ugly, but it might be the case the this element is initialized before the window is done loading */
-            /* and my build-errors element doesn't come in until the very end */
-            /* so if build-errors isn't available yet (to tell me what blocks don't exist), wait til window load */
-            if(!document.querySelector('build-errors')){
-                window.addEventListener('load', () => {
-                    this.buildBlockList()
-                })
-            } else {
-                this.buildBlockList()
-            }
-        })
+    async connectedCallback(){
+        if(this.hasntBeenInitializedYet()){
+            // most blocks can initialize themselves right away,
+            // but become-block is going to list all possible blocks,
+            // so it should wait until the document is done loading 
+            await this.waitForDOM()
+            this.buildBlockList()
+        }
     }
 
     buildBlockList(){               
@@ -31,7 +24,7 @@ class BecomeBlock extends ProtoBlock {
         })
         impossibleBlocks.push('proto-block','become-block')
         let availableBlocks = possibleBlocks.filter(block => !impossibleBlocks.includes(block))
-
+        console.log("Available", availableBlocks)
         let blockList = document.createElement('ul')
         availableBlocks.forEach(block => {
             let blockListItem = document.createElement('li')

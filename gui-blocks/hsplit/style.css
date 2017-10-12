@@ -8,8 +8,6 @@
   background: white;
 }
 
-
-
 :host > *:nth-child(even) {
   left: 0;
   top: 0;

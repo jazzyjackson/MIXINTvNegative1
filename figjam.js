@@ -34,12 +34,12 @@ let defaultFig = {
             "href": "data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
         }},
         {"style": {
-            "textContent": "* {margin: 0; padding: 0; box-sizing: border-box;} body {overflow: hidden;}"
+            "textContent": "* {margin: 0; padding: 0; box-sizing: border-box;} body, html {overflow: hidden; width: 100%; height: 100%;}"
         }}
     ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
-    "blocks": ["proto","directory","become","hsplit","vsplit","thread"],
+    "blocks": ["proto","directory","become","hsplit","vsplit","thread","textarea"],
     "body": [
         {"become-block": {
 
@@ -69,6 +69,7 @@ module.exports = async function(request, response){
     for(var block of requisiteBlocks){
         await streamBlockTemplate(block)
     }
+
     response.write(`</head>\n`)
     response.write(`<body>\n`)
     // recursively build tags in body

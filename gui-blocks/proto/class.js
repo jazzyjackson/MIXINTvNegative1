@@ -60,38 +60,25 @@ class ProtoBlock extends HTMLElement {
         return superClassChain
     }
 
-    init(){
+    hasntBeenInitializedYet(){
+        if(this.initialized) return false // in other words, that HAS been initialized already
+
+        this.attachShadow({mode: 'open'})
+        this.shadowRoot.appendChild(document.querySelector(`[renders="${this.tagName.toLowerCase()}"]`).content.cloneNode(true))  
+        this.id = 'block' + String(Math.random()).slice(-4) + String(Date.now()).slice(-4) //random id for convenience. random number + time to reduce likelihood of collisions
+
+        this.superClassChain.reverse().forEach(superClass => {
         /* this calls every connectedCallback up the class inheritence chain or whatever you want to call it */
-        if(this.initialized){
-            // connected, unattached and reattached? attach listeners.
-            switch(this.initialized){
-                case 'pending':
-                    console.log(`A ${this.tagName.toLowerCase()} init was called, still pending`);
-                    break;
-                case 'done':
-                    console.log(`A ${this.tagName.toLowerCase()} was re-initialized`);
-                    break;
-                default:
-                    console.log("INIT DEFAULT", this.tagName, this.initialized)
-            }
-        } else {
-            this.initialized = 'pending'             
-            /* but only calls it once if initialized flag isn't already set */
-            this.attachShadow({mode: 'open'})
-            this.shadowRoot.appendChild(document.querySelector(`[renders="${this.tagName.toLowerCase()}"]`).content.cloneNode(true))  
-            this.id = 'block' + String(Math.random()).slice(-4) + String(Date.now()).slice(-4) //random id for convenience. random number + time to reduce likelihood of collisions
-            /* call in reverse order to invoke base class connectedCallback first. */
-            this.superClassChain.reverse().forEach(superClass => {
-                /* this also expected connectedCallback to exist on every class, so just connectedCallback(){init()} if you don't need to do anything, just keep it as a template */
-                if(superClass.prototype.connectedCallback != undefined){
-                    superClass.prototype.connectedCallback.call(this)
-                }
-            })
-            this.initialized = 'done'
-            /* I'm expecting connectedCallbacks to be effectively blocking so that init is fired once all methods and HTML nodes are on the DOM, that's my intention anyway */
-            console.log(`A ${this.tagName.toLowerCase()} was initialized`)
-            this.dispatchEvent(new Event('init')) /* fire load event so other elements can wait for the node to be initialized */
-        }
+        /* call in reverse order to invoke base class connectedCallback first. */
+        /* doesn't call the connectedCallback of 'THIS' block, just all classes above it */
+            superClass.prototype.connectedCallback != undefined
+            && superClass.prototype.connectedCallback != this.connectedCallback 
+            && superClass.prototype.connectedCallback.call(this)
+        })
+        /* I'm expecting connectedCallbacks to be effectively blocking so that init is fired once all methods and HTML nodes are on the DOM, that's my intention anyway */
+            
+        console.log(`A ${this.tagName.toLowerCase()} was initialized`)
+        return this.initialized = true         
     }
 
     /* to be more extensible this should probably go up the superclasschain accumulating static get keepAttributes, and using that array to skip attribute removal */
@@ -136,5 +123,12 @@ class ProtoBlock extends HTMLElement {
         Use ES6 enhanced object literals to eval node.name as a key, so you have an array of objects (instead of attribute) and then you can just roll it up with reduce */
         return Array.from(this.attributes, attr => ({[attr.name]: attr.value}))
                     .reduce((a, n) => Object.assign(a, n)) // You would think you could do .reduce(Object.assign), but assign is variadic, and reduce passes the original array as the 4th argument to its callback, so you would get the original numeric keys in your result if you passed all 4 arguments of reduce to Object.assign. So, explicitely pass just 2 arguments, accumulator and next.
+    }
+
+    waitForDOM(){
+        return new Promise(resolve => {
+            if(document.readyState == 'complete') resolve()
+            else window.addEventListener('load', resolve)
+        })
     }
 }
