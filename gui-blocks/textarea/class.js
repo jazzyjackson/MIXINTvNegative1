@@ -19,7 +19,7 @@ class TextareaBlock extends ProtoBlock {
     fetchFile(source){
         this.props = {lastUpdate: Date.now()} 
         fetch(source, {
-            method: 'post',
+            method: 'get',
             credentials: 'same-origin',
             redirect: 'error' 
         })

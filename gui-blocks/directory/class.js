@@ -8,16 +8,16 @@ class DirectoryBlock extends ProtoBlock {
             this.header = this.shadowRoot.querySelector('header')
             this.fileList = this.shadowRoot.querySelector('file-list')
             this.fileList.setAttribute('mode', 'icon' || 'detail' ) /* switch these to change default display mode */
-            /* if pathname attribute wasn't set before being connected, set it as the current pathname */
-            this.getAttribute('pathname') || this.setAttribute('pathname', location.pathname)
-            this.header.textContent = this.props.pathname
+            /* if src attribute wasn't set before being connected, set it as the current src */
+            this.getAttribute('src') || this.setAttribute('src', location.pathname)
+            this.header.textContent = this.props.src
             if(!this.props.lastUpdate) this.fetchDirectory()
         }
     }
 
     fetchDirectory(){
         this.props = {lastUpdate: Date.now()} 
-        fetch(this.props.pathname + '?' + 'ls --all --format=verbose --group-directories-first --human-readable --time-style=long-iso', {
+        fetch(this.props.src + '?' + 'ls --all --format=verbose --group-directories-first --human-readable --time-style=long-iso', {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
@@ -54,24 +54,40 @@ class DirectoryBlock extends ProtoBlock {
                     newBlock.appendChild(fileDatum)
                 }
                 this.fileList.appendChild(newBlock)
-                if(directoryFlag){
-                    newBlock.addEventListener('dblclick', event => {
-                        console.log(event)
-                        let currentPath = this.props.pathname
-                        let newDirectory = event.target.textContent
-                        let newPath = newDirectory == '..' ? currentPath.split('/').slice(0,-2).join('/') + '/' :
-                                      newDirectory == '.'  ? currentPath                                        :
-                                      currentPath + newDirectory + '/'                                          ;
-                        this.replaceWithNewDirectory(newPath)
-                    })
-                }
+                newBlock.addEventListener('dblclick', event => {
+                    console.log(event)
+                    console.log("NEW DIR", event.target.textContent)
+                    
+                    let currentPath = this.props.src
+                    let newDirectory = event.target.textContent
+                    let newPath = newDirectory == '..' ? currentPath.split('/').slice(0,-2).join('/') + '/' :
+                                    newDirectory == '.'  ? currentPath                                      :
+                                    currentPath + newDirectory + (directoryFlag ? '/' : '')                 ;
+                    if(directoryFlag){
+                        this.replaceWithNewBlock('directory-block', {src: newPath})
+                    } else {
+                        this.appendNewBlock('textarea-block', {src: newPath})
+                    }
+                })
+   
             })
         })
     }
 
-    replaceWithNewDirectory(pathname){
-        let newBlock = new DirectoryBlock
-        newBlock.props = {pathname}
+    replaceWithNewBlock(blockType, props){
+        console.log(arguments)
+        let newBlock = document.createElement(blockType)
+        newBlock.props = props
+        console.log(newBlock)
         this.replaceWith(newBlock)
+    }
+
+    appendNewBlock(blockType, props){
+        console.log(arguments)
+        let newBlock = document.createElement(blockType)
+        newBlock.props = props
+        console.log(newBlock);
+        /* not sure if I can assume the parent node is a shadowroot, so, try both and append to whatever exists */
+        (this.parentElement || this.getRootNode()).appendChild(newBlock)
     }
 }

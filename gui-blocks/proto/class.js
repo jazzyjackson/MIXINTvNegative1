@@ -62,7 +62,7 @@ class ProtoBlock extends HTMLElement {
 
     hasntBeenInitializedYet(){
         if(this.initialized) return false // in other words, that HAS been initialized already
-
+        
         this.attachShadow({mode: 'open'})
         this.shadowRoot.appendChild(document.querySelector(`[renders="${this.tagName.toLowerCase()}"]`).content.cloneNode(true))  
         this.id = 'block' + String(Math.random()).slice(-4) + String(Date.now()).slice(-4) //random id for convenience. random number + time to reduce likelihood of collisions
