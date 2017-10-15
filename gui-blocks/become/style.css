@@ -4,7 +4,6 @@
   flex-direction: column;
   width: 100%;
   flex-wrap: wrap;
-  align-content: flex-start;
   background: white;
   overflow: auto;
 }

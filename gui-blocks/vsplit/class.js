@@ -1,21 +1,25 @@
-class VsplitBlock extends HTMLElement {
+class VsplitBlock extends MultiplexBlock {
     constructor(){
         super()
     }
 
-    connectedCallback(){
-        if(this.shadowRoot) return this
-        /* attach shadow */
-        this.attachShadow({mode: 'open'})
-        var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
-        var shadowChild = template.content.cloneNode(true)
-        this.shadowRoot.appendChild(shadowChild)  
-        Array.from(this.children, child => this.shadowRoot.appendChild(child))
-
-        /* but this is a split, so if I wasn't initialized with children, lets make some new ones */
-        if(this.children.length == 0){
-            this.shadowRoot.appendChild(new BecomeBlock)
-            this.shadowRoot.appendChild(new BecomeBlock)
+    connectedCallback(initializing){
+        console.log("VSPLIT INIT", initializing)
+        if(initializing || this.hasntBeenInitializedYet()){
+            console.log("VSPLIT GOING")
         }
     }
+
+
+    reCalculateChildren(){
+        console.log("recalc")
+        let height = 100 / parseInt(this.getAttribute('show-max'))
+        let start = parseInt(this.getAttribute('show-start'))
+        Array.from(this.shadowRoot.children, (child, nth) => {
+            child.style.height = `${height}%`
+            child.style.top = `${height * (nth - start)}%`
+        })
+    }
+
+
 }

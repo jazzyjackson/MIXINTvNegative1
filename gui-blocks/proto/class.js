@@ -62,18 +62,20 @@ class ProtoBlock extends HTMLElement {
 
     hasntBeenInitializedYet(){
         if(this.initialized) return false // in other words, that HAS been initialized already
-        
+        this.initialized = true  
+          /* attach shadow */
         this.attachShadow({mode: 'open'})
-        this.shadowRoot.appendChild(document.querySelector(`[renders="${this.tagName.toLowerCase()}"]`).content.cloneNode(true))  
-        this.id = 'block' + String(Math.random()).slice(-4) + String(Date.now()).slice(-4) //random id for convenience. random number + time to reduce likelihood of collisions
-
+        var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
+        var shadowTree = template.content.cloneNode(true)
+        this.shadowRoot.appendChild(shadowTree)
         this.superClassChain.reverse().forEach(superClass => {
+            console.log("gonna call", superClass.name)
         /* this calls every connectedCallback up the class inheritence chain or whatever you want to call it */
         /* call in reverse order to invoke base class connectedCallback first. */
         /* doesn't call the connectedCallback of 'THIS' block, just all classes above it */
             superClass.prototype.connectedCallback != undefined
             && superClass.prototype.connectedCallback != this.connectedCallback 
-            && superClass.prototype.connectedCallback.call(this)
+            && superClass.prototype.connectedCallback.call(this, "BLOO") // 1st argument "initializing" only called from this chain
         })
         /* I'm expecting connectedCallbacks to be effectively blocking so that init is fired once all methods and HTML nodes are on the DOM, that's my intention anyway */
             
@@ -119,6 +121,7 @@ class ProtoBlock extends HTMLElement {
     }
 
     get props(){
+        if(!this.attributes.length) return {}
         /* an ugly way to coerce a NamedNodeMap (attributes) into a normal key: value object. 
         Use ES6 enhanced object literals to eval node.name as a key, so you have an array of objects (instead of attribute) and then you can just roll it up with reduce */
         return Array.from(this.attributes, attr => ({[attr.name]: attr.value}))

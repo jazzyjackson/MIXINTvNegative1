@@ -3,16 +3,24 @@ class TextareaBlock extends ProtoBlock {
         super()
     }
 
-    connectedCallback(){
-        if(this.hasntBeenInitializedYet()){
+    connectedCallback(initializing){
+        if(initializing || this.hasntBeenInitializedYet()){
             this.header = this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')
-            if(this.props.src){
-                this.fetchFile(this.props.src)
-            } else {
-                this.props = {src: undefined}
-            }
-            this.header.textContent = this.props.src
+            if(!this.props.src) this.props = {src: undefined}
+        }
+    }
+
+    static get observedAttributes(){
+        return ['src']
+    }
+
+    attributeChangedCallback(attr, newVal, oldVal){
+        switch(attr){
+            case 'src':
+                this.header.textContent = this.props.src
+                newVal && this.fetchFile(newVal)
+                break
         }
     }
 

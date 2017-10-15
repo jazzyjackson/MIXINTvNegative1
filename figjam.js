@@ -8,6 +8,7 @@
 /* if a node has childNodes, that property is also an array of objects to describe those HTML Elements to be rendered    */
 /* {tagName: {a: v, a: v, childNodes:[{tagName: {a: v, a:v}},{tagName: {a: v, a:v}}]}}                                   */
 /* note that attribute/value (a/v) are named by you, "childNodes" is the key that figjam.js uses to recurse, so use that */
+/* I kinda want to put this in a separate .json file but you cant have comments in json */
 let defaultFig = {
     "head": [
         {"meta":{
@@ -21,7 +22,7 @@ let defaultFig = {
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
-            "data-identity": process.env.user
+            "user-identity": process.env.user
         }},
         {"meta":{
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
@@ -39,7 +40,7 @@ let defaultFig = {
     ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
-    "blocks": ["proto","directory","become","hsplit","vsplit","thread","textarea"],
+    "blocks": ["proto","directory","become","multiplex","hsplit","vsplit","thread","textarea"],
     "body": [
         {"become-block": {
 

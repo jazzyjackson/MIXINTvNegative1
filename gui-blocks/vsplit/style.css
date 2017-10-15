@@ -1,26 +1,12 @@
 :host {
-  position: absolute;
   display: block;
-  left: 0;
-  top: 0;
-  width: 100%;
   height: 100%;
-  background: white;
 }
 
 
-:host > *:nth-child(even) {
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 50%;
+:host > * {
+  position: absolute;
 }
-
-:host > *:nth-child(odd) {
-  left: 0;
-  top: 50%;
-  width: 100%;
-  height: 50%;
-  border-top: 1px solid lightgrey;
+:host > *:not(:nth-child(2)){
+  border-top: 2px solid pink;
 }
-

@@ -3,13 +3,16 @@ class BecomeBlock extends ProtoBlock {
         super()
     }
 
-    async connectedCallback(){
-        if(this.hasntBeenInitializedYet()){
+    connectedCallback(initializing){
+        console.log("initializing!", initializing)
+        if(initializing || this.hasntBeenInitializedYet()){
             // most blocks can initialize themselves right away,
             // but become-block is going to list all possible blocks,
             // so it should wait until the document is done loading 
-            await this.waitForDOM()
-            this.buildBlockList()
+            this.waitForDOM().then(()=>{
+                this.buildBlockList()
+                
+            })
         }
     }
 
@@ -22,16 +25,17 @@ class BecomeBlock extends ProtoBlock {
             /* so .split('/')[1] should return proto, and I append '-block'                */
             return error.getAttribute('path').split('/')[1] + '-block'
         })
-        impossibleBlocks.push('proto-block','become-block')
+        impossibleBlocks.push('proto-block','become-block') /* there ought to be an option to hide certain blocks by name, doesnt really matter if they're loaded or not, just filter them out. somewhere in the fig file? */
         let availableBlocks = possibleBlocks.filter(block => !impossibleBlocks.includes(block))
         console.log("Available", availableBlocks)
         let blockList = document.createElement('ul')
-        availableBlocks.forEach(block => {
+        possibleBlocks.forEach(block => {
             let blockListItem = document.createElement('li')
             blockListItem.setAttribute('block-name', block)
             blockListItem.textContent = block.split('-')[0]
             blockListItem.addEventListener('click', event => {
                 let enclosedElement = block
+                console.log("replacing become with", block)
                 this.replaceWith(document.createElement(enclosedElement))
             })
             blockList.appendChild(blockListItem)
