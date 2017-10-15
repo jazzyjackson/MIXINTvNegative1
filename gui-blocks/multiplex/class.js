@@ -1,11 +1,7 @@
 class MultiplexBlock extends ProtoBlock {
     constructor(){
         super()
-    }
-
-    connectedCallback(initializing){
-        console.log("MULTIPLEX INIT", initializing)
-        if(initializing || this.hasntBeenInitializedYet()){
+        this.addEventListener('init', () => {
             /* hoist child nodes of custom element INTO the shadowRoot of this */
             Array.from(this.children, child => this.shadowRoot.appendChild(child))
             /* some default attributes */
@@ -16,15 +12,17 @@ class MultiplexBlock extends ProtoBlock {
             while(this.shadowRoot.children.length <= this.showMax){
                 this.shadowRoot.appendChild(new BecomeBlock)
             }
-            
+
             this.reCalculateChildren()                        
-            this.selfAwareness = new MutationObserver(event => {
+            this.watchChildren = new MutationObserver(event => {
                 console.log(event)
                 let childrenDelta = event[0].addedNodes.length - event[0].removedNodes.length
+                /* if there was a change in the number of children, animate the new child, if there is one */
+                childrenDelta && this.animateNewChild(event[0].addedNodes[0])
                 this.showStart = childrenDelta + parseInt(this.props["show-start"])
                 this.reCalculateChildren()
             })
-            this.selfAwareness.observe(this.shadowRoot, {childList: true, attributes: true})
+            this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})
             this.props = {tabindex: 0}
             this.addEventListener('keydown', event => {
                 /* modify max and start with ctrl+shift+[wasd] */
@@ -37,7 +35,19 @@ class MultiplexBlock extends ProtoBlock {
                     case 'd': this.showStart++; break;
                 }
             })
-        }   
+        })
+    }
+
+    static get observedAttributes(){
+        return ['show-start','show-max']
+    }
+
+    attributeChangedCallback(){
+        this.reCalculateChildren()
+    }
+
+    connectedCallback(){
+        this.initialized || this.dispatchEvent(new Event('init'))                
     }
 
     // reCalculateChildren defined by subclasses, vsplit, hsplit, fibonacciplex

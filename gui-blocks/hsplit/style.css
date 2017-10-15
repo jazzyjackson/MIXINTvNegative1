@@ -1,13 +1,12 @@
 :host {
   display: block;
+  width: 100%;
   height: 100%;
 }
 
 :host > * {
-  transition: left 0.25s;
+  width: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
+  transition: left 0.25s, width 0.25s, margin-left 0.25s;
   position: absolute;
-}
-
-:host > *:not(:nth-child(2)){
-  border-left: 2px solid pink;
+  margin-left: 2px;
 }

@@ -5,8 +5,17 @@ There is no custom element. no document.createElement('proto-block'), just, clas
 class ProtoBlock extends HTMLElement {
     constructor(){
         super()
+        this.addEventListener('init', () => {
+            this.initialized = true
+            var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
+            if(!template) return console.error(`${this.tagName} has no template`)
+
+            this.attachShadow({mode: 'open'})            
+            this.shadowRoot.appendChild(template.content.cloneNode(true))
+        })
     }
-  /* get actions that should be exposed to menu block from this class */
+
+    /* get actions that should be exposed to menu block from this class */
     static get actions(){
         return {
             "become": {
@@ -22,12 +31,18 @@ class ProtoBlock extends HTMLElement {
             "inspect or modify": {
                 func: this.prototype.inspectOrModify,
                 args: [{"select": ["style.css","class.js","template.html"]}]
+            },
+            "fullscreen frame": {
+
+            },
+            "fullscreen block": {
+                
             }
             /* new child, new sibling -> templates */
         }   
   }
 
-  /* get list of actions available on every class on the prototype chain and return an object to render MenuBlock */
+    /* get list of actions available on every class on the prototype chain and return an object to render MenuBlock */
     get actionMenu(){
         /* this getter walks up the prototype chain, invoking 'get actions' on each class, then with that array of menu objects, reduce Object assign is called to return an amalgamated object of menu options */
         return this.superClassChain.map(superclass => superclass.actions)
@@ -37,50 +52,6 @@ class ProtoBlock extends HTMLElement {
 
     static get requiredAttributes(){
 
-    }
-
-    static get superClassChain(){
-        /* is there a javascript built in I don't know about? Chrome seems to resolve this automatically in inspector, can I just ask an object for its list of prototypes instead of iterating ? */
-        var superClassChain = []
-        var superclass = this /* this is the part thats different for the class method: we can call the prototype of the class */
-        while(superclass.name != 'HTMLElement'){
-            superClassChain.push(superclass.prototype.constructor)
-            superclass = superclass.__proto__
-        }
-        return superClassChain 
-    }
-
-    get superClassChain(){
-        var superClassChain = []
-        var superclass = this.constructor /* this is the part thats different for the instance method: we have to call the constructor before we call for the prototype */
-        while(superclass.name != 'HTMLElement'){
-            superClassChain.push(superclass.prototype.constructor)
-            superclass = superclass.__proto__
-        }        
-        return superClassChain
-    }
-
-    hasntBeenInitializedYet(){
-        if(this.initialized) return false // in other words, that HAS been initialized already
-        this.initialized = true  
-          /* attach shadow */
-        this.attachShadow({mode: 'open'})
-        var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
-        var shadowTree = template.content.cloneNode(true)
-        this.shadowRoot.appendChild(shadowTree)
-        this.superClassChain.reverse().forEach(superClass => {
-            console.log("gonna call", superClass.name)
-        /* this calls every connectedCallback up the class inheritence chain or whatever you want to call it */
-        /* call in reverse order to invoke base class connectedCallback first. */
-        /* doesn't call the connectedCallback of 'THIS' block, just all classes above it */
-            superClass.prototype.connectedCallback != undefined
-            && superClass.prototype.connectedCallback != this.connectedCallback 
-            && superClass.prototype.connectedCallback.call(this, "BLOO") // 1st argument "initializing" only called from this chain
-        })
-        /* I'm expecting connectedCallbacks to be effectively blocking so that init is fired once all methods and HTML nodes are on the DOM, that's my intention anyway */
-            
-        console.log(`A ${this.tagName.toLowerCase()} was initialized`)
-        return this.initialized = true         
     }
 
     /* to be more extensible this should probably go up the superclasschain accumulating static get keepAttributes, and using that array to skip attribute removal */

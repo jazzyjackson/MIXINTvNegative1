@@ -1,10 +1,7 @@
 class DirectoryBlock extends ProtoBlock {
     constructor(){
         super()
-    }
-
-    connectedCallback(initializing){
-        if(initializing || this.hasntBeenInitializedYet()){
+        this.addEventListener('init', () => {
             this.header = this.shadowRoot.querySelector('header')
             this.fileList = this.shadowRoot.querySelector('file-list')
 
@@ -12,11 +9,14 @@ class DirectoryBlock extends ProtoBlock {
             this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))`
             
             /* if src attribute wasn't set before being connected, set it as the current src */
-            if(!this.props.src){
-                this.setAttribute('src', location.pathname)
-            }
+            this.props.src || this.setAttribute('src', location.pathname)
+
             this.fetchDirectory(this.props.src)
-        }
+        })
+    }
+
+    connectedCallback(){
+        this.initialized || this.dispatchEvent(new Event('init'))
     }
 
     fetchDirectory(pathname){

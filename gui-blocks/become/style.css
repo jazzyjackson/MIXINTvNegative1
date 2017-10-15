@@ -3,8 +3,7 @@
   position: absolute;
   flex-direction: column;
   width: 100%;
-  flex-wrap: wrap;
-  background: white;
+  height: 100%;
   overflow: auto;
 }
 
@@ -14,12 +13,18 @@
 
 header {
   text-align: center;
-  margin: 9px;
+  padding: 9px;
+  background: white;
 }
 
 header em {
   border: 0.5px solid rgba(0,0,0,0.6);
   padding: 1px 3px;
+}
+
+block-list {
+  background: white;
+  flex: 1;
 }
 
 ul {
@@ -36,3 +41,4 @@ li {
   margin: 3px;
   padding: 3px;
 }
+

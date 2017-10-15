@@ -35,7 +35,21 @@ let defaultFig = {
             "href": "data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
         }},
         {"style": {
-            "textContent": "* {margin: 0; padding: 0; box-sizing: border-box;} body, html {overflow: hidden; width: 100%; height: 100%;}"
+            "textContent": `
+                * {
+                    margin: 0; 
+                    padding: 0; 
+                    box-sizing: 
+                    border-box;
+                } 
+                body, html {
+                    overflow: hidden;
+                    width: 100%; 
+                    height: 100%;
+                }
+                body {
+                    background: black;
+                }`
         }}
     ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */

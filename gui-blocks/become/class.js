@@ -1,19 +1,16 @@
 class BecomeBlock extends ProtoBlock {
     constructor(){
         super()
-    }
-
-    connectedCallback(initializing){
-        console.log("initializing!", initializing)
-        if(initializing || this.hasntBeenInitializedYet()){
-            // most blocks can initialize themselves right away,
-            // but become-block is going to list all possible blocks,
-            // so it should wait until the document is done loading 
+        this.addEventListener('init', () => {
             this.waitForDOM().then(()=>{
                 this.buildBlockList()
                 
             })
-        }
+        })
+    }
+
+    connectedCallback(){
+        this.initialized || this.dispatchEvent(new Event('init'))                
     }
 
     buildBlockList(){               
