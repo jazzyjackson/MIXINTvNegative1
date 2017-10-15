@@ -1,5 +1,6 @@
 :host {
   display: block;
+  overflow: hidden;
   width: 100%;
   height: 100%;
 }
@@ -9,9 +10,11 @@
   height: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
   transition: top 0.25s, height 0.25s, margin-top 0.25s;
   position: absolute;
+  border-top: 2px solid black;
+  box-sizing: border-box;
 }
 
 
-:host > *:not(:nth-child(2)){
-  border-top: 2px solid transparent;
-}
+/* :host > *:not(:nth-child(2)){
+  border-top: 2px solid black;
+} */

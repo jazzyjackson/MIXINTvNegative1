@@ -17,6 +17,7 @@ class HsplitBlock extends MultiplexBlock {
             /* have to take a step out of sync for a second, let the margin */
             /* get painted, but throw a transition to 0 on the event loop */
             node.style.marginLeft = '0%'
+            node.style.marginLeft = null
         })
     }
 

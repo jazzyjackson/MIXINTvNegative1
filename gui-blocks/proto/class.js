@@ -105,4 +105,17 @@ class ProtoBlock extends HTMLElement {
             else window.addEventListener('load', resolve)
         })
     }
+
+    insertSibling(node){
+        if(this.nextElementSibling){
+            this.parentNode.insertBefore(node, this.nextElementSibling)
+        } else {
+            this.parentNode.appendChild(node)
+        }
+    }
+
+    whatChildIsThis(node){
+        /* if node is child of component, return the array index, else -1 */
+        return Array.from(this.shadowRoot.children).indexOf(node)
+    }
 }

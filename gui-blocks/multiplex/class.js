@@ -15,24 +15,32 @@ class MultiplexBlock extends ProtoBlock {
 
             this.reCalculateChildren()                        
             this.watchChildren = new MutationObserver(event => {
-                console.log(event)
                 let childrenDelta = event[0].addedNodes.length - event[0].removedNodes.length
-                /* if there was a change in the number of children, animate the new child, if there is one */
-                childrenDelta && this.animateNewChild(event[0].addedNodes[0])
-                this.showStart = childrenDelta + parseInt(this.props["show-start"])
+
+                /* if there's a new child, animate its creation */
+                let newChild = event[0].addedNodes[0]
+                let nthIndex = this.whatChildIsThis(newChild)
+                let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n
+                console.log({nthIndex, lastVisibleIndex, newChild, childrenDelta})
+                if(nthIndex > lastVisibleIndex || childrenDelta < 0){
+                    this.showStart = childrenDelta + parseInt(this.props["show-start"])                                                                
+                }
+                this.animateNewChild(newChild)                
                 this.reCalculateChildren()
+
             })
             this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})
             this.props = {tabindex: 0}
             this.addEventListener('keydown', event => {
+                console.log(event)
                 /* modify max and start with ctrl+shift+[wasd] */
                 if(!(event.ctrlKey & event.shiftKey)) return null
-
+                event.stopPropagation()
                 switch(event.key){
-                    case 'w': this.showMax++; break;
-                    case 'a': this.showStart--; break;
-                    case 's': this.showMax--; break;
-                    case 'd': this.showStart++; break;
+                    case 'ArrowUp': this.showMax++; break;
+                    case 'ArrowLeft': this.showStart > 1 && this.showStart--; break;
+                    case 'ArrowDown': this.showMax > 1 && this.showMax--; break;
+                    case 'ArrowRight': this.showStart++; break;
                 }
             })
         })
@@ -57,12 +65,12 @@ class MultiplexBlock extends ProtoBlock {
         this.setAttribute('show-start', newStartIndex)
     }
     get showStart(){
-        return this.getAttribute('show-start')
+        return parseInt(this.getAttribute('show-start'))
     }
     set showMax(newShowMax){
         this.setAttribute('show-max', newShowMax)
     }
     get showMax(){
-        return this.getAttribute('show-max')
+        return parseInt(this.getAttribute('show-max'))
     }
 }

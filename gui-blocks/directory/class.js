@@ -10,7 +10,6 @@ class DirectoryBlock extends ProtoBlock {
             
             /* if src attribute wasn't set before being connected, set it as the current src */
             this.props.src || this.setAttribute('src', location.pathname)
-
             this.fetchDirectory(this.props.src)
         })
     }
@@ -46,11 +45,17 @@ class DirectoryBlock extends ProtoBlock {
             node.addEventListener('dblclick', event => {
                 let newBlock = document.createElement('directory-block')
                 newBlock.props = {src: this.props.src + event.target.textContent + '/'}
-                this.parentNode.appendChild(newBlock)
+                this.insertSibling(newBlock)
             })
         })
         Array.from(this.fileList.querySelectorAll('file-block'), node => {
-
+            node.addEventListener('dblclick', event => {
+                console.log("inserting textarea with src",  this.props.src + event.target.textContent)
+            
+                let newBlock = document.createElement('textarea-block')
+                newBlock.props = {src: this.props.src + event.target.textContent}
+                this.insertSibling(newBlock)
+            })
         })
     }
 }

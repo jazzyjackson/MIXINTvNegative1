@@ -1,31 +1,20 @@
 class TextareaBlock extends ProtoBlock {
     constructor(){
         super()
+        console.log("constructing textarea")
         this.addEventListener('init', () => {
-            console.log("calling src")
+
+            console.log("textrea initialized")
             this.header = this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')
             this.getAttribute('src') || this.setAttribute('src', 'untitled')
+            this.header.textContent = this.props.src
+            this.props.src != 'untitled' && this.fetchFile(this.props.src)
         })
     }
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))                
-    }
-
-    static get observedAttributes(){
-        return ['src']
-    }
-
-    attributeChangedCallback(attr, oldVal, newVal){
-        console.log("changed", attr)
-        switch(attr){
-            case 'src':
-                console.log('case src, newval:',newVal)
-                this.header.textContent = newVal
-                newVal != 'untitled' && this.fetchFile(newVal)
-                break
-        }
     }
 
     fetchFile(source){

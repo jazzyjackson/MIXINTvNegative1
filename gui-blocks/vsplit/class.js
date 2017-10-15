@@ -1,8 +1,6 @@
 class VsplitBlock extends MultiplexBlock {
     constructor(){
         super()
-        this.addEventListener('init', () => {
-        })
     }
 
     connectedCallback(){
@@ -22,7 +20,6 @@ class VsplitBlock extends MultiplexBlock {
     }
 
     reCalculateChildren(){
-        console.log("recalc")
         let height = 100 / this.showMax
         let start = this.showStart
         Array.from(this.shadowRoot.children, (child, nth) => {
