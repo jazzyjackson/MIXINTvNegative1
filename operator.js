@@ -1,8 +1,8 @@
 #!/usr/local/bin/node
-var bookkeeper = require('./bookkeeper')
-var fs         = require('fs')
-var exec       = require('child_process').exec
 var os         = require('os')
+var fs         = require('fs')
+var bookkeeper = require('./bookkeeper')
+var exec       = require('child_process').exec
 var figjam     = chooseFigJam()
 var key, cert
 /* try to read key and certificate from disk and enable HTTPS if true */
@@ -10,15 +10,15 @@ var SSL_READY  = trySSL(key, cert)
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key: key, cert: cert})
-.on('request', function(req,res){       
+.on('request', function(req,res){
     /* on receiving a network request, inspect request properties to determine response   */
     /* via recursive ternary - continue until some condition is found to be true          */
-    req.headers.accept.match(/text\/event-stream/i)       ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-    req.headers.accept.match(/application\/octet-stream/) ? pipeProcess(req,res)        : /* fetch with binary data */
-    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/)  ? figjam(req,res)             : /* url path w/ trailing slash */
+    /text\/event-stream/i.test(req.headers.accept)        ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
+    /application\/octet-stream/i.test(req.headers.accept) ? pipeProcess(req,res)        : /* fetch with binary data */
+    /.*\/(?=\?|$)/.test(req.url) && req.method == 'GET'   ? figjam(req,res)             : /* url path w/ trailing slash */
     req.method == 'GET'                                   ? streamFile(req,res)         :
-    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
     req.method == 'PUT'                                   ? saveBody(req,res)           :
+    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
     req.method == 'DELETE'                                ? deleteFile(req,res)         :
     res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
 })
