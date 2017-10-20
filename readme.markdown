@@ -1,5 +1,5 @@
 # Poly-Int
-## Polymorphic Interpreter
+## Polymorphic Interface
 
 ### An extensible and remixable space for cooperating with your network.
 
@@ -16,6 +16,8 @@ Your network may include:
 
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on the same local network with or without any connection to the wider internet.
 
+The workspace that is served on connecting to a Poly-Int is a graphs of web-components that can be modified with code and content you write yourself. Once you arrange an environment with content and capabilities that are useful to you, the application can be cloned to run on any other computer, using git remotes to synchronize content if desired. This allows for shared documents and chatrooms that are available offline and synchronize when connected.
+
 # Operator.js
 Operator.js will connect your calls - fulfilling network requests in one of six ways:
  - A GET request to a file path will stream the file from disk to the caller
@@ -31,23 +33,23 @@ var SSL_READY  = trySSL(key, cert)
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key: key, cert: cert})
-.on('request', function(req,res){       
-    /* on receiving a network request, inspect request properties to determine response   */
-    /* via recursive ternary - continue until some condition is found to be true          */
-    req.headers.accept.match(/text\/event-stream/i) ? subscibeToEvents(req,res) : /* from new EventSource (SSE) */
-    req.headers.accept.match(/application\/octet-stream/) ? pipeProcess(req,res) : /* fetch with binary data */
-    req.method == 'GET' && req.url.match(/.*\/(?=\?|$)/)  ? figjam(req,res) : /* url path w/ trailing slash */
-    req.method == 'GET' ? streamFile(req,res) :
-    req.method == 'POST' ? streamSubProcess(req,res) :
-    req.method == 'PUT' ? saveBody(req,res) :
-    req.method == 'DELETE' ? deleteFile(req,res) :
-    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me") ;
-})                                      
+.on('request', function(req,res){  
+    /* recursive ternary tests conditions until success */
+    /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)             : /* url path w/ trailing slash */
+    /text\/event-stream/.test(req.headers.accept)         ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
+    /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)        : /* fetch with binary data */
+    req.method == 'GET'                                   ? streamFile(req,res)         :
+    req.method == 'PUT'                                   ? saveBody(req,res)           :
+    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
+    req.method == 'DELETE'                                ? deleteFile(req,res)         :
+    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
+})
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
 /* start listening on port 3000 unless another number was passed as argument */
 /* once the server is listening, print the port number to stdout             */
 /* switchboard will request port 0, which assigns a random, unused port      */
+
 ```
  _See annotated code in guide/operator.js_
 
