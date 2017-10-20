@@ -6,11 +6,12 @@ class DirectoryBlock extends ProtoBlock {
             this.fileList = this.shadowRoot.querySelector('file-list')
 
             this.listFunc = (pathname) => `${pathname}?ls -ap1` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line */
-            this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))`
+            this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"`
             
             /* if src attribute wasn't set before being connected, set it as the current src */
             this.props.src || this.setAttribute('src', location.pathname)
             this.fetchDirectory(this.props.src)
+                .then(listText => this.generateIcons(listText))
         })
     }
 
@@ -18,16 +19,28 @@ class DirectoryBlock extends ProtoBlock {
         this.initialized || this.dispatchEvent(new Event('init'))
     }
 
-    fetchDirectory(pathname){
-        this.header.textContent = pathname      
+    fetchDirectory(pathname){ 
+        this.header.textContent = '...'      
         this.props = {lastUpdate: Date.now()} 
-        fetch(this.listFunc(pathname), {
+        return fetch(this.listFunc(pathname), {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
         })
+        .then(response => {
+            this.header.textContent = response.url.split('?')[0].slice(location.origin.length)
+            return response
+        })
         .then(response => response.text())
-        .then(listText => this.generateIcons(listText))
+    }
+
+    fetchStat(pathname, filename){
+        return fetch(this.statFunc(pathname, filename), {
+            method: 'post',
+            credentials: 'same-origin',
+            redirect: 'error'
+        })
+        .then(response => response.json())
     }
 
     generateIcons(listText){
@@ -37,10 +50,14 @@ class DirectoryBlock extends ProtoBlock {
 
         let files = listText.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => `<file-block tabindex=0><file-name>${name}</file-name></file-block>`)
+            .map(name => `<a href="${this.props.src + name}" download="${name}"><file-block><file-name>${name}</file-name></file-block></a>`)
 
         this.fileList.innerHTML = folders.concat(files).join('\n')
-
+        Array.from(this.fileList.querySelectorAll('a'), node => {
+            console.log(node)
+            node.addEventListener('click', event => event.preventDefault())
+        })
+            
         Array.from(this.fileList.querySelectorAll('dir-block'), node => {
             node.addEventListener('dblclick', event => {
                 let newBlock = document.createElement('directory-block')
@@ -55,6 +72,13 @@ class DirectoryBlock extends ProtoBlock {
                 let newBlock = document.createElement('textarea-block')
                 newBlock.props = {src: this.props.src + event.target.textContent}
                 this.insertSibling(newBlock)
+            })
+        })
+        Array.from(this.fileList.querySelectorAll('a, dir-block'), node => {
+            node.addEventListener('focus', event => {
+                let a = node
+                console.log(a)
+                this.fetchStat(this.props.src, a.textContent).then(console.log)
             })
         })
     }

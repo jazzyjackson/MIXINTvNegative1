@@ -28,6 +28,14 @@ file-list {
     background: white;
 }
 
+file-list a {
+    color: black;
+    text-decoration: none;
+}
+file-list a:visited {
+    color: black;
+}
+
 file-block, dir-block {
     display: flex;
     justify-content: center;
