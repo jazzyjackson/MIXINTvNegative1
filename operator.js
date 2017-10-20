@@ -1,8 +1,8 @@
 #!/usr/local/bin/node
-var bookkeeper = require('./bookkeeper')
-var fs         = require('fs')
-var exec       = require('child_process').exec
 var os         = require('os')
+var fs         = require('fs')
+var bookkeeper = require('./bookkeeper')
+var exec       = require('child_process').exec
 var figjam     = chooseFigJam()
 var key, cert
 /* try to read key and certificate from disk and enable HTTPS if true */
