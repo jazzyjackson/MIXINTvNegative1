@@ -44,42 +44,67 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     generateIcons(listText){
+        let makeMarkup = props => `<file-block tabindex=0>
+                                        <file-details class="${props.class}"></file-details>
+                                        <file-name>${props.name}</file-name>
+                                    </file-block>`
+                                    
         let folders = listText.split('\n')
             .filter(name => name.slice(-1) == '/') // filter out anything thats not a directory
-            .map(name => `<dir-block tabindex=0><file-name>${name.slice(0,-1)}</file-name></dir-block>`)
+            .map(name => makeMarkup({class: "directory", name: name.slice(0,-1)}))
 
         let files = listText.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => `<a href="${this.props.src + name}" download="${name}"><file-block><file-name>${name}</file-name></file-block></a>`)
-
+            .map(name => makeMarkup({class: "file", name: name}))
+            
         this.fileList.innerHTML = folders.concat(files).join('\n')
-        Array.from(this.fileList.querySelectorAll('a'), node => {
-            console.log(node)
-            node.addEventListener('click', event => event.preventDefault())
-        })
+
+        // Array.from(this.fileList.querySelectorAll('a'), node => {
+        //     console.log(node)
+        //     node.addEventListener('click', event => event.preventDefault())
+        // })
             
-        Array.from(this.fileList.querySelectorAll('dir-block'), node => {
-            node.addEventListener('dblclick', event => {
-                let newBlock = document.createElement('directory-block')
-                newBlock.props = {src: this.props.src + event.target.textContent + '/'}
-                this.insertSibling(newBlock)
-            })
-        })
-        Array.from(this.fileList.querySelectorAll('file-block'), node => {
-            node.addEventListener('dblclick', event => {
-                console.log("inserting textarea with src",  this.props.src + event.target.textContent)
+        // Array.from(this.fileList.querySelectorAll('dir-block'), node => {
+        //     node.addEventListener('dblclick', event => {
+        //         let newBlock = document.createElement('directory-block')
+        //         newBlock.props = {src: this.props.src + event.target.textContent + '/'}
+        //         this.insertSibling(newBlock)
+        //     })
+        // })
+        // Array.from(this.fileList.querySelectorAll('file-block'), node => {
+        //     node.addEventListener('dblclick', event => {
+        //         console.log("inserting textarea with src",  this.props.src + event.target.textContent)
             
-                let newBlock = document.createElement('textarea-block')
-                newBlock.props = {src: this.props.src + event.target.textContent}
-                this.insertSibling(newBlock)
-            })
-        })
-        Array.from(this.fileList.querySelectorAll('a, dir-block'), node => {
-            node.addEventListener('focus', event => {
-                let a = node
-                console.log(a)
-                this.fetchStat(this.props.src, a.textContent).then(console.log)
-            })
-        })
+        //         let newBlock = document.createElement('textarea-block')
+        //         newBlock.props = {src: this.props.src + event.target.textContent}
+        //         this.insertSibling(newBlock)
+        //     })
+        // })
+        // Array.from(this.fileList.querySelectorAll('a, dir-block'), node => {
+        //     node.addEventListener('focus', event => {
+        //         let a = node
+        //         console.log(a)
+        //         this.fetchStat(this.props.src, a.textContent).then(console.log)
+        //     })
+        // })
     }
+
+    octal2symbol(filestat){
+        let zeropad = binaryString => binaryString.length < 3 ? zeropad("0" + binaryString) : binaryString
+        // filestat looks like 33279, returned by node's fs.stat
+        let octalArray = parseInt(filestat,8).toString().split('')
+        // octalArray is in the form chmod likes, ["1","7",5,1] for flag/owner/group/world
+        let binaryArray = octalArray.slice(1).map((octal, index) => zeropad(parseInt(octal).toString(2)))
+                                    .join('').split('')
+        // goes from ['1','7','5','1'] 
+        //        to ['7','5','1'] via slice(1) to ignore the leading special flag bit 
+        //        to ['111', '101', '1'] with int.toString(2)
+        //        to ['111','101','001'] via zeropad
+        //        to '111101001' via join('')
+        //        to ['1','1','1','1','0','1','0','0','1'] via split('')
+        let symbolMask = 'rwxrwxrwx'.split('')
+        return binaryArray.map((flag, index) => parseInt(flag) ? symbolMask[index] : '-')
+    }
+
+
 }

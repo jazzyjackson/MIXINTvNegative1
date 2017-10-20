@@ -55,7 +55,7 @@ let defaultFig = {
     "blocks": ["directory","become","textarea"],
     "frames": ["hsplit","vsplit","thread"],
     "body": [
-        {"hsplit": {
+        {"hsplit-block": {
             childNodes: [{"become-block": { }}]
         }}
     ]
@@ -80,7 +80,7 @@ module.exports = async function(request, response){
     
     // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
     // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
-    var requisiteBlocks = new Set(defaultFig.prereq.concat(defaultFig.frames, defaultFig.blocks))
+    var requisiteBlocks = new Set(defaultFig.prereq.concat(defaultFig.blocks, defaultFig.frames))
     fig.blocks.forEach(block => requisiteBlocks.add(block))
     for(var block of requisiteBlocks){
         await streamBlockTemplate(block)
