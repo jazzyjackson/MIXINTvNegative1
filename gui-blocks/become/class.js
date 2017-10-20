@@ -13,18 +13,10 @@ class BecomeBlock extends ProtoBlock {
         this.initialized || this.dispatchEvent(new Event('init'))                
     }
 
-    buildBlockList(){               
-        let possibleBlocks = Array.from(document.querySelectorAll('template'), template => {
-            return template.getAttribute('renders')
-        })
-        let impossibleBlocks = Array.from(document.querySelectorAll('build-error'), error => {
-            /* I assume path attribute for error looks like gui-blocks/proto/template.html */
-            /* so .split('/')[1] should return proto, and I append '-block'                */
-            return error.getAttribute('path').split('/')[1] + '-block'
-        })
-        impossibleBlocks.push('proto-block','become-block') /* there ought to be an option to hide certain blocks by name, doesnt really matter if they're loaded or not, just filter them out. somewhere in the fig file? */
-        let availableBlocks = possibleBlocks.filter(block => !impossibleBlocks.includes(block))
-        console.log("Available", availableBlocks)
+    buildBlockList(){      
+        console.log('defaultFig', defaultFig.blocks.concat(defaultFig.frames)) 
+        let possibleBlocks = defaultFig.blocks.concat(defaultFig.frames).map(classname => classname + '-block')      
+        console.log("Available", possibleBlocks)
         let blockList = document.createElement('ul')
         possibleBlocks.forEach(block => {
             let blockListItem = document.createElement('li')
