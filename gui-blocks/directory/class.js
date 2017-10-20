@@ -44,22 +44,68 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     generateIcons(listText){
-        let makeMarkup = props => `<file-block tabindex=0>
-                                        <file-details class="${props.class}"></file-details>
+        let makeMarkup = props => `<file-block tabindex=0 filetype="${props.type}" filename="${props.name}">
+                                        <file-details></file-details>
                                         <file-name>${props.name}</file-name>
                                     </file-block>`
-                                    
+        let makeDateString = zulutime => {
+            let dateObj = new Date(zulutime)
+            return dateObj.toLocaleTimeString() + ' ' + dateObj.toDateString() 
+        }
+
         let folders = listText.split('\n')
             .filter(name => name.slice(-1) == '/') // filter out anything thats not a directory
-            .map(name => makeMarkup({class: "directory", name: name.slice(0,-1)}))
+            .map(name => makeMarkup({type: "directory", name: name.slice(0,-1)}))
 
         let files = listText.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => makeMarkup({class: "file", name: name}))
+            .map(name => makeMarkup({type: "file", name: name}))
             
         this.fileList.innerHTML = folders.concat(files).join('\n')
 
-        // Array.from(this.fileList.querySelectorAll('a'), node => {
+        Array.from(this.fileList.querySelectorAll('file-block'), node => {
+            node.details = node.querySelector('file-details')
+            node.addEventListener('focus', event => {
+                if(node.details.textContent) return null // already been done
+                this.fetchStat(this.props.src, node.getAttribute('filename'))
+                .then(stat => {
+                    node.details.innerHTML += `
+                        <data-mode>${this.octal2symbol(stat.mode)}</data-mode>
+                        <data-atime>${makeDateString(stat.atime)}</data-atime>
+                        <data-mtime>${makeDateString(stat.mtime)}</data-mtime>
+                        <data-size>${stat.size}</data-size>
+                    `
+                })
+            })
+            node.addEventListener('dblclick', event => {
+                document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
+                switch(node.getAttribute('filetype')){
+                    case 'file': 
+                        var newSibling = new TextareaBlock
+                        newSibling.props = {
+                            src: this.props.src + node.getAttribute('filename')
+                        }
+                        this.insertSibling(newSibling)
+                        break
+                    case 'directory':
+                        var newSibling = new DirectoryBlock
+                        newSibling.props = {
+                            src: this.props.src + node.getAttribute('filename') + '/'
+                        }
+                        this.insertSibling(newSibling)
+                        break
+                }
+            })
+
+                // switch(event.target.classList)
+                // console.log("inserting textarea with src",  this.props.src + event.target.textContent)
+            
+                // let newBlock = document.createElement('textarea-block')
+                // newBlock.props = {src: this.props.src + event.target.textContent}
+                // this.insertSibling(newBlock)
+        })
+
+        // Array.from(this.fileList.querySelectorAll('file-block'), node => {
         //     console.log(node)
         //     node.addEventListener('click', event => event.preventDefault())
         // })
@@ -71,20 +117,10 @@ class DirectoryBlock extends ProtoBlock {
         //         this.insertSibling(newBlock)
         //     })
         // })
-        // Array.from(this.fileList.querySelectorAll('file-block'), node => {
-        //     node.addEventListener('dblclick', event => {
-        //         console.log("inserting textarea with src",  this.props.src + event.target.textContent)
-            
-        //         let newBlock = document.createElement('textarea-block')
-        //         newBlock.props = {src: this.props.src + event.target.textContent}
-        //         this.insertSibling(newBlock)
-        //     })
-        // })
         // Array.from(this.fileList.querySelectorAll('a, dir-block'), node => {
         //     node.addEventListener('focus', event => {
         //         let a = node
         //         console.log(a)
-        //         this.fetchStat(this.props.src, a.textContent).then(console.log)
         //     })
         // })
     }
@@ -92,9 +128,9 @@ class DirectoryBlock extends ProtoBlock {
     octal2symbol(filestat){
         let zeropad = binaryString => binaryString.length < 3 ? zeropad("0" + binaryString) : binaryString
         // filestat looks like 33279, returned by node's fs.stat
-        let octalArray = parseInt(filestat,8).toString().split('')
-        // octalArray is in the form chmod likes, ["1","7",5,1] for flag/owner/group/world
-        let binaryArray = octalArray.slice(1).map((octal, index) => zeropad(parseInt(octal).toString(2)))
+        let octalArray = filestat.toString(8).split('').slice(-3)
+        // octalArray is in the form chmod likes, ['7','7','7']
+        let binaryArray = octalArray.map((octal, index) => zeropad(parseInt(octal).toString(2)))
                                     .join('').split('')
         // goes from ['1','7','5','1'] 
         //        to ['7','5','1'] via slice(1) to ignore the leading special flag bit 
@@ -103,7 +139,7 @@ class DirectoryBlock extends ProtoBlock {
         //        to '111101001' via join('')
         //        to ['1','1','1','1','0','1','0','0','1'] via split('')
         let symbolMask = 'rwxrwxrwx'.split('')
-        return binaryArray.map((flag, index) => parseInt(flag) ? symbolMask[index] : '-')
+        return binaryArray.map((flag, index) => parseInt(flag) ? symbolMask[index] : '-').join('')
     }
 
 
