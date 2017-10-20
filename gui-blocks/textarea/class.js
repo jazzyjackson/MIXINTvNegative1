@@ -8,7 +8,6 @@ class TextareaBlock extends ProtoBlock {
             this.header = this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')
             this.getAttribute('src') || this.setAttribute('src', 'untitled')
-            this.header.textContent = this.props.src
             this.props.src != 'untitled' && this.fetchFile(this.props.src)
         })
     }
@@ -18,11 +17,16 @@ class TextareaBlock extends ProtoBlock {
     }
 
     fetchFile(source){
+        this.header.textContent = '...'        
         this.props = {lastUpdate: Date.now()} 
         fetch(source, {
             method: 'get',
             credentials: 'same-origin',
             redirect: 'error' 
+        })
+        .then(response => {
+            this.header.textContent = response.url.slice(location.origin.length)
+            return response
         })
         .then(response => response.text())
         .then(text => {

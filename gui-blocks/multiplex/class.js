@@ -1,6 +1,9 @@
 class MultiplexBlock extends ProtoBlock {
     constructor(){
         super()
+        if(this.constructor.name == "MultiplexBlock"){
+            throw new Error("MultiplexBlock is a prerequisite to vsplit, hsplit, fibonacciplexer and others, but it cannot exist on its own, it prescribes no method for calculating the size of its children")
+        }
         this.addEventListener('init', () => {
             /* hoist child nodes of custom element INTO the shadowRoot of this */
             Array.from(this.children, child => this.shadowRoot.appendChild(child))
@@ -25,7 +28,7 @@ class MultiplexBlock extends ProtoBlock {
                 if(nthIndex > lastVisibleIndex || childrenDelta < 0){
                     this.showStart = childrenDelta + parseInt(this.props["show-start"])                                                                
                 }
-                this.animateNewChild(newChild)                
+                childrenDelta && this.animateNewChild(newChild)                
                 this.reCalculateChildren()
 
             })
