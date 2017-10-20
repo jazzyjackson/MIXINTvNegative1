@@ -35,29 +35,28 @@ let defaultFig = {
             "href": "data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
         }},
         {"style": {
+            "id":"defaultStyle",
             "textContent": `
                 * {
                     margin: 0; 
                     padding: 0; 
-                    box-sizing: 
-                    border-box;
+                    box-sizing: border-box;
                 } 
                 body, html {
                     overflow: hidden;
                     width: 100%; 
                     height: 100%;
-                }
-                body {
-                    background: black;
                 }`
         }}
     ],
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
-    "blocks": ["proto","directory","become","multiplex","hsplit","vsplit","thread","textarea"],
+    "prereq": ["proto","multiplex"],
+    "blocks": ["directory","become","textarea"],
+    "frames": ["hsplit","vsplit","thread"],
     "body": [
-        {"become-block": {
-
+        {"hsplit": {
+            childNodes: [{"become-block": { }}]
         }}
     ]
 }
@@ -76,10 +75,12 @@ module.exports = async function(request, response){
     response.write(`<!DOCTYPE html><html><head>\n`)
     defaultFig.head.forEach(streamNodes)
     fig.head.forEach(streamNodes)
-
+    response.write(`\n`)
+    response.write(`<script> window.defaultFig = ${JSON.stringify(defaultFig)} </script>`)
+    
     // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
     // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
-    var requisiteBlocks = new Set(defaultFig.blocks)
+    var requisiteBlocks = new Set(defaultFig.prereq.concat(defaultFig.frames, defaultFig.blocks))
     fig.blocks.forEach(block => requisiteBlocks.add(block))
     for(var block of requisiteBlocks){
         await streamBlockTemplate(block)
