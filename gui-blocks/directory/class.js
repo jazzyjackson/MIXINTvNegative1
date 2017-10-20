@@ -43,86 +43,81 @@ class DirectoryBlock extends ProtoBlock {
         .then(response => response.json())
     }
 
-    generateIcons(listText){
-        let makeMarkup = props => `<file-block tabindex=0 filetype="${props.type}" filename="${props.name}">
-                                        <file-details></file-details>
-                                        <file-name>${props.name}</file-name>
-                                    </file-block>`
-        let makeDateString = zulutime => {
-            let dateObj = new Date(zulutime)
-            return dateObj.toLocaleTimeString() + ' ' + dateObj.toDateString() 
-        }
+    makeMarkup(props){
+        return `<file-block tabindex=0 filetype="${props.type}" title="${props.name}">
+                    <file-details></file-details>
+                    <file-name>${props.name}</file-name>
+                </file-block>`
+    }
 
+    makeDateString(zulutime){
+        let dateObj = new Date(zulutime)
+        return dateObj.toLocaleTimeString() + ' ' + dateObj.toDateString() 
+    }
+
+    generateIcons(listText){
         let folders = listText.split('\n')
             .filter(name => name.slice(-1) == '/') // filter out anything thats not a directory
-            .map(name => makeMarkup({type: "directory", name: name.slice(0,-1)}))
+            .map(name => this.makeMarkup({type: "directory", name: name.slice(0,-1)}))
 
         let files = listText.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => makeMarkup({type: "file", name: name}))
-            
+            .map(name => this.makeMarkup({type: "file", name: name}))
+        
+        // setting text of HTML creates subtree
         this.fileList.innerHTML = folders.concat(files).join('\n')
-
+        // and then I attach event listeners to all the nodes that exist all of a sudden
         Array.from(this.fileList.querySelectorAll('file-block'), node => {
             node.details = node.querySelector('file-details')
-            node.addEventListener('focus', event => {
-                if(node.details.textContent) return null // already been done
-                this.fetchStat(this.props.src, node.getAttribute('filename'))
-                .then(stat => {
-                    node.details.innerHTML += `
-                        <data-mode>${this.octal2symbol(stat.mode)}</data-mode>
-                        <data-atime>${makeDateString(stat.atime)}</data-atime>
-                        <data-mtime>${makeDateString(stat.mtime)}</data-mtime>
-                        <data-size>${stat.size}</data-size>
-                    `
-                })
+            node.addEventListener('focus', () => {
+                this.fillFileDetail(node)
             })
-            node.addEventListener('dblclick', event => {
-                document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
-                switch(node.getAttribute('filetype')){
-                    case 'file': 
-                        var newSibling = new TextareaBlock
-                        newSibling.props = {
-                            src: this.props.src + node.getAttribute('filename')
-                        }
-                        this.insertSibling(newSibling)
-                        break
-                    case 'directory':
-                        var newSibling = new DirectoryBlock
-                        newSibling.props = {
-                            src: this.props.src + node.getAttribute('filename') + '/'
-                        }
-                        this.insertSibling(newSibling)
-                        break
+            node.addEventListener('dblclick', () => {
+                this.openFileFrom(node)
+            })
+            node.addEventListener('keydown', event => {
+                if(event.key == 'Enter'){
+                    this.openFileFrom(node)
                 }
             })
-
-                // switch(event.target.classList)
-                // console.log("inserting textarea with src",  this.props.src + event.target.textContent)
-            
-                // let newBlock = document.createElement('textarea-block')
-                // newBlock.props = {src: this.props.src + event.target.textContent}
-                // this.insertSibling(newBlock)
         })
+    }
 
-        // Array.from(this.fileList.querySelectorAll('file-block'), node => {
-        //     console.log(node)
-        //     node.addEventListener('click', event => event.preventDefault())
-        // })
-            
-        // Array.from(this.fileList.querySelectorAll('dir-block'), node => {
-        //     node.addEventListener('dblclick', event => {
-        //         let newBlock = document.createElement('directory-block')
-        //         newBlock.props = {src: this.props.src + event.target.textContent + '/'}
-        //         this.insertSibling(newBlock)
-        //     })
-        // })
-        // Array.from(this.fileList.querySelectorAll('a, dir-block'), node => {
-        //     node.addEventListener('focus', event => {
-        //         let a = node
-        //         console.log(a)
-        //     })
-        // })
+    fillFileDetail(node){
+        if(node.details.textContent) return null // already been done
+        this.fetchStat(this.props.src, node.getAttribute('title'))
+        .then(stat => {
+            node.details.innerHTML += `
+                <data-mode>${this.octal2symbol(stat.mode)}</data-mode>
+                <data-atime>${this.makeDateString(stat.atime)}</data-atime>
+                <data-mtime>${this.makeDateString(stat.mtime)}</data-mtime>
+                <data-size>${stat.size}</data-size>
+            `
+        })
+    }
+
+    openFileFrom(node){
+        document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
+        switch(node.getAttribute('filetype')){
+            case 'file': 
+                var newSibling = new TextareaBlock
+                newSibling.props = {
+                    src: this.props.src + node.getAttribute('title')
+                }
+                this.insertSibling(newSibling)
+                break
+            case 'directory':
+                var newSibling = new DirectoryBlock
+                newSibling.props = {
+                    src: this.props.src + node.getAttribute('title') + '/'
+                }
+                this.insertSibling(newSibling)
+                break
+            case 'image':
+            case 'audio':
+            case 'video':
+            case '3d':
+        }
     }
 
     octal2symbol(filestat){
