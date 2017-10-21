@@ -20,7 +20,7 @@ class ProtoBlock extends HTMLElement {
         return {
             "become": {
                 func: this.prototype.become,
-                args: [{select: Array.from(document.querySelectorAll('template'), template => template.getAttribute('renders'))}],
+                args: [{select: window.defaultFig.blocks}],
                 default: [ctx => ctx.tagName.toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
             }, 
@@ -32,12 +32,20 @@ class ProtoBlock extends HTMLElement {
                 func: this.prototype.inspectOrModify,
                 args: [{"select": ["style.css","class.js","template.html"]}]
             },
-            "fullscreen frame": {
-
-            },
-            "fullscreen block": {
-                
-            }
+            "view":[
+                {"fullscreen frame": {
+    
+                }},
+                {"fullscreen block": {
+                    
+                }},
+                {"add frame": {
+    
+                }},
+                {"swap frame": {
+    
+                }}
+            ]
             /* new child, new sibling -> templates */
         }   
   }
