@@ -11,15 +11,16 @@ var SSL_READY  = trySSL(key, cert)
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key: key, cert: cert})
 .on('request', function(req,res){  
+    console.log(/text\/event-stream/.test(req.headers.accept));
     /* recursive ternary tests conditions until success */
-    /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)             : /* url path w/ trailing slash */
-    /text\/event-stream/.test(req.headers.accept)         ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-    /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)        : /* fetch with binary data */
-    req.method == 'GET'                                   ? streamFile(req,res)         :
-    req.method == 'PUT'                                   ? saveBody(req,res)           :
-    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
-    req.method == 'DELETE'                                ? deleteFile(req,res)         :
-    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
+    /text\/event-stream/.test(req.headers.accept)         ? subscribeToEvents(req,res) : /* from new EventSource (SSE) */
+    /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)      : /* fetch with binary data */
+    /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)           : /* url path w/ trailing slash */
+    req.method == 'GET'                                   ? streamFile(req,res)       :
+    req.method == 'PUT'                                   ? saveBody(req,res)         :
+    req.method == 'POST'                                  ? streamSubProcess(req,res) :
+    req.method == 'DELETE'                                ? deleteFile(req,res)       :
+    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")   ;
 })
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
@@ -62,18 +63,28 @@ function streamSubProcess(request, response){
     })
 }
 
-function subscibeToEvents(request, response){
+function subscribeToEvents(request, response){
+    response.setHeader('Content-Type', 'text/event-stream')
+
     var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
         cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
     })
     subprocess.on('error', function(err){
-        response.write("event: err" + "\n" + "data:" + JSON.stringify(err)) //JSON stringify does a pretty good job of escaping things
+        response.write("event: err" + "\n" + "data:" + JSON.stringify(err) + '\n\n') //JSON stringify does a pretty good job of escaping things
     })
     subprocess.stdout.on('data', function(data){
-        response.write("event: stdout" + "\n" + "data:" + JSON.stringify(data)) //JSON stringify does a pretty good job of escaping things
+        response.write("event: stdout" + "\n" + "data:" + JSON.stringify(data) + '\n\n') //JSON stringify does a pretty good job of escaping things
     })
     subprocess.stderr.on('data', function(data){
-        response.write("event: stderr" + "\n" + "data:" + JSON.stringify(data)) //JSON stringify does a pretty good job of escaping things
+        response.write("event: stderr" + "\n" + "data:" + JSON.stringify(data) + '\n\n') //JSON stringify does a pretty good job of escaping things
+    })
+    subprocess.on('close', (code,signal) => {
+        if(signal){
+            response.write('event: signal\ndata:' + signal + '\n\n')
+        } else {
+            response.write('event: code\ndata:' + code + '\n\n')
+        }
+        response.end()
     })
 }
 
