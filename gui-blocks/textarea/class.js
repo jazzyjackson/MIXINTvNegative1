@@ -7,8 +7,12 @@ class TextareaBlock extends ProtoBlock {
             console.log("textrea initialized")
             this.header = this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')
-            this.getAttribute('src') || this.setAttribute('src', 'untitled')
-            this.props.src != 'untitled' && this.fetchFile(this.props.src)
+            if(this.props.src){
+                this.fetchFile(this.props.src)
+            }else{
+                this.props = {src: prompt("I need a name for this new file:")}
+            }
+            this.header.textContent = this.props.src
         })
     }
 
