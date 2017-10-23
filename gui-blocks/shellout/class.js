@@ -40,7 +40,7 @@ class ShelloutBlock extends ProtoBlock {
             this.shell.scrollTop = this.shell.scrollHeight            
         })
         spring.addEventListener('error', event => {
-            this.error.textContent += JSON.parse(event.data)
+            this.error.textContent += JSON.stringify(JSON.parse(event.data), null, 4)
             this.shell.scrollTop = this.shell.scrollHeight            
         })
 
