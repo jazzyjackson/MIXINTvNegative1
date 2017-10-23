@@ -42,8 +42,8 @@ class MultiplexBlock extends ProtoBlock {
                 switch(event.key){
                     case 'ArrowUp': this.showMax++; break;
                     case 'ArrowLeft': this.showStart > 1 && this.showStart--; break;
-                    case 'ArrowDown': this.showMax > 1 && this.showMax--; break;
-                    case 'ArrowRight': this.showStart++; break;
+                    case 'ArrowDown': this.showMax > 2 && this.showMax--; break;
+                    case 'ArrowRight': this.showStart < this.shadowRoot.children.length - 1 && this.showStart++; break;
                 }
             })
         })

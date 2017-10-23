@@ -127,15 +127,12 @@ class DirectoryBlock extends ProtoBlock {
         // octalArray is in the form chmod likes, ['7','7','7']
         let binaryArray = octalArray.map((octal, index) => zeropad(parseInt(octal).toString(2)))
                                     .join('').split('')
-        // goes from ['1','7','5','1'] 
-        //        to ['7','5','1'] via slice(1) to ignore the leading special flag bit 
-        //        to ['111', '101', '1'] with int.toString(2)
+        // goes from ['7','5','1'] 
+        //        to ['111', '101', '1'] with parseInt().toString(2)
         //        to ['111','101','001'] via zeropad
         //        to '111101001' via join('')
         //        to ['1','1','1','1','0','1','0','0','1'] via split('')
         let symbolMask = 'rwxrwxrwx'.split('')
         return binaryArray.map((flag, index) => parseInt(flag) ? symbolMask[index] : '-').join('')
     }
-
-
 }

@@ -11,9 +11,8 @@ var SSL_READY  = trySSL(key, cert)
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key: key, cert: cert})
 .on('request', function(req,res){  
-    console.log(/text\/event-stream/.test(req.headers.accept));
     /* recursive ternary tests conditions until success */
-    /text\/event-stream/.test(req.headers.accept)         ? subscribeToEvents(req,res) : /* from new EventSource (SSE) */
+    /text\/event-stream/.test(req.headers.accept)         ? subscribe2events(req,res) : /* from new EventSource (SSE) */
     /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)      : /* fetch with binary data */
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)           : /* url path w/ trailing slash */
     req.method == 'GET'                                   ? streamFile(req,res)       :
@@ -43,6 +42,7 @@ function saveBody(request, response){
 }
 
 function streamSubProcess(request, response){
+    /* check for pid in parameters, pipe body to existing process if available, else throw 'no process with that pid' */
     response.setHeader('Content-Type', 'application/octet-stream')
     response.setHeader('Trailer', 'Exit-Code')
     var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
@@ -63,27 +63,33 @@ function streamSubProcess(request, response){
     })
 }
 
-function subscribeToEvents(request, response){
+function subscribe2events(request, response){
     response.setHeader('Content-Type', 'text/event-stream')
+    var msgid = 0
+    var pushEvent = function(name,data){
+        response.write('id:' + ++msgid + '\nevent: ' + name + '\ndata:' + JSON.stringify(data) + '\n\n')
+    }
 
     var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
         cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
     })
-    subprocess.on('error', function(err){
-        response.write("event: err" + "\n" + "data:" + JSON.stringify(err) + '\n\n') //JSON stringify does a pretty good job of escaping things
+    /* ... I wonder if I can register this subprocess to global, and allow subsequent POSTs to PID to be piped here... maybe maybe */
+
+    var heartbeat = setInterval(function(){pushEvent(':heartbeat','')},1500)
+    pushEvent('pid', subprocess.pid)
+    
+    subprocess.on('error', function(error){
+        pushEvent('error', error)
     })
     subprocess.stdout.on('data', function(data){
-        response.write("event: stdout" + "\n" + "data:" + JSON.stringify(data) + '\n\n') //JSON stringify does a pretty good job of escaping things
+        pushEvent('stdout',data)
     })
     subprocess.stderr.on('data', function(data){
-        response.write("event: stderr" + "\n" + "data:" + JSON.stringify(data) + '\n\n') //JSON stringify does a pretty good job of escaping things
+        pushEvent('stderr',data)
     })
     subprocess.on('close', (code,signal) => {
-        if(signal){
-            response.write('event: signal\ndata:' + signal + '\n\n')
-        } else {
-            response.write('event: code\ndata:' + code + '\n\n')
-        }
+        clearInterval(heartbeat) // stop trying to send heartbeats
+        pushEvent('close', {code: code, signal: signal})
         response.end()
     })
 }

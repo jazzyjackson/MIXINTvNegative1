@@ -10,7 +10,7 @@ class ProtoBlock extends HTMLElement {
             var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
             if(!template) return console.error(`${this.tagName} has no template`)
 
-            this.attachShadow({mode: 'open'})            
+            this.attachShadow({mode: 'open'})
             this.shadowRoot.appendChild(template.content.cloneNode(true))
         })
     }
@@ -47,7 +47,7 @@ class ProtoBlock extends HTMLElement {
                 }}
             ]
             /* new child, new sibling -> templates */
-        }   
+        }
   }
 
     /* get list of actions available on every class on the prototype chain and return an object to render MenuBlock */
