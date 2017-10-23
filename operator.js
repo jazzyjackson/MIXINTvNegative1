@@ -5,6 +5,7 @@ var bookkeeper = require('./bookkeeper')
 var exec       = require('child_process').exec
 var figjam     = chooseFigJam()
 var key, cert
+var subprocess_registry = {}
 /* try to read key and certificate from disk and enable HTTPS if true */
 var SSL_READY  = trySSL(key, cert)       
 /* check if private key and certificate were read properly and start server  */ 
@@ -48,6 +49,7 @@ function streamSubProcess(request, response){
     var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
         cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
     })
+
     subprocess.on('error', function(err){ 
         response.writeHead(500); 
         response.end(JSON.stringify(err)) 
@@ -61,6 +63,9 @@ function streamSubProcess(request, response){
         response.addTrailers({'Exit-Code': code || signal})
         response.end()
     })
+
+    subprocess_registry[subprocess.pid] = subprocess
+    
 }
 
 function subscribe2events(request, response){
@@ -77,6 +82,7 @@ function subscribe2events(request, response){
 
     var heartbeat = setInterval(function(){pushEvent(':heartbeat','')},1500)
     pushEvent('pid', subprocess.pid)
+    subprocess_registry[subprocess.pid] = subprocess
     
     subprocess.on('error', function(error){
         pushEvent('error', error)
@@ -91,6 +97,7 @@ function subscribe2events(request, response){
         clearInterval(heartbeat) // stop trying to send heartbeats
         pushEvent('close', {code: code, signal: signal})
         response.end() // and close the connection. client should close the eventSource when receiving 'close' event
+        delete subprocess_registry[subprocess.pid] //forgeddaboutit
     })
 }
 
