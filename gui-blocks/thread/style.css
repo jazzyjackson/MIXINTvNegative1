@@ -32,6 +32,7 @@ add-button form {
     background: white;
     float: right;
     padding-left: 8px;
+    white-space: nowrap;
 }
 add-button button {
     background: black;
