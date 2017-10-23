@@ -28,21 +28,19 @@ Operator.js will connect your calls - fulfilling network requests in one of six 
  - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
 
  ```js
-/* try to read key and certificate from disk and enable HTTPS if true */
-var SSL_READY  = trySSL(key, cert)       
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key: key, cert: cert})
 .on('request', function(req,res){  
     /* recursive ternary tests conditions until success */
-    /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)             : /* url path w/ trailing slash */
-    /text\/event-stream/.test(req.headers.accept)         ? subscibeToEvents(req,res)   : /* from new EventSource (SSE) */
-    /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)        : /* fetch with binary data */
-    req.method == 'GET'                                   ? streamFile(req,res)         :
-    req.method == 'PUT'                                   ? saveBody(req,res)           :
-    req.method == 'POST'                                  ? streamSubProcess(req,res)   :
-    req.method == 'DELETE'                                ? deleteFile(req,res)         :
-    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")     ;
+    /text\/event-stream/.test(req.headers.accept)         ? subscribe2events(req,res) : /* from new EventSource (SSE) */
+    /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)      : /* fetch with binary data */
+    /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)           : /* url path w/ trailing slash */
+    req.method == 'GET'                                   ? streamFile(req,res)       :
+    req.method == 'PUT'                                   ? saveBody(req,res)         :
+    req.method == 'POST'                                  ? streamSubProcess(req,res) :
+    req.method == 'DELETE'                                ? deleteFile(req,res)       :
+    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")   ;
 })
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })

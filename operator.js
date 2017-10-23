@@ -90,7 +90,7 @@ function subscribe2events(request, response){
     subprocess.on('close', (code,signal) => {
         clearInterval(heartbeat) // stop trying to send heartbeats
         pushEvent('close', {code: code, signal: signal})
-        response.end()
+        response.end() // and close the connection. client should close the eventSource when receiving 'close' event
     })
 }
 

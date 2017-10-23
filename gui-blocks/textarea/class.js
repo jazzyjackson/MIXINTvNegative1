@@ -9,6 +9,7 @@ class TextareaBlock extends ProtoBlock {
             this.textarea = this.shadowRoot.querySelector('textarea')
             if(this.props.src){
                 this.fetchFile(this.props.src)
+                this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely editing the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
             }else{
                 this.props = {src: prompt("I need a name for this new file:")}
             }
