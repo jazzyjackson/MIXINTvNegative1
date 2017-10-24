@@ -71,6 +71,12 @@ module.exports = async function(request, response){
     var fig = await parseFig()
     var buildErrors = []
     response.write(`<!DOCTYPE html><html><head>\n`)
+    /* someday, compare access logs with convo logs and check that IP always matches */
+    defaultFig.head.push({
+        "meta": { 
+            "ip": request.headers['x-forwarded-for'] || request.connection.remoteAddress
+        }
+    })
     defaultFig.head.forEach(streamNodes)
     fig.head.forEach(streamNodes)
     response.write(`\n`)
