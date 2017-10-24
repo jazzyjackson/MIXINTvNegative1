@@ -55,9 +55,7 @@ let defaultFig = {
     "blocks": ["directory","become","textarea","shellout"],
     "frames": ["hsplit","vsplit","thread"],
     "body": [
-        {"hsplit-block": {
-            childNodes: [{"become-block": { }}]
-        }}
+        {"become-block": {}}
     ]
 }
 
