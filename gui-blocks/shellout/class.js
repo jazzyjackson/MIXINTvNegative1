@@ -8,8 +8,8 @@ class ShelloutBlock extends ProtoBlock {
             this.stderr = this.shadowRoot.querySelector('data-stderr')
             this.error = this.shadowRoot.querySelector('data-error')
             this.footer = this.shadowRoot.querySelector('footer')
-            if(!this.props.bash) this.props = {bash: prompt('I need a bash command to execute:')}
-            this.subscribeToShell(this.props.bash)
+            if(!this.props.action) this.props = {action: prompt('I need a bash command to execute:')}
+            this.subscribeToShell(this.props.action)
         })
     }
 
@@ -18,7 +18,9 @@ class ShelloutBlock extends ProtoBlock {
     }
 
     sendSignal(signal){
-        fetch(`/?pkill -${signal} -P ${this.props.pid}`,{
+        /* I have to figure out why the pid represents the shell on linux, but the process itself on darwin */
+        /* anyway, I have to kill 'the parent of pid', or if that fails, try 'kill the pid' */
+        fetch(`/?pkill -${signal} -P ${this.props.pid} || kill -${signal} ${this.props.pid}`,{
             method: 'POST',
             credentials: 'same-origin'
         })
@@ -26,7 +28,7 @@ class ShelloutBlock extends ProtoBlock {
 
     subscribeToShell(command){
         let spring = new EventSource(location.pathname + '?' + command, {credentials: "same-origin"})
-        this.header.textContent = location.pathname + ' → ' + this.props.bash
+        this.header.textContent = location.pathname + ' → ' + command
         
         spring.addEventListener('pid', event => {
             this.setAttribute('pid', event.data)
@@ -46,7 +48,7 @@ class ShelloutBlock extends ProtoBlock {
 
         spring.addEventListener('close', event => {
             var exit = JSON.parse(event.data)
-            exit.signal ? this.setAttribute('exit-signal', exit.signal) 
+            exit.signal ? this.setAttribute('exit-signal', exit.signal)
                         : this.setAttribute('exit-code', exit.code)
             spring.close()
         })
