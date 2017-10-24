@@ -69,6 +69,9 @@ class DirectoryBlock extends ProtoBlock {
         // and then I attach event listeners to all the nodes that exist all of a sudden
         Array.from(this.fileList.querySelectorAll('file-block'), node => {
             node.details = node.querySelector('file-details')
+            /* dblclick doesn't register for iphone, and focus will shift position in the middle of a dblclick */
+            /* so I think I'll have to move the 'focus' css to a cusotm attribute, and determine whether to apply  */
+            /* that attribute on click (so, with a delay in anticipation of a double click), using a timeout mechanism */
             node.addEventListener('focus', () => {
                 this.fillFileDetail(node)
             })
