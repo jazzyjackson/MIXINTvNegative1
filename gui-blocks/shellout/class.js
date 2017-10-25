@@ -13,6 +13,10 @@ class ShelloutBlock extends ProtoBlock {
         })
     }
 
+    /* needs an action to flip attribute word wrap */
+    /* might want to generalize a method for chooosing among attributes */
+    /* or just, each element has an attribute submenu, and a dropdown provided for each thing to customize */
+
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))                
     }
@@ -29,21 +33,25 @@ class ShelloutBlock extends ProtoBlock {
     subscribeToShell(command){
         let spring = new EventSource(location.pathname + '?' + command, {credentials: "same-origin"})
         this.header.textContent = location.pathname + ' → ' + command
-        
+
         spring.addEventListener('pid', event => {
             this.setAttribute('pid', event.data)
+            this.scrollIntoView()            
         })
         spring.addEventListener('stdout', event => {
             this.stdout.textContent += JSON.parse(event.data)
             this.shell.scrollTop = this.shell.scrollHeight
+            this.scrollIntoView()            
         })
         spring.addEventListener('stderr', event => {
             this.stderr.textContent += JSON.parse(event.data)
-            this.shell.scrollTop = this.shell.scrollHeight            
+            this.shell.scrollTop = this.shell.scrollHeight   
+            this.scrollIntoView()            
         })
         spring.addEventListener('error', event => {
             this.error.textContent += JSON.stringify(JSON.parse(event.data), null, 4)
-            this.shell.scrollTop = this.shell.scrollHeight            
+            this.shell.scrollTop = this.shell.scrollHeight   
+            this.scrollIntoView()            
         })
 
         spring.addEventListener('close', event => {
@@ -51,6 +59,7 @@ class ShelloutBlock extends ProtoBlock {
             exit.signal ? this.setAttribute('exit-signal', exit.signal)
                         : this.setAttribute('exit-code', exit.code)
             spring.close()
+            this.scrollIntoView()            
         })
     }
 }  

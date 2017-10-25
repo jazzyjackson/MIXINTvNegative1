@@ -1,0 +1,33 @@
+:host {
+    display: block;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: lightgrey;
+}
+  
+:host > *:not(convo-form) {
+    position: initial;
+    height: initial;
+}
+
+convo-form {
+}
+
+convo-form form {
+    background: white;
+    white-space: nowrap;
+    display: flex;
+}
+convo-form button {
+    background: black;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+}
+convo-form input {
+    flex: 1;
+    border: none;
+}
