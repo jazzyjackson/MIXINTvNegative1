@@ -78,9 +78,14 @@ function subscribe2events(request, response){
     response.setHeader('Content-Type', 'text/event-stream')
     var command = decodeURIComponent(request.url.split('?')[1])
     var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
-    var msgid = 0
+    var msgid = 0 // this is used to identify already digested messages on reconnecting from a bad connection,
+    /* but an index isn't enough. I think I have to send a header including request start, and work that into a hash somehow? 
+    /* So that if client receives a message with the same content, with the same request begin time, client can disregard it based on msgid... */
     var pushEvent = function(name,data){
-        response.write('id:' + ++msgid + '\nevent: ' + name + '\ndata:' + JSON.stringify(data || "") + '\n\n')
+        response.write(['id:', ++msgid, '\n',// point is msgid is a placeholder for future functionality
+                        'event: ', name, '\n',
+                        'data: ', data ? JSON.stringify(data) : '', '\n',
+                        '\n'].join(''))
     }
     if(!command){
         pushEvent('close',{code: null, signal: null})
