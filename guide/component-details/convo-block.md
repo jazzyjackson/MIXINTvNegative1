@@ -1,3 +1,19 @@
+
+ConvoShell
+A common interface for appending message-blocks to a thread
+Message blocks are elements that have various actions attached to attributes.
+Message blocks may include metadata describing channel, tags, author. 
+For attachments and richer message bodies (code snippets, photo galleries, etc), include a figtree
+Figtrees can be popped out (their documnent 'adopted' by a different shadowRoot) anytime. 
+
+----- ideas -----
+
+Oooo, color could represent channel in a thread including all messages (with colored pipes in the background), mouseover one message, collapse messages occuring in others (filter to channel), just one of many playful interfaces for exploring ongoing conversations....
+
+Messages may be encrypted (still new line terminated, made to be 4096 bytes (new line inclusive) exactly)
+You have a list of keys, and basically, if you can't JSON parse a line, iterate through the keys until you can parse it, or discard message if you can't discard it, it wasn't meant for you.
+
+---------- old ---------
 Provides an input form to submit messages.
 Comes with two modes: single player and multi player
 Single Player operates much like a shell, where commands can be executed, or addressing the chatbot directly
@@ -5,7 +21,7 @@ Multi player is an implementation of a chatroom where all participants in the sa
 
 On submit, the convo block checks its mode attribute and accordingly:
 POSTS message in singple player
-Wraps message in context object not to exceed 512 bytes to allow fast synchronous operation
+Wraps message in context object not to exceed 4096 bytes to allow fast synchronous operation.
 
 {
   dt: Date.now(),

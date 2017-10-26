@@ -31,18 +31,24 @@ require(SSL_READY ? 'https' : 'http')
 /************************************* Function definitions to fulfill requests **************************************/
 
 function streamFile(request, response){
+    /* response.setHeader('x-githash', process.env.githash) // send metadata about what version of a file was requested */
     fs.createReadStream(request.url.split('?')[0].slice(1))
     .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
     .pipe(response)
 }
 
 function saveBody(request, response){
+    /* might automatically launch git commit here... */
     request.pipe(fs.createWriteStream('.' + request.url, 'utf8'))
     .on('finish', function(){ response.writeHead(201); response.end() })
     .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
 }
 
 function streamSubProcess(request, response){
+    if(request.headers && request.headers["x-for-pid"]){
+        console.log('for pid', request.headers["x-for-pid"])
+        console.log(request.body)
+    }
     /* check for pid in parameters, pipe body to existing process if available, else throw 'no process with that pid' */
     response.setHeader('Content-Type', 'application/octet-stream')
     response.setHeader('Trailer', 'Exit-Code')
@@ -70,19 +76,23 @@ function streamSubProcess(request, response){
 
 function subscribe2events(request, response){
     response.setHeader('Content-Type', 'text/event-stream')
+    var command = decodeURIComponent(request.url.split('?')[1])
+    var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
     var msgid = 0
     var pushEvent = function(name,data){
-        response.write('id:' + ++msgid + '\nevent: ' + name + '\ndata:' + JSON.stringify(data) + '\n\n')
+        response.write('id:' + ++msgid + '\nevent: ' + name + '\ndata:' + JSON.stringify(data || "") + '\n\n')
+    }
+    if(!command){
+        pushEvent('close',{code: null, signal: null})
+        return response.end()
+        /* return so I don't try to execute an empty command */
     }
 
-    var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
-        cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
-    })
-    /* ... I wonder if I can register this subprocess to global, and allow subsequent POSTs to PID to be piped here... maybe maybe */
-
-    var heartbeat = setInterval(function(){pushEvent(':heartbeat','')},1500)
-    pushEvent('pid', subprocess.pid)
+    var subprocess = exec(command, {cwd: workingDirectory})
     subprocess_registry[subprocess.pid] = subprocess
+
+    var heartbeat = setInterval(function(){pushEvent(':heartbeat')},15000)
+    pushEvent('pid', subprocess.pid)
     
     subprocess.on('error', function(error){
         pushEvent('error', error)

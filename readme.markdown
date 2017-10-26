@@ -16,7 +16,7 @@ Your network may include:
 
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on the same local network with or without any connection to the wider internet.
 
-The workspace that is served on connecting to a Poly-Int is a graphs of web-components that can be modified with code and content you write yourself. Once you arrange an environment with content and capabilities that are useful to you, the application can be cloned to run on any other computer, using git remotes to synchronize content if desired. This allows for shared documents and chatrooms that are available offline and synchronize when connected.
+When connected to a Poly-Int, you're served a graph of web-components that can be modified with code and content you write yourself. Once you arrange an environment with content and capabilities that are useful to you, the application can be cloned to run on any other computer, using git remotes to synchronize content if desired. This allows for shared documents and chatrooms that are available offline and synchronize when connected.
 
 # Operator.js
 Operator.js will connect your calls - fulfilling network requests in one of six ways:
