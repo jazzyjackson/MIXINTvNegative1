@@ -24,7 +24,6 @@ class MultiplexBlock extends ProtoBlock {
                 let newChild = event[0].addedNodes[0]
                 let nthIndex = this.whatChildIsThis(newChild)
                 let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n
-                console.log({nthIndex, lastVisibleIndex, newChild, childrenDelta})
                 if(nthIndex > lastVisibleIndex || childrenDelta < 0){
                     this.showStart = childrenDelta + parseInt(this.props["show-start"])                                                                
                 }
@@ -35,7 +34,6 @@ class MultiplexBlock extends ProtoBlock {
             this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})
             this.props = {tabindex: 0}
             this.addEventListener('keydown', event => {
-                console.log(event)
                 /* modify max and start with ctrl+shift+[wasd] */
                 if(!(event.ctrlKey & event.shiftKey)) return null
                 event.stopPropagation()

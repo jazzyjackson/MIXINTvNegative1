@@ -16,9 +16,16 @@ class ShelloutBlock extends ProtoBlock {
     /* needs an action to flip attribute word wrap */
     /* might want to generalize a method for chooosing among attributes */
     /* or just, each element has an attribute submenu, and a dropdown provided for each thing to customize */
+    scrollToBottom(){
+        // ask the parentNode to scroll down, if it has a method to do so
+        !this.getAttribute('ignoreUpdate')
+        && this.shadowParent
+        && this.shadowParent.scrollToBottom
+        && this.shadowParent.scrollToBottom()
+    }
 
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))                
+        this.initialized || this.dispatchEvent(new Event('init'))
     }
 
     sendSignal(signal){
@@ -31,26 +38,35 @@ class ShelloutBlock extends ProtoBlock {
     }
 
     subscribeToShell(command){
-        let spring = new EventSource(location.pathname + '?' + command, {credentials: "same-origin"})
+        let spring = new EventSource(location.pathname + '?' + encodeURIComponent(command), {credentials: "same-origin"})
         this.header.textContent = location.pathname + ' → ' + command
 
         spring.addEventListener('pid', event => {
             this.setAttribute('pid', event.data)
-            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
+            this.scrollToBottom()
         })
 
         spring.addEventListener('stdout', event => {
-            let newString = JSON.parse(event.data)
-            this.stdout.textContent += newString.replace(/.[\b]/g, (y,z) => newString[z+1])
-            console.log(JSON.parse(event.data))
-            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
+            let newData = JSON.parse(event.data)
+            if(typeof newData == 'object'){
+                /* if some process returned an object, take those objects properties and make them attributes of this block */
+                this.props = newData
+            } else {
+                /* There's a couple things to handle when digesting stdout from bash - the man pages do this thing where */
+                /* a\ba (backspace) is like a double-typed a that should be displayed bold, but for now I just want to throw out the doubled up letters */
+                let backspacedString = newData.replace(/.[\b]/g, '') // delete groups of any character followed by backspace. Later I might use a replacement function like (x,y) => <em>newstring[x]</em> or whatever */
+                this.stdout.textContent += backspacedString
+            }
+            this.scrollToBottom()            
         })
+
         spring.addEventListener('stderr', event => {
             this.setAttribute('error', true)
             this.stderr.textContent += JSON.parse(event.data)
             this.shell.scrollTop = this.shell.scrollHeight   
-            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
+            this.scrollToBottom()
         })
+        
         spring.addEventListener('error', event => {
             let error = JSON.parse(event.data)
             this.setAttribute('errno', error.errno)
@@ -58,7 +74,7 @@ class ShelloutBlock extends ProtoBlock {
             spring.close()
             this.error.textContent += JSON.stringify(error, null, 4)
             this.shell.scrollTop = this.shell.scrollHeight   
-            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
+            this.scrollToBottom()
         })
 
         spring.addEventListener('close', event => {
@@ -66,7 +82,7 @@ class ShelloutBlock extends ProtoBlock {
             var exit = JSON.parse(event.data)
             exit.signal ? this.setAttribute('exit-signal', exit.signal)
                         : this.setAttribute('exit-code', exit.code)
-            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
+            this.scrollToBottom()
         })
     }
 }  

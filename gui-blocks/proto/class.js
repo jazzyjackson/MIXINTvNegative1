@@ -12,7 +12,7 @@ class ProtoBlock extends HTMLElement {
 
             this.attachShadow({mode: 'open'})
             this.shadowRoot.appendChild(template.content.cloneNode(true))
-            this.shadowParent = this.parentNode.host
+            this.shadowParent = this.getRootNode().host // might want this.getRootNode().host if this block would be nested somehow, but I'm not expected that to happen.
         })
     }
 

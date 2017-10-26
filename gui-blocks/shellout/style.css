@@ -11,8 +11,6 @@
 }
 
 header {
-  background: black;
-  color: white;
   padding: 3px;
 }
 
@@ -26,7 +24,6 @@ data-shell {
   flex-direction: column;
   padding: 5px;
   white-space: pre-wrap;
-  
 }
 
 data-stderr, data-error{

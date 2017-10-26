@@ -4,17 +4,26 @@
 }
 
 :host {
-    display: block;
-    overflow: hidden;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
     height: 100%;
+    width: 100%;
+}
+
+convo-body {
+    flex: 1;
     overflow: auto;
-    background: lightgrey;
 }
   
-:host > *:not(convo-form) {
+convo-body > *:not(convo-form) {
     position: initial;
     height: initial;
+}
+
+header {
+    padding: 3px;
+    background: black;
+    color: white;
 }
 
 convo-form form {
@@ -36,11 +45,13 @@ convo-form button {
 }
 convo-form input {
     flex: 1;
+    /* basically undoing user agent text input styles */
     border: none;
     line-height: 27px;
     padding: 0;
     padding-left: 5px;
     outline: none;
+    font-size: initial;
 }
 convo-form input:focus {
     background: linear-gradient(to top, cornflowerblue 10%, white 10%);
