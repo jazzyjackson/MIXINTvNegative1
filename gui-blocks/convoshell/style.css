@@ -1,3 +1,8 @@
+* {
+    box-sizing: border-box;
+    font-family: monospace;
+}
+
 :host {
     display: block;
     overflow: hidden;
@@ -12,22 +17,31 @@
     height: initial;
 }
 
-convo-form {
-}
-
 convo-form form {
     background: white;
     white-space: nowrap;
     display: flex;
 }
+convo-form form:before {
+    content: attr(pathname) ' ' attr(prompt);
+    line-height: 27px;
+    padding-left: 3px;
+}
+
 convo-form button {
-    background: black;
-    color: white;
+    background: white;
     border: none;
-    width: 30px;
-    height: 30px;
+    width: 27px;
+    height: 27px;
 }
 convo-form input {
     flex: 1;
     border: none;
+    line-height: 27px;
+    padding: 0;
+    padding-left: 5px;
+    outline: none;
+}
+convo-form input:focus {
+    background: linear-gradient(to top, cornflowerblue 10%, white 10%);
 }

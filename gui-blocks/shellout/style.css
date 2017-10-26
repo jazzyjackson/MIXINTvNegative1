@@ -24,27 +24,25 @@ data-shell {
   overflow: auto; 
   display: flex; 
   flex-direction: column;
-}
-
-data-stdout, data-stderr, data-error {
-  white-space: pre;
   padding: 5px;
+  white-space: pre-wrap;
+  
 }
 
 data-stderr, data-error{
   color: red;
 }
-:host(:not([exit-code]):not([exit-signal])) {
-  /* box-shadow: inset cornflowerblue -3px -2px 6px;   */
-}
-:host(:not([exit-code]):not([exit-signal])) footer {
+ongoing-bar {
+  display: block;
   height: 4px;
   position: relative;
+}
+/* show 'ongoing' animation as long as there is no exit code, exit signal, or error number indicating that the process is over */
+:host(:not([exit-code]):not([exit-signal]):not([errno])) ongoing-bar {
   animation: progress 1.5s infinite cubic-bezier(0.4, 0, 1, 1);
   background: linear-gradient(to right, white 0%, transparent 20%, transparent 80%, white 100%),
               linear-gradient(to top, white, cornflowerblue, white); 
 }
-
 
 @keyframes progress {
     0% {

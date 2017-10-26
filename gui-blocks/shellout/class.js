@@ -36,30 +36,37 @@ class ShelloutBlock extends ProtoBlock {
 
         spring.addEventListener('pid', event => {
             this.setAttribute('pid', event.data)
-            this.scrollIntoView()            
+            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
         })
+
         spring.addEventListener('stdout', event => {
-            this.stdout.textContent += JSON.parse(event.data)
-            this.shell.scrollTop = this.shell.scrollHeight
-            this.scrollIntoView()            
+            let newString = JSON.parse(event.data)
+            this.stdout.textContent += newString.replace(/.[\b]/g, (y,z) => newString[z+1])
+            console.log(JSON.parse(event.data))
+            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
         })
         spring.addEventListener('stderr', event => {
+            this.setAttribute('error', true)
             this.stderr.textContent += JSON.parse(event.data)
             this.shell.scrollTop = this.shell.scrollHeight   
-            this.scrollIntoView()            
+            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
         })
         spring.addEventListener('error', event => {
-            this.error.textContent += JSON.stringify(JSON.parse(event.data), null, 4)
+            let error = JSON.parse(event.data)
+            this.setAttribute('errno', error.errno)
+            /* this is child_process.exec throwing an error, not the subprocess */
+            spring.close()
+            this.error.textContent += JSON.stringify(error, null, 4)
             this.shell.scrollTop = this.shell.scrollHeight   
-            this.scrollIntoView()            
+            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
         })
 
         spring.addEventListener('close', event => {
+            spring.close()
             var exit = JSON.parse(event.data)
             exit.signal ? this.setAttribute('exit-signal', exit.signal)
                         : this.setAttribute('exit-code', exit.code)
-            spring.close()
-            this.scrollIntoView()            
+            this.getAttribute('ignoreUpdate') || (this.shadowParent.scrollTop = this.shadowParent.scrollHeight)
         })
     }
 }  

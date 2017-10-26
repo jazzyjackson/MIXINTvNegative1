@@ -14,9 +14,8 @@ class ConvoshellBlock extends ProtoBlock {
                     let shellout = new ShelloutBlock
                     shellout.props = { action: this.input.value }
                     this.shadowRoot.insertBefore(shellout, this.convoForm)
-                    shellout.addEventListener('load', () => this.form.scrollIntoView())                    
+                    // shellout.addEventListener('load', () => this.form.scrollIntoView())                    
                 } 
-                this.form.scrollIntoView()
             })
         })
     }
