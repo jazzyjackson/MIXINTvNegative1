@@ -22,7 +22,7 @@ let defaultFig = {
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
-            "user-identity": process.env.user
+            "user-identity": process.env.USER
         }},
         {"meta":{
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
