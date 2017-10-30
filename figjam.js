@@ -22,15 +22,11 @@ let defaultFig = {
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
-<<<<<<< HEAD
-            "user-identity": process.env.USER
-=======
             "platform": process.platform
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
-            "user-identity": process.env.user
->>>>>>> multiplex blue fade in css the way I wanted, mostly
+            "user-identity": process.env.USER
         }},
         {"meta":{
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
@@ -150,7 +146,6 @@ module.exports = async function(request, response){
     }
     /* streamNodes should probably be upgraded to async and resolve after the buffer is drained, to scale up */
     function streamNodes(nodeDescription){
-        console.log(nodeDescription)
         // 'this' will be bound to the HTTP Response object, write back to client
         var tagName = Object.keys(nodeDescription)[0]
         var tagObject = nodeDescription[tagName]

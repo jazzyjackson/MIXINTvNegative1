@@ -2,7 +2,7 @@
 var os         = require('os')
 var fs         = require('fs')
 var bookkeeper = require('./bookkeeper')
-var exec       = require('child_process').exec
+var spawn      = require('child_process').spawn
 var figjam     = chooseFigJam()
 var key, cert
 var subprocess_registry = {}
@@ -52,9 +52,11 @@ function streamSubProcess(request, response){
     /* check for pid in parameters, pipe body to existing process if available, else throw 'no process with that pid' */
     response.setHeader('Content-Type', 'application/octet-stream')
     response.setHeader('Trailer', 'Exit-Code')
-    var subprocess = exec(decodeURIComponent(request.url.split('?')[1]), {
-        cwd: process.cwd() + request.url.split('/').slice(0,-1).join('/')
-    })
+
+    var workingDirectory=  process.cwd() + request.url.split('/').slice(0,-1).join('/')
+    var command = decodeURIComponent(request.url.split('?')[1])
+
+    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
 
     subprocess.on('error', function(err){ 
         response.writeHead(500); 
@@ -64,6 +66,7 @@ function streamSubProcess(request, response){
     /* lets not allow stdio to close connection, wait until process exits, As a bonus, I get to send the exit code */
     subprocess.stdout.pipe(response, {end: false})
     subprocess.stderr.pipe(response, {end: false})
+
     subprocess.on('close', (code,signal) => {
         /* OK fine, trailers aren't really supported by anyone right now, maybe they'll be in HTTP2 */
         response.addTrailers({'Exit-Code': code || signal})
@@ -87,13 +90,12 @@ function subscribe2events(request, response){
                         'data: ', data ? JSON.stringify(data) : '', '\n',
                         '\n'].join(''))
     }
-    if(!command){
+    if(!command.length){
         pushEvent('close',{code: null, signal: null})
         return response.end()
         /* return so I don't try to execute an empty command */
     }
-
-    var subprocess = exec(command, {cwd: workingDirectory})
+    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
     subprocess_registry[subprocess.pid] = subprocess
 
     var heartbeat = setInterval(function(){pushEvent(':heartbeat')},15000)
@@ -103,10 +105,10 @@ function subscribe2events(request, response){
         pushEvent('error', error)
     })
     subprocess.stdout.on('data', function(data){
-        pushEvent('stdout',data)
+        pushEvent('stdout',data.toString())
     })
     subprocess.stderr.on('data', function(data){
-        pushEvent('stderr',data)
+        pushEvent('stderr',data.toString())
     })
     subprocess.on('close', (code,signal) => {
         clearInterval(heartbeat) // stop trying to send heartbeats

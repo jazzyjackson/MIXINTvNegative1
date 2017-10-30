@@ -38,8 +38,8 @@ class ShelloutBlock extends ProtoBlock {
     }
 
     subscribeToShell(command){
-        let shell = new EventSource(location.pathname + '?' + command, {credentials: "same-origin"})
-        this.header.textContent = location.pathname + ' → ' + this.props.bash
+        let shell = new EventSource(location.pathname + '?' + encodeURIComponent(command), {credentials: "same-origin"})
+        this.header.textContent = location.pathname + ' → ' + this.props.action
         
         shell.addEventListener('pid', event => {
             this.setAttribute('pid', event.data)
@@ -47,16 +47,15 @@ class ShelloutBlock extends ProtoBlock {
         })
         shell.addEventListener('stdout', event => {
             this.stdout.textContent += JSON.parse(event.data)
-            this.shell.scrollTop = this.shell.scrollHeight
+            this.scrollToBottom()
         })
         shell.addEventListener('stderr', event => {
             this.stderr.textContent += JSON.parse(event.data)
-            this.shell.scrollTop = this.shell.scrollHeight   
             this.scrollToBottom()
         })
         shell.addEventListener('error', event => {
             this.error.textContent += JSON.stringify(JSON.parse(event.data), null, 4)
-            this.shell.scrollTop = this.shell.scrollHeight            
+            this.scrollToBottom()
         })
 
         shell.addEventListener('close', event => {
