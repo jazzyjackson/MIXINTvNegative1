@@ -22,7 +22,15 @@ let defaultFig = {
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
+<<<<<<< HEAD
             "user-identity": process.env.USER
+=======
+            "platform": process.platform
+        }},
+        {"meta":{
+            // let the web interface know who this is, just for filling in attributes for 'who'
+            "user-identity": process.env.user
+>>>>>>> multiplex blue fade in css the way I wanted, mostly
         }},
         {"meta":{
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
@@ -46,6 +54,7 @@ let defaultFig = {
                     overflow: hidden;
                     width: 100%; 
                     height: 100%;
+                    background: lightblue;
                 }`
         }}
     ],
