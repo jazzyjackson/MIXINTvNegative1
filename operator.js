@@ -1,9 +1,10 @@
 #!/usr/local/bin/node
-var os         = require('os')
-var fs         = require('fs')
-var bookkeeper = require('./bookkeeper')
-var spawn      = require('child_process').spawn
-var figjam     = chooseFigJam()
+process.platform.includes('win') && process.exit(console.log("Please start me on something unixy."))
+var os          = require('os')
+var fs          = require('fs')
+var bookkeeper  = require('./bookkeeper')
+var spawn       = require('child_process').spawn
+var figjam      = chooseFigJam()
 var key, cert
 var subprocess_registry = {}
 /* try to read key and certificate from disk and enable HTTPS if true */
@@ -13,14 +14,14 @@ require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && {key: key, cert: cert})
 .on('request', function(req,res){  
     /* recursive ternary tests conditions until success */
-    /text\/event-stream/.test(req.headers.accept)         ? subscribe2events(req,res) : /* from new EventSource (SSE) */
-    /application\/octet-stream/.test(req.headers.accept)  ? pipeProcess(req,res)      : /* fetch with binary data */
-    /\/(?=\?|$)/.test(req.url) && req.method == 'GET'     ? figjam(req,res)           : /* url path w/ trailing slash */
-    req.method == 'GET'                                   ? streamFile(req,res)       :
-    req.method == 'PUT'                                   ? saveBody(req,res)         :
-    req.method == 'POST'                                  ? streamSubProcess(req,res) :
-    req.method == 'DELETE'                                ? deleteFile(req,res)       :
-    res.end(req.method + ' ' + req.url + "\n" + "Doesn't look like anything to me")   ;
+    /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) : /* from new EventSource (SSE) */
+    /octet-stream/.test(req.headers.accept)           ? pipeProcess(req,res)      : /* fetch with binary data */
+    /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           : /* url path w/ trailing slash */
+    req.method == 'GET'                               ? streamFile(req,res)       :
+    req.method == 'PUT'                               ? saveBody(req,res)         :
+    req.method == 'POST'                              ? streamSubProcess(req,res) :
+    req.method == 'DELETE'                            ? deleteFile(req,res)       :
+    res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
 })
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
