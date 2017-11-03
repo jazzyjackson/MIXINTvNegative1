@@ -63,6 +63,27 @@ class ProtoBlock extends HTMLElement {
 
     }
 
+    static get superClassChain(){
+        /* is there a javascript built in I don't know about? Chrome seems to resolve this automatically in inspector, can I just ask an object for its list of prototypes instead of iterating ? */
+        var superClassChain = []
+        var superclass = this /* this is the part thats different for the class method: we can call the prototype of the class */
+        while(superclass.name != 'HTMLElement'){
+            superClassChain.push(superclass.prototype.constructor)
+            superclass = superclass.__proto__
+        }
+        return superClassChain 
+    }
+
+    get superClassChain(){
+        var superClassChain = []
+        var superclass = this.constructor /* this is the part thats different for the instance method: we have to call the constructor before we call for the prototype */
+        while(superclass.name != 'HTMLElement'){
+            superClassChain.push(superclass.prototype.constructor)
+            superclass = superclass.__proto__
+        }        
+        return superClassChain
+    }
+
     /* to be more extensible this should probably go up the superclasschain accumulating static get keepAttributes, and using that array to skip attribute removal */
     clear(){
         /* a method for destroying attributes, to reset the block, but there's probably some attributes you want to keep. tabIndex and style needs to exist for click and drag (active element works off focus, updates from style attributes) */
@@ -73,7 +94,7 @@ class ProtoBlock extends HTMLElement {
     become(block = this.constructor){
         // shell-block is the tagName of a ShellBlock, two different ways to make the same thing,
         // depending on whether become was called with a reference to a class or just the string of a tagName
-        var newBlock = typeof block == 'string' ? document.createElement(block) : new block
+        var newBlock = typeof block == 'string' ? document.createElement(block + '-block') : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
         // I'm expecting the element that has been replaced to be garbage collected

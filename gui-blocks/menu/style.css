@@ -1,0 +1,80 @@
+/* thanks to this thread https://stackoverflow.com/questions/9513588/prevent-children-from-inheriting-rotate-transformation-in-css */
+/* for the idea of applying the rotation transform to a :after psuedo element so that the children of menu-block won't be rotated when the icon is */
+:host {
+  position: absolute;
+  display: block;
+  top: 0;
+  right: 0;
+  width: 1em;
+  height: 1em;
+  padding: 4px;
+  z-index: 11;
+  cursor: pointer;
+  box-sizing: content-box;
+}
+
+:host:after {
+  content: '';
+  position: absolute;
+  display: block;
+  top: 0;
+  right: 0;
+  width: 1em;
+  height: 1em;
+  margin: 4px;
+  background-color: white;
+  clip-path: polygon(0.462em 0.000em, 0.369em 0.010em, 0.369em 0.369em, 0.009em 0.369em, 0.000em 0.462em, 0.010em 0.554em, 0.369em 0.554em, 0.369em 0.914em, 0.462em 0.923em, 0.554em 0.913em, 0.554em 0.554em, 0.914em 0.554em, 0.923em 0.462em, 0.913em 0.369em, 0.554em 0.369em, 0.554em 0.009em, 0.462em 0.000em);
+  z-index: 20;
+  transition: .25s transform;
+}
+
+:host-context(:focus):after {
+  background-color: cornflowerblue;
+}
+
+:host-context([menu="visible"]):after {
+  transform: rotate(45deg)
+}
+
+ul {
+  position: absolute;
+  right: 0;
+  list-style: none;
+  overflow: hidden;
+  transition: 0.25s height;
+}
+
+:host-context([menu="hidden"]:not([selection])) ul {
+  height: 0 !important; /* javascript is setting max height on the element, so to hide it we have to override */
+}
+
+li {
+  padding: 4px 25px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  width: 0;
+  display: table;
+  float: right;
+  clear: both;
+  white-space: nowrap;    
+  transition: .25s all;
+}
+
+li:hover, li:focus {
+  border-left: 3px solid cornflowerblue;
+}
+
+li:focus::after {
+  content: '⏎';
+  color: cornflowerblue;
+  padding-left: 5px;
+}
+
+/*direct descendents of form should have more obvious focus highligting */
+form > *:focus {
+  border-left: 3px solid cornflowerblue;
+}
+
+form {
+  display: inline-block;
+}
