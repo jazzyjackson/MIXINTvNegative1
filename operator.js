@@ -1,5 +1,5 @@
 #!/usr/local/bin/node
-process.platform.includes('win') && process.exit(console.log("Please start me on something unixy."))
+process.platform.includes('win32') && process.exit(console.log("Please start me on something unixy."))
 var os          = require('os')
 var fs          = require('fs')
 var bookkeeper  = require('./bookkeeper')
