@@ -3,6 +3,7 @@ class DirectoryBlock extends ProtoBlock {
         super()
         this.addEventListener('init', () => {
             this.header = this.shadowRoot.querySelector('header')
+            this.headerTitle = this.shadowRoot.querySelector('header-title')
             this.fileList = this.shadowRoot.querySelector('file-list')
 
             this.listFunc = (pathname) => `${pathname}?ls -ap1` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line */
@@ -15,12 +16,18 @@ class DirectoryBlock extends ProtoBlock {
         })
     }
 
+    static get actions(){
+        return {
+            
+        }
+    }        
+
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
     }
 
     fetchDirectory(pathname){ 
-        this.header.textContent = '...'      
+        this.headerTitle.textContent = '...'      
         this.props = {lastUpdate: Date.now()} 
         return fetch(this.listFunc(pathname), {
             method: 'post',
@@ -28,7 +35,7 @@ class DirectoryBlock extends ProtoBlock {
             redirect: 'error'
         })
         .then(response => {
-            this.header.textContent = response.url.split('?')[0].slice(location.origin.length)
+            this.headerTitle.textContent = response.url.split('?')[0].slice(location.origin.length)
             return response
         })
         .then(response => response.text())
