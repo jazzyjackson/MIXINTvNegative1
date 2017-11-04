@@ -27,8 +27,8 @@ class MultiplexBlock extends ProtoBlock {
                 if(nthIndex > lastVisibleIndex || childrenDelta < 0){
                     this.showStart = childrenDelta + parseInt(this.props["show-start"])                                                                
                 }
-                childrenDelta && this.animateNewChild(newChild)                
                 this.reCalculateChildren()
+                childrenDelta && this.animateNewChild(newChild)                
 
             })
             this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})

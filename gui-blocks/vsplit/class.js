@@ -10,12 +10,17 @@ class VsplitBlock extends MultiplexBlock {
     animateNewChild(node){
         if(!node) return null /* exit it child doesn't exist */
         /* force a margin animation on new children */
-        node.style.marginLeft = `${100 / this.showMax}%`
+        // node.style.marginLeft = `${100 / this.showMax}%`
+        node.style.width = 0
+        node.style.opacity = 0
         setTimeout(()=>{
+            node.style.opacity = 1
+            node.style.opacity = null
             /* have to take a step out of sync for a second, let the margin */
             /* get painted, but throw a transition to 0 on the event loop */
-            node.style.marginLeft = '0%'
-            node.style.marginLeft = null
+            // node.style.marginLeft = '0%'
+            // node.style.marginLeft = null
+            this.reCalculateChildren()
         })
     }
 

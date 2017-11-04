@@ -38,51 +38,31 @@ class ShelloutBlock extends ProtoBlock {
     }
 
     subscribeToShell(command){
-        let spring = new EventSource(location.pathname + '?' + encodeURIComponent(command), {credentials: "same-origin"})
-        this.header.textContent = location.pathname + ' → ' + command
-
-        spring.addEventListener('pid', event => {
+        let shell = new EventSource(location.pathname + '?' + encodeURIComponent(command), {credentials: "same-origin"})
+        this.header.textContent = location.pathname + ' → ' + this.props.action
+        
+        shell.addEventListener('pid', event => {
             this.setAttribute('pid', event.data)
             this.scrollToBottom()
         })
-
-        spring.addEventListener('stdout', event => {
-            let newData = JSON.parse(event.data)
-            if(typeof newData == 'object'){
-                /* if some process returned an object, take those objects properties and make them attributes of this block */
-                this.props = newData
-            } else {
-                /* There's a couple things to handle when digesting stdout from bash - the man pages do this thing where */
-                /* a\ba (backspace) is like a double-typed a that should be displayed bold, but for now I just want to throw out the doubled up letters */
-                let backspacedString = newData.replace(/.[\b]/g, '') // delete groups of any character followed by backspace. Later I might use a replacement function like (x,y) => <em>newstring[x]</em> or whatever */
-                this.stdout.textContent += backspacedString
-            }
-            this.scrollToBottom()            
+        shell.addEventListener('stdout', event => {
+            this.stdout.textContent += JSON.parse(event.data)
+            this.scrollToBottom()
         })
-
-        spring.addEventListener('stderr', event => {
-            this.setAttribute('error', true)
+        shell.addEventListener('stderr', event => {
             this.stderr.textContent += JSON.parse(event.data)
-            this.shell.scrollTop = this.shell.scrollHeight   
             this.scrollToBottom()
         })
-        
-        spring.addEventListener('error', event => {
-            let error = JSON.parse(event.data)
-            this.setAttribute('errno', error.errno)
-            /* this is child_process.exec throwing an error, not the subprocess */
-            spring.close()
-            this.error.textContent += JSON.stringify(error, null, 4)
-            this.shell.scrollTop = this.shell.scrollHeight   
+        shell.addEventListener('error', event => {
+            this.error.textContent += JSON.stringify(JSON.parse(event.data), null, 4)
             this.scrollToBottom()
         })
 
-        spring.addEventListener('close', event => {
-            spring.close()
+        shell.addEventListener('close', event => {
             var exit = JSON.parse(event.data)
             exit.signal ? this.setAttribute('exit-signal', exit.signal)
                         : this.setAttribute('exit-code', exit.code)
-            this.scrollToBottom()
+            shell.close()
         })
     }
 }  

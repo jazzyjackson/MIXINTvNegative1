@@ -22,6 +22,10 @@ let defaultFig = {
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
+            "platform": process.platform
+        }},
+        {"meta":{
+            // let the web interface know who this is, just for filling in attributes for 'who'
             "user-identity": process.env.USER
         }},
         {"meta":{
@@ -46,6 +50,7 @@ let defaultFig = {
                     overflow: hidden;
                     width: 100%; 
                     height: 100%;
+                    background: lightblue;
                 }`
         }}
     ],
@@ -141,7 +146,6 @@ module.exports = async function(request, response){
     }
     /* streamNodes should probably be upgraded to async and resolve after the buffer is drained, to scale up */
     function streamNodes(nodeDescription){
-        console.log(nodeDescription)
         // 'this' will be bound to the HTTP Response object, write back to client
         var tagName = Object.keys(nodeDescription)[0]
         var tagObject = nodeDescription[tagName]
