@@ -24,11 +24,26 @@ require(SSL_READY ? 'https' : 'http')
 })
 .listen(process.argv[2] || 3000)       
 .on('listening', function(){ console.log(this.address().port) })
+
 /* start listening on port 3000 unless another number was passed as argument */
 /* once the server is listening, print the port number to stdout             */
 /* switchboard will request port 0, which assigns a random, unused port      */
 
 /************************************* Function definitions to fulfill requests **************************************/
+
+function forkProcess(request){
+    var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
+    var command = decodeURIComponent(request.url.split('?')[1])
+    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
+
+    subprocess_registry[subprocess.pid] = subprocess
+    return subprocess
+}
+
+function messageProcess(pid, command){
+    // I'm assuming that piping to stdin of a nonexistant process will fail right away, messageProcess should be called in a try/catch block
+    subprocess_registry[subprocess.pid].stdin.write(command)
+}
 
 function streamFile(request, response){
     /* response.setHeader('x-githash', process.env.githash) // send metadata about what version of a file was requested */
@@ -45,71 +60,60 @@ function saveBody(request, response){
 }
 
 function streamSubProcess(request, response){
+    // if the request is for an ongoing process, it will carry a x-for-pid header
+    // processes started previously 
+    // processes are registered per operator, so in a multi-user enviornment, users can't try to send messages (control chars etc) to other users' processes
     if(request.headers && request.headers["x-for-pid"]){
-        console.log('for pid', request.headers["x-for-pid"])
-        console.log(request.body)
+        try {
+            messageProcess(request.headers["x-for-pid"], request.body)
+            return response.end(204)
+        } catch(err){
+            response.writeHead(500)
+            return response.end(err)
+        }
     }
+    
+    var subprocess = forkProcess(request)
     /* check for pid in parameters, pipe body to existing process if available, else throw 'no process with that pid' */
     response.setHeader('Content-Type', 'application/octet-stream')
-    response.setHeader('Trailer', 'Exit-Code')
-
-    var workingDirectory=  process.cwd() + request.url.split('/').slice(0,-1).join('/')
-    var command = decodeURIComponent(request.url.split('?')[1])
-
-    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
+    response.setHeader('Trailer', 'Exit-Code') // not really supported by anyone yet, but it will be useful once browsers can read trailers.
 
     subprocess.on('error', function(err){ 
         response.writeHead(500); 
         response.end(JSON.stringify(err)) 
     })
-    /* I had a curious data drop out, I wonder if stderr piped a null byte and closed the connection early */
-    /* lets not allow stdio to close connection, wait until process exits, As a bonus, I get to send the exit code */
-    subprocess.stdout.pipe(response, {end: false})
+
+    subprocess.stdout.pipe(response, {end: false}) // end: false - don't close pipe on receiving null bytes
     subprocess.stderr.pipe(response, {end: false})
 
     subprocess.on('close', (code,signal) => {
-        /* OK fine, trailers aren't really supported by anyone right now, maybe they'll be in HTTP2 */
         response.addTrailers({'Exit-Code': code || signal})
         response.end()
-    })
-
-    subprocess_registry[subprocess.pid] = subprocess
-    
+    })    
 }
 
 function subscribe2events(request, response){
     response.setHeader('Content-Type', 'text/event-stream')
-    var command = decodeURIComponent(request.url.split('?')[1])
-    var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
-    var msgid = 0 // this is used to identify already digested messages on reconnecting from a bad connection,
-    /* but an index isn't enough. I think I have to send a header including request start, and work that into a hash somehow? 
-    /* So that if client receives a message with the same content, with the same request begin time, client can disregard it based on msgid... */
+
     var pushEvent = function(name,data){
-        response.write(['id:', ++msgid, '\n',// point is msgid is a placeholder for future functionality
-                        'event: ', name, '\n',
+        response.write(['event: ', name, '\n',
                         'data: ', data ? JSON.stringify(data) : '', '\n',
                         '\n'].join(''))
     }
-    if(!command.length){
+    /* test for empty command and return a null exit code instead of trying to spawn a blank command */
+    if(!command){
         pushEvent('close',{code: null, signal: null})
         return response.end()
-        /* return so I don't try to execute an empty command */
     }
-    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
-    subprocess_registry[subprocess.pid] = subprocess
-
-    var heartbeat = setInterval(function(){pushEvent(':heartbeat')},15000)
+    /* start the subprocess and send the pid to client */
+    var subprocess = forkProcess(request)
     pushEvent('pid', subprocess.pid)
-    
-    subprocess.on('error', function(error){
-        pushEvent('error', error)
-    })
-    subprocess.stdout.on('data', function(data){
-        pushEvent('stdout',data.toString())
-    })
-    subprocess.stderr.on('data', function(data){
-        pushEvent('stderr',data.toString())
-    })
+    /* start sending an empty heartbeat event every 15 seconds until process closes, to keep connection open */
+    var heartbeat = setInterval(function(){pushEvent(':heartbeat')},15000)
+    /* push error, data, and close events from the subprocess */
+    subprocess.on('error', function(error){ pushEvent('error', error) })
+    subprocess.stdout.on('data', function(data){ pushEvent('stdout',data.toString()) })
+    subprocess.stderr.on('data', function(data){ pushEvent('stderr',data.toString()) })
     subprocess.on('close', (code,signal) => {
         clearInterval(heartbeat) // stop trying to send heartbeats
         pushEvent('close', {code: code, signal: signal})
@@ -127,6 +131,7 @@ function deleteFile(request, response){
 
 function trySSL(key, cert){
     /* force HTTP server and skip reading files */
+    return false
     if(process.env.DISABLE_SSL) return false
     try {
         /* blocking, but only once at start up */
