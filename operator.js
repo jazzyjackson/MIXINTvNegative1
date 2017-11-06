@@ -2,6 +2,7 @@
 var os         = require('os')
 var fs         = require('fs')
 var bookkeeper = require('./bookkeeper')
+var inspect    = require('util').inspect
 var spawn      = require('child_process').spawn
 var figjam     = chooseFigJam()
 var key, cert
@@ -35,14 +36,20 @@ function forkProcess(request){
     var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
     var command = decodeURIComponent(request.url.split('?')[1])
     var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
+    subprocess_registry[String(subprocess.pid)] = subprocess
 
-    subprocess_registry[subprocess.pid] = subprocess
+    subprocess.on('close', () => {
+        delete subprocess_registry[subprocess.pid] //forgeddaboutit
+    })
+    
     return subprocess
 }
 
 function messageProcess(pid, command){
+    console.log("PID", pid)
+    console.log("Command", JSON.stringify(command + os.EOL))
     // I'm assuming that piping to stdin of a nonexistant process will fail right away, messageProcess should be called in a try/catch block
-    subprocess_registry[subprocess.pid].stdin.write(command)
+    subprocess_registry[pid].stdin.write(command + os.EOL) // there is an option to have a callback if the write throws errors, but I'm only anticipating errors when the subprocess doesn't exist.
 }
 
 function streamFile(request, response){
@@ -59,17 +66,25 @@ function saveBody(request, response){
     .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
 }
 
+function deleteFile(request, response){
+    fs.unlink('.' + request.url, function(err){ 
+        response.writeHead( err ? 500 : 204); 
+        response.end(JSON.stringify(err))
+    })
+}
+
 function streamSubProcess(request, response){
     // if the request is for an ongoing process, it will carry a x-for-pid header
     // processes started previously 
     // processes are registered per operator, so in a multi-user enviornment, users can't try to send messages (control chars etc) to other users' processes
     if(request.headers && request.headers["x-for-pid"]){
         try {
-            messageProcess(request.headers["x-for-pid"], request.body)
-            return response.end(204)
+            messageProcess(request.headers["x-for-pid"], decodeURIComponent(request.url.split('?')[1]))
+            response.writeHead(204)
+            return response.end()
         } catch(err){
             response.writeHead(500)
-            return response.end(err)
+            return response.end(inpsect(err))
         }
     }
     
@@ -94,19 +109,15 @@ function streamSubProcess(request, response){
 
 function subscribe2events(request, response){
     response.setHeader('Content-Type', 'text/event-stream')
-
     var pushEvent = function(name,data){
         response.write(['event: ', name, '\n',
                         'data: ', data ? JSON.stringify(data) : '', '\n',
                         '\n'].join(''))
     }
-    /* test for empty command and return a null exit code instead of trying to spawn a blank command */
-    if(!command){
-        pushEvent('close',{code: null, signal: null})
-        return response.end()
-    }
+
     /* start the subprocess and send the pid to client */
     var subprocess = forkProcess(request)
+    
     pushEvent('pid', subprocess.pid)
     /* start sending an empty heartbeat event every 15 seconds until process closes, to keep connection open */
     var heartbeat = setInterval(function(){pushEvent(':heartbeat')},15000)
@@ -118,16 +129,10 @@ function subscribe2events(request, response){
         clearInterval(heartbeat) // stop trying to send heartbeats
         pushEvent('close', {code: code, signal: signal})
         response.end() // and close the connection. client should close the eventSource when receiving 'close' event
-        delete subprocess_registry[subprocess.pid] //forgeddaboutit
     })
 }
 
-function deleteFile(request, response){
-    fs.unlink('.' + request.url, function(err){ 
-        response.writeHead( err ? 500 : 204); 
-        response.end(JSON.stringify(err))
-    })
-}
+
 
 function trySSL(key, cert){
     /* force HTTP server and skip reading files */
