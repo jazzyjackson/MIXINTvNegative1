@@ -1,0 +1,3 @@
+/* reads a file and parses it based on standard csv spec
+drops all the data into an HTML table
+*/
