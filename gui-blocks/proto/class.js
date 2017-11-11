@@ -59,10 +59,6 @@ class ProtoBlock extends HTMLElement {
                                     
     }
 
-    static get requiredAttributes(){
-
-    }
-
     static get superClassChain(){
         /* is there a javascript built in I don't know about? Chrome seems to resolve this automatically in inspector, can I just ask an object for its list of prototypes instead of iterating ? */
         var superClassChain = []
@@ -84,17 +80,16 @@ class ProtoBlock extends HTMLElement {
         return superClassChain
     }
 
-    /* to be more extensible this should probably go up the superclasschain accumulating static get keepAttributes, and using that array to skip attribute removal */
-    clear(){
-        /* a method for destroying attributes, to reset the block, but there's probably some attributes you want to keep. tabIndex and style needs to exist for click and drag (active element works off focus, updates from style attributes) */
-        let keepAttributes = ['id','style','tabindex','input','headless']
-        return Array.from(this.attributes, attr => keepAttributes.includes(attr.name) || this.removeAttribute(attr.name))
+    get ephemeralAttributes(){
+        /* attributes that shouldn't be copied when a block becomes another block (you can call .become() to reset a block by replacing it with a fresh instance, sans these attributes) */
+        return ['style','become']
     }
 
     become(block = this.constructor){
         // shell-block is the tagName of a ShellBlock, two different ways to make the same thing,
         // depending on whether become was called with a reference to a class or just the string of a tagName
-        var newBlock = typeof block == 'string' ? document.createElement(block + '-block') : new block
+        var newBlock = typeof block == 'string' ? document.createElement(block) 
+                                                : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
         // I'm expecting the element that has been replaced to be garbage collected
@@ -105,6 +100,7 @@ class ProtoBlock extends HTMLElement {
         let filepath = `/gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
         // TextBlock.from(filepath)
         // eventually CodeMirrorBlock
+        // maybe use DirectoryBlocks function to open the appropriate block
         // open TextBlock from the source code, might be class.js
     }
 
