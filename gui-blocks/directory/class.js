@@ -11,12 +11,39 @@ class DirectoryBlock extends ProtoBlock {
             /* if src attribute wasn't set before being connected, set it as the current src */
             this.props.src || this.setAttribute('src', location.pathname)
             this.fetchDirectory(this.props.src)
-                .then(listText => this.generateIcons(listText))
+            .then(listText => this.generateIcons(listText))
         })
     }
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
+    }
+
+    get knownFormats(){
+        return {
+            table: ['csv','tsv'],
+            image: ['jpeg','jpg','png','gif','bmp','svg'],
+            audio: ['ogg','flac','acc','mp3','wave','wav'],
+            video: ['webm','mp4','avi'],
+            code: ['py','js','c','cs','top','html','css'],
+            markdown: ['markdown','mdown','mkdn','md','mkd','mdwn'],
+            geometry: ['stl','fbx','obj'],
+            pdf: ['pdf'],
+            proprietary: ['doc','docx','xlst','pptx']
+        }
+    }
+
+    determineFileType(filename){
+        let forExtension = /[.-\w]+\.(\w+$)/i
+        let extension = filename.match(forExtension)
+        if(!extension) return "file" // exit with generic "file" if no regex result
+        extension = extension[1].toLowerCase() // extract match from regex result
+        for(var format in this.knownFormats){
+            if(this.knownFormats[format].includes(extension)){
+                return format
+            }
+        }
+        return "file"
     }
 
     fetchDirectory(pathname){ 
@@ -62,7 +89,7 @@ class DirectoryBlock extends ProtoBlock {
 
         let files = listText.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => this.makeMarkup({type: "file", name: name}))
+            .map(name => this.makeMarkup({type: this.determineFileType(name), name: name}))
         
         // setting text of HTML creates subtree
         this.fileList.innerHTML = folders.concat(files).join('\n')
@@ -99,28 +126,30 @@ class DirectoryBlock extends ProtoBlock {
         })
     }
 
-    openFileFrom(node){
-        document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
-        switch(node.getAttribute('filetype')){
-            case 'file': 
-                var newSibling = new TextareaBlock
-                newSibling.props = {
-                    src: this.props.src + node.getAttribute('title')
-                }
-                this.insertSibling(newSibling)
-                break
-            case 'directory':
-                var newSibling = new DirectoryBlock
-                newSibling.props = {
-                    src: this.props.src + node.getAttribute('title') + '/'
-                }
-                this.insertSibling(newSibling)
-                break
-            case 'image':
-            case 'audio':
-            case 'video':
-            case '3d':
+    get blockFromFileType(){
+        /* this is probably not great. Blocks should register themselves to a global map */
+        /* I am a codemirror block and I am for code files */
+        /* I am a video block and I am for videos */
+        return {
+            directory: DirectoryBlock,
+            table: TableBlock,
+            // image: ImageBlock,
+            // audio: AudioBlock,
+            // video: VideoBlock,
+            code: TextareaBlock,
+            file: TextareaBlock,
+            // geometry: TextareaBlock
         }
+    }
+
+    openFileFrom(node){
+        var newSibling = new this.blockFromFileType[node.getAttribute('filetype')]
+        var trailingSlash = node.getAttribute('filetype') == 'directory' ? '/' : ''
+        var newSource = this.props.src + node.getAttribute('title') + trailingSlash
+
+        document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
+        newSibling.props = { src: newSource }
+        this.insertSibling(newSibling)
     }
 
     octal2symbol(filestat){

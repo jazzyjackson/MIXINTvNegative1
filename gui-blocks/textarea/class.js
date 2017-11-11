@@ -3,7 +3,6 @@ class TextareaBlock extends ProtoBlock {
         super()
         console.log("constructing textarea")
         this.addEventListener('init', () => {
-
             console.log("textrea initialized")
             this.header = this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')
@@ -36,6 +35,9 @@ class TextareaBlock extends ProtoBlock {
         .then(response => response.text())
         .then(text => {
             this.textarea.textContent = text
+        })
+        .then(() => {
+            this.dispatchEvent(new Event('load'))
         })
         .catch(error => {
             this.props = {error}

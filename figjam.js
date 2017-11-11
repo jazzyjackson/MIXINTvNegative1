@@ -38,6 +38,9 @@ let defaultFig = {
             "type":"image/x-icon",
             "href": "data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
         }},
+        {"script": {
+            "src":"/gui-blocks/table/assets/papa.js"
+        }},
         {"style": {
             "id":"defaultStyle",
             "textContent": `
@@ -57,7 +60,7 @@ let defaultFig = {
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
     "prereq": ["proto","multiplex"],
-    "blocks": ["directory","become","textarea","shellout","convoshell"],
+    "blocks": ["directory","become","textarea","table","shellout","convoshell"],
     "frames": ["hsplit","vsplit","thread"],
     "body": [
         {"become-block": {}}
