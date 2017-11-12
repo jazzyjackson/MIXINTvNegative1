@@ -16,5 +16,12 @@ Focusing on another block and/or opening another blocks menu does not destory th
 To achieve the expanding animation of the menu, I have a css transition on the height of the UL
 The UL sets its overflow to hidden
 
+------------ implementation -------------
+
+menu-block attaches its style to its shadowRoot
+
+provides methods `makeMenu` and `destroyMenu` which perform top level construction/deconstruction of the UL and LI subelements
+
+But there has to be an abstraction already to create th
 
 
