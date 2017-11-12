@@ -13,5 +13,8 @@ Focusing another element within the host destroys the menu
 
 Focusing on another block and/or opening another blocks menu does not destory the menu, so you can open more than one menu at a time. I might change my mind on this but I kinda like it.
 
+To achieve the expanding animation of the menu, I have a css transition on the height of the UL
+The UL sets its overflow to hidden
+
 
 

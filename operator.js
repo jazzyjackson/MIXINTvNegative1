@@ -16,7 +16,6 @@ require(SSL_READY ? 'https' : 'http')
 .on('request', function(req,res){  
     /* recursive ternary tests conditions until success */
     /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) : /* from new EventSource (SSE) */
-    /octet-stream/.test(req.headers.accept)           ? pipeProcess(req,res)      : /* fetch with binary data */
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           : /* url path w/ trailing slash */
     req.method == 'GET'                               ? streamFile(req,res)       :
     req.method == 'PUT'                               ? saveBody(req,res)         :
