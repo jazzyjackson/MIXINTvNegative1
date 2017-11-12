@@ -57,7 +57,7 @@ class DirectoryBlock extends ProtoBlock {
             redirect: 'error'
         })
         .then(response => {
-            this.header.headerTitle = response.url.split('?')[0].slice(location.origin.length)
+            this.headerTitle.textContent = response.url.split('?')[0].slice(location.origin.length)
             return response
         })
         .then(response => response.text())
