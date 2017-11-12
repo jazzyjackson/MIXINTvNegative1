@@ -28,24 +28,21 @@
   transition: .25s transform;
 }
 
-:host-context(:focus):after {
+:host-context(:focus):host:after{
+  background-color: cornflowerblue;  
+}
+
+:host-context([active]):host:after {
+  transform: rotate(45deg);
   background-color: cornflowerblue;
 }
 
-:host-context([menu="visible"]):after {
-  transform: rotate(45deg)
-}
-
-ul {
+:host > ul {
   position: absolute;
   right: 0;
   list-style: none;
   overflow: hidden;
   transition: 0.25s height;
-}
-
-:host-context([menu="hidden"]:not([selection])) ul {
-  height: 0 !important; /* javascript is setting max height on the element, so to hide it we have to override */
 }
 
 li {

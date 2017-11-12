@@ -32,7 +32,6 @@ class MultiplexBlock extends ProtoBlock {
 
             })
             this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})
-            this.props = {tabindex: 0}
             this.addEventListener('keydown', event => {
                 /* modify max and start with ctrl+shift+[wasd] */
                 if(!(event.ctrlKey & event.shiftKey)) return null

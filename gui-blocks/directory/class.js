@@ -3,10 +3,11 @@ class DirectoryBlock extends ProtoBlock {
         super()
         this.addEventListener('init', () => {
             this.header = this.shadowRoot.querySelector('header')
+            this.headerTitle = this.shadowRoot.querySelector('header-title')
             this.fileList = this.shadowRoot.querySelector('file-list')
 
             this.listFunc = (pathname) => `${pathname}?ls -ap1` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line */
-            this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a swith for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
+            this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a switch for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
             
             /* if src attribute wasn't set before being connected, set it as the current src */
             this.props.src || this.setAttribute('src', location.pathname)
@@ -29,7 +30,8 @@ class DirectoryBlock extends ProtoBlock {
             markdown: ['markdown','mdown','mkdn','md','mkd','mdwn'],
             geometry: ['stl','fbx','obj'],
             pdf: ['pdf'],
-            proprietary: ['doc','docx','xlst','pptx']
+            msoffice: ['doc','docx','xlst','pptx'],
+            openoffice: ['odf']
         }
     }
 
@@ -47,7 +49,7 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     fetchDirectory(pathname){ 
-        this.header.textContent = '...'      
+        this.headerTitle.textContent = '...'      
         this.props = {lastUpdate: Date.now()} 
         return fetch(this.listFunc(pathname), {
             method: 'post',
@@ -55,7 +57,7 @@ class DirectoryBlock extends ProtoBlock {
             redirect: 'error'
         })
         .then(response => {
-            this.header.textContent = response.url.split('?')[0].slice(location.origin.length)
+            this.header.headerTitle = response.url.split('?')[0].slice(location.origin.length)
             return response
         })
         .then(response => response.text())
@@ -71,7 +73,7 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     makeMarkup(props){
-        return `<file-block tabindex=0 filetype="${props.type}" title="${props.name}">
+        return `<file-block tabindex="0" filetype="${props.type}" title="${props.name}">
                     <file-details></file-details>
                     <file-name>${props.name}</file-name>
                 </file-block>`
@@ -151,6 +153,7 @@ class DirectoryBlock extends ProtoBlock {
         document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
         newSibling.props = { src: newSource }
         this.insertSibling(newSibling)
+        newSibling.focus()
     }
 
     octal2symbol(filestat){

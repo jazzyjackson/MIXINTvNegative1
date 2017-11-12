@@ -18,22 +18,22 @@ class ProtoBlock extends HTMLElement {
 
     /* get actions that should be exposed to menu block from this class */
     static get actions(){
-        return {
-            "become": {
+        return [
+            {"become": {
                 func: this.prototype.become,
                 args: [{select: window.defaultFig.blocks}],
                 default: [ctx => ctx.tagName.toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
-            }, 
-            "remove from window": {
+            }},
+            {"remove from window": {
                 func: HTMLElement.prototype.remove,
                 info: "Calls this.remove()"
-            },
-            "inspect or modify": {
+            }},
+            {"inspect or modify": {
                 func: this.prototype.inspectOrModify,
                 args: [{"select": ["style.css","class.js","template.html"]}]
-            },
-            "view":[
+            }},
+            {"view":[
                 {"fullscreen frame": {
     
                 }},
@@ -46,17 +46,36 @@ class ProtoBlock extends HTMLElement {
                 {"swap frame": {
     
                 }}
-            ]
+            ]}
             /* new child, new sibling -> templates */
-        }
+        ]
   }
 
     /* get list of actions available on every class on the prototype chain and return an object to render MenuBlock */
     get actionMenu(){
-        /* this getter walks up the prototype chain, invoking 'get actions' on each class, then with that array of menu objects, reduce Object assign is called to return an amalgamated object of menu options */
-        return this.superClassChain.map(superclass => superclass.actions)
-                                    .reduce((a,b) => Object.assign(a,b))
-                                    
+        /* this goes from called block to protiest-prototype, 
+           creating an array of actions 
+           Since it's an array of objects only distinguishbale by their names,
+           this was the flattest way I could think to create an array of unique objects
+           otherwise there's lots of nested iterating and asking if an array contains an object that has the same key as this other object
+           super inefficient, and maybe it was a mistake to make actionArrays arrays of objects instead of just an object that I coulde reduce(Object.assign) to a single object
+           but distinguishing between an Array of actions and an object lets me have recursive menus, so I'm going to go with this for now
+        */
+        let actionArray = []
+        let nameOf = object => Object.keys(object)[0]
+        var actionNames = new Set()
+        
+        this.superClassChain.forEach(superClass => {
+            var actions = superClass.actions
+            actions.forEach(action => {
+                if(!actionNames.has(nameOf(action))){
+                    actionArray.push(action)
+                    actionNames.add(nameOf(action))
+                }
+            })
+        })             
+        
+        return actionArray
     }
 
     static get superClassChain(){
