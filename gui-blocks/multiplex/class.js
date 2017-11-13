@@ -2,7 +2,7 @@ class MultiplexBlock extends ProtoBlock {
     constructor(){
         super()
         if(this.constructor.name == "MultiplexBlock"){
-            throw new Error("MultiplexBlock is a prerequisite to vsplit, hsplit, fibonacciplexer and others, but it cannot exist on its own, it prescribes no method for calculating the size of its children")
+            throw new Error("MultiplexBlock is a prototype for vsplit, hsplit, fibonacciplexer and others, but it cannot exist on its own; it prescribes no method for calculating the size of its children")
         }
         this.addEventListener('init', () => {
             /* hoist child nodes of custom element INTO the shadowRoot of this */
@@ -15,24 +15,41 @@ class MultiplexBlock extends ProtoBlock {
             while(this.shadowRoot.children.length <= this.showMax){
                 this.shadowRoot.appendChild(new BecomeBlock)
             }
+            console.log("init recalc")
+            this.reCalculateChildren()     
 
-            this.reCalculateChildren()                        
             this.watchChildren = new MutationObserver(event => {
-                let childrenDelta = event[0].addedNodes.length - event[0].removedNodes.length
+                event[0].addedNodes.forEach(newChild => {
+                    if(!Array.from(this.shadowRoot.children).includes(newChild)){
+                        // mutation from further down the tree, no action required
+                        return null
+                    }
+                    console.log("INIT", newChild.props)
+                    let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n                
+                    // let enclosedNewChild = newChild
+                    let nthIndex = this.whatChildIsThis(newChild)
+                    this.deflate(newChild)                    
+                    if(nthIndex > lastVisibleIndex){
+                        this.showStart += 1 // will synchronously trigger a recalc, setting style left to destination postion      
+                    }
+                    this.inflate(newChild)
+                })
 
-                /* if there's a new child, animate its creation */
-                let newChild = event[0].addedNodes[0]
-                let nthIndex = this.whatChildIsThis(newChild)
-                let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n
-                if(nthIndex > lastVisibleIndex || childrenDelta < 0){
-                    this.showStart = childrenDelta + parseInt(this.props["show-start"])                                                                
+
+                event[0].removedNodes.forEach(oldChild => {
+                    let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index                    
+                    if(this.shadowRoot.children.length < lastVisibleIndex){
+                        this.showStart -= 1
+                    }
+                    this.reCalculateChildren()                                                    
+                })
+
+
+                if(event[0].addedNodes.length == event[0].removedNodes.length){
+                    this.reCalculateChildren()                                
                 }
-                this.reCalculateChildren()
-                childrenDelta && this.animateNewChild(newChild)                
-
             })
-            this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})
-            this.props = {tabindex: 0}
+            this.watchChildren.observe(this.shadowRoot, {childList: true})
             this.addEventListener('keydown', event => {
                 /* modify max and start with ctrl+shift+[wasd] */
                 if(!(event.ctrlKey & event.shiftKey)) return null
@@ -52,6 +69,7 @@ class MultiplexBlock extends ProtoBlock {
     }
 
     attributeChangedCallback(){
+        console.log("attribute recalc")
         this.reCalculateChildren()
     }
 

@@ -4,7 +4,6 @@ class BecomeBlock extends ProtoBlock {
         this.addEventListener('init', () => {
             this.waitForDOM().then(()=>{
                 this.buildBlockList()
-                
             })
         })
     }

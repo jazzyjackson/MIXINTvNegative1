@@ -18,22 +18,22 @@ class ProtoBlock extends HTMLElement {
 
     /* get actions that should be exposed to menu block from this class */
     static get actions(){
-        return {
-            "become": {
+        return [
+            {"become": {
                 func: this.prototype.become,
                 args: [{select: window.defaultFig.blocks}],
                 default: [ctx => ctx.tagName.toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
-            }, 
-            "remove from window": {
+            }},
+            {"remove from window": {
                 func: HTMLElement.prototype.remove,
                 info: "Calls this.remove()"
-            },
-            "inspect or modify": {
+            }},
+            {"inspect or modify": {
                 func: this.prototype.inspectOrModify,
                 args: [{"select": ["style.css","class.js","template.html"]}]
-            },
-            "view":[
+            }},
+            {"view":[
                 {"fullscreen frame": {
     
                 }},
@@ -46,21 +46,36 @@ class ProtoBlock extends HTMLElement {
                 {"swap frame": {
     
                 }}
-            ]
+            ]}
             /* new child, new sibling -> templates */
-        }
+        ]
   }
 
     /* get list of actions available on every class on the prototype chain and return an object to render MenuBlock */
     get actionMenu(){
-        /* this getter walks up the prototype chain, invoking 'get actions' on each class, then with that array of menu objects, reduce Object assign is called to return an amalgamated object of menu options */
-        return this.superClassChain.map(superclass => superclass.actions)
-                                    .reduce((a,b) => Object.assign(a,b))
-                                    
-    }
-
-    static get requiredAttributes(){
-
+        /* this goes from called block to protiest-prototype, 
+           creating an array of actions 
+           Since it's an array of objects only distinguishbale by their names,
+           this was the flattest way I could think to create an array of unique objects
+           otherwise there's lots of nested iterating and asking if an array contains an object that has the same key as this other object
+           super inefficient, and maybe it was a mistake to make actionArrays arrays of objects instead of just an object that I coulde reduce(Object.assign) to a single object
+           but distinguishing between an Array of actions and an object lets me have recursive menus, so I'm going to go with this for now
+        */
+        let actionArray = []
+        let nameOf = object => Object.keys(object)[0]
+        var actionNames = new Set()
+        
+        this.superClassChain.forEach(superClass => {
+            var actions = superClass.actions
+            actions.forEach(action => {
+                if(!actionNames.has(nameOf(action))){
+                    actionArray.push(action)
+                    actionNames.add(nameOf(action))
+                }
+            })
+        })             
+        
+        return actionArray
     }
 
     static get superClassChain(){
@@ -84,17 +99,16 @@ class ProtoBlock extends HTMLElement {
         return superClassChain
     }
 
-    /* to be more extensible this should probably go up the superclasschain accumulating static get keepAttributes, and using that array to skip attribute removal */
-    clear(){
-        /* a method for destroying attributes, to reset the block, but there's probably some attributes you want to keep. tabIndex and style needs to exist for click and drag (active element works off focus, updates from style attributes) */
-        let keepAttributes = ['id','style','tabindex','input','headless']
-        return Array.from(this.attributes, attr => keepAttributes.includes(attr.name) || this.removeAttribute(attr.name))
+    get ephemeralAttributes(){
+        /* attributes that shouldn't be copied when a block becomes another block (you can call .become() to reset a block by replacing it with a fresh instance, sans these attributes) */
+        return ['style','become']
     }
 
     become(block = this.constructor){
         // shell-block is the tagName of a ShellBlock, two different ways to make the same thing,
         // depending on whether become was called with a reference to a class or just the string of a tagName
-        var newBlock = typeof block == 'string' ? document.createElement(block + '-block') : new block
+        var newBlock = typeof block == 'string' ? document.createElement(block) 
+                                                : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
         // I'm expecting the element that has been replaced to be garbage collected
@@ -105,6 +119,7 @@ class ProtoBlock extends HTMLElement {
         let filepath = `/gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
         // TextBlock.from(filepath)
         // eventually CodeMirrorBlock
+        // maybe use DirectoryBlocks function to open the appropriate block
         // open TextBlock from the source code, might be class.js
     }
 
