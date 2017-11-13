@@ -9,9 +9,7 @@ class VsplitBlock extends MultiplexBlock {
 
     deflate(node){
         node.style.display = 'none' // hide
-        node.style.width = 0
         node.style.opacity = 0
-
         console.log("deflating")
     }
 

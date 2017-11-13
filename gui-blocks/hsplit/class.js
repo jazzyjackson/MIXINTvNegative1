@@ -9,9 +9,7 @@ class HsplitBlock extends MultiplexBlock {
 
     deflate(node){
         node.style.display = 'none' // hide
-        node.style.height = 0
         node.style.opacity = 0
-
         console.log("deflating")
     }
 
