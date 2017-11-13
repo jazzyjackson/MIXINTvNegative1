@@ -17,14 +17,18 @@ class VsplitBlock extends MultiplexBlock {
 
     inflate(node){  
         console.log("inflating")
-        
+        if(node.style.left){
+            node.style.left = parseInt(node.style.left) + (100 / this.showMax) + '%'            
+        }
         setTimeout(()=>{
             console.log("inflating timeout")        
             node.style.display = null // show   
             node.style.opacity = 1        
             // opacity is being transitioned to 1 and then removed
             // node.style.opacity = null
-            this.reCalculateChildren()            
+            setTimeout(()=>{
+                this.reCalculateChildren() 
+            })             
         })
     }
 

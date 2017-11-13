@@ -2,7 +2,6 @@ class MenuBlock extends ProtoBlock {
     constructor(){
         super()
         this.addEventListener('init', () => {
-
             this.addEventListener('click', event => {
                 this.props.active ? this.destroyMenu()
                                   : this.createMenu()
@@ -14,12 +13,7 @@ class MenuBlock extends ProtoBlock {
                 event.key == 'Escape' && (this.destroyMenu() || this.shadowParent.focus())
             })
             this.shadowParent.addEventListener('blur', event => {
-                console.log("BLUR")
-                console.log(document.activeElement)
                 setTimeout(()=>{
-                    console.log("BLUR NEXT")
-                    console.log(this)
-                    console.log(document.activeElement)
                     if(!this.contains(document.activeElement)){
                         this.destroyMenu()
                     }

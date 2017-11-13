@@ -20,16 +20,17 @@ class MultiplexBlock extends ProtoBlock {
 
             this.watchChildren = new MutationObserver(event => {
                 event[0].addedNodes.forEach(newChild => {
-                    console.log("INIT", newChild.initialized)
+                    if(!Array.from(this.shadowRoot.children).includes(newChild)){
+                        // mutation from further down the tree, no action required
+                        return null
+                    }
+                    console.log("INIT", newChild.props)
                     let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n                
                     // let enclosedNewChild = newChild
                     let nthIndex = this.whatChildIsThis(newChild)
                     this.deflate(newChild)                    
                     if(nthIndex > lastVisibleIndex){
                         this.showStart += 1 // will synchronously trigger a recalc, setting style left to destination postion      
-                        newChild.style.left = parseInt(newChild.style.left) + (100 / this.showMax) + '%'
-                    } else {
-                        this.reCalculateChildren()                                    
                     }
                     this.inflate(newChild)
                 })

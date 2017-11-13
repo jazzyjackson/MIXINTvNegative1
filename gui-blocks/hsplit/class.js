@@ -4,22 +4,30 @@ class HsplitBlock extends MultiplexBlock {
     }
 
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))                
+        this.initialized || this.dispatchEvent(new Event('init'))        
     }
 
-    animateNewChild(node){
-        if(!node) return null /* exit it child doesn't exist */
-        /* force a margin animation on new children */
+    deflate(node){
+        node.style.display = 'none' // hide
         node.style.height = 0
         node.style.opacity = 0
+
+        console.log("deflating")
+    }
+
+    inflate(node){  
+        console.log("inflating")
+        if(node.style.top){
+            node.style.top = parseInt(node.style.top) + (100 / this.showMax) + '%'            
+        }
         setTimeout(()=>{
-            node.style.opacity = 1
-            node.style.opacity = null
-            /* have to take a step out of sync for a second, let the margin */
-            /* get painted, but throw a transition to 0 on the event loop */
-            // node.style.marginLeft = '0%'
-            // node.style.marginLeft = null
-            this.reCalculateChildren()
+            console.log("inflating timeout")        
+            node.style.display = null // show   
+            node.style.opacity = 1        
+            // opacity is being transitioned to 1 and then removed
+            setTimeout(()=>{
+                this.reCalculateChildren() 
+            })                       
         })
     }
 

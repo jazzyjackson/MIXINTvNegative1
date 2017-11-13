@@ -1,7 +1,6 @@
 class TextareaBlock extends ProtoBlock {
     constructor(){
         super()
-        console.log("constructing textarea")
         this.addEventListener('init', () => {
             this.header = this.shadowRoot.querySelector('header')
             this.headerTitle = this.shadowRoot.querySelector('header-title')
@@ -13,7 +12,6 @@ class TextareaBlock extends ProtoBlock {
                 this.props = {src: prompt("I need a name for this new file:")}
             }
             this.headerTitle.textContent = this.props.src
-            console.log("textrea initialized")            
         })
     }
 
