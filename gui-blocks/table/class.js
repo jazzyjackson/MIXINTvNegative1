@@ -5,13 +5,17 @@ class TableBlock extends TextareaBlock {
             this.table = this.shadowRoot.querySelector('table')
         })
 
+        
+        // this load will fire when the fetch for the file (in src attribute) completes
         this.addEventListener('load', () => {
-            // depends on assets/papa.js
-            this.data = Papa.parse(this.textarea.value).data
-            this.table.style.display = 'none' 
-            this.buildTable(this.data)
-            this.textarea.style.display = 'none'
-            this.table.style.display = 'table'
+            // this promise will resolve immediately if the script is already available
+            this.attachGlobalScript('/gui-blocks/table/assets/papa.js').then(()=>{
+                this.data = Papa.parse(this.textarea.value).data
+                this.table.style.display = 'none' 
+                this.buildTable(this.data)
+                this.textarea.style.display = 'none'
+                this.table.style.display = 'table'
+            })
         })
     }
 
@@ -23,7 +27,7 @@ class TableBlock extends TextareaBlock {
     buildTable(arrayOfarrays){
         // destroy anything that's already there
         while (this.table.firstChild) {
-            this.table.removeChild(myNode.firstChild)
+            this.table.removeChild(this.table.firstChild)
         }
         for(var row of arrayOfarrays){
             var tr = document.createElement('tr')
@@ -35,6 +39,10 @@ class TableBlock extends TextareaBlock {
             this.table.appendChild(tr)            
         }
     }
+
+    // add row and add column tables 
+    // dimensions can be announced in props
+    // hint to hit esc to commit to 
 
 
 }

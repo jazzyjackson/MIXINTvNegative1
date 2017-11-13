@@ -115,6 +115,26 @@ class ProtoBlock extends HTMLElement {
         return newBlock
     }
 
+    attachGlobalScript(filename){
+        return new Promise(function(resolve, reject){
+            let existingScripts = Array.from(document.head.getElementsByTagName('script'))
+            if(existingScripts.some(script => filename == script.getAttribute('src'))){
+                // if the script already exists, resolve
+                console.log(filename + " AVAILABLE")
+                resolve()
+            } else {
+                // else resolve once the newly appended script is done loading
+                let newScript = document.createElement('script')
+                newScript.setAttribute('src', filename)
+                newScript.addEventListener('load', () => {
+                    console.log(filename + " LOADED")
+                    resolve()
+                })
+                document.head.appendChild(newScript)
+            }
+        })
+    }
+
     inspectOrModify(filename){
         let filepath = `/gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
         // TextBlock.from(filepath)
