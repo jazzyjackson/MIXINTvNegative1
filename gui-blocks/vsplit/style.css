@@ -9,10 +9,6 @@
   width: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
   transition: all 0.5s;
   position: absolute;
-  border-left: 2px solid black;
+  border-right: 2px solid black;
   box-sizing: border-box;
-}
-
-:host > *:nth-child(2) {
-  border-left: none;
 }

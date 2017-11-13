@@ -10,15 +10,6 @@
   height: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
   transition: all 0.5s;
   position: absolute;
-  border-top: 2px solid black;
+  border-bottom: 2px solid black;
   box-sizing: border-box;
 }
-
-:host > *:nth-child(2) {
-  border-top: none;
-}
-
-
-/* :host > *:not(:nth-child(2)){
-  border-top: 2px solid black;
-} */
