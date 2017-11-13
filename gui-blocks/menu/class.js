@@ -94,7 +94,7 @@ class MenuBlock extends ProtoBlock {
           an onclick listener is attached to that new node, and when its called, it calls the bound function
           which closes the menu, but more importantly destroys the new node that was created on click,
           and possibly restores the old node with event listener in tact. huh. */
-        let becomeAction = event => {
+        return event => {
             console.log("BECOME ACTION", actionObject)
             if(event.type == 'keydown' && event.key != 'Enter') return null // ignore nonEnter key events
             event.preventDefault()
@@ -102,7 +102,6 @@ class MenuBlock extends ProtoBlock {
 
             let menuBlock = this.shadowRoot.querySelector('menu-block')
             let menuList = menuBlock.shadowRoot.querySelector('ul')
-            console.log(menuList)
             
             let oldMenuOption = event.target
             let newMenuOption = document.createElement('li')
@@ -111,7 +110,7 @@ class MenuBlock extends ProtoBlock {
             nameSpan.textContent = 'this.' + actionObject.func.name + '(' //I'll use old textContent cuz it already has those non-breaking spaces/hyphens stuck in
             let formNode = document.createElement('form')
             formNode.addEventListener('submit', event => event.preventDefault()) // actually don't submit if someone goes and hits enter
-            formNode.addEventListener('click', event => event.stopPropagation()) // actually don't submit if someone goes and hits enter
+            formNode.addEventListener('click', event => event.stopPropagation()) // capture form clicks so they don't fire "destroyMenu() higher up"
             Array.isArray(actionObject.args) && actionObject.args.forEach(argObject => {
                 let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
                 let argNode = document.createElement(formType)
@@ -136,6 +135,15 @@ class MenuBlock extends ProtoBlock {
             oldMenuOption.replaceWith(newMenuOption)
             newMenuOption.focus()
 
+            // if a different menuOption is focused, rollback to unactivated status
+            // So you always have to click twice to invoke
+            // instead of accidentally leaving this.remove() open while you try to click on the one next to
+            newMenuOption.addEventListener('blur', event => {
+                if(!newMenuOption.contains(event.relatedTarget)){
+                    newMenuOption.replaceWith(oldMenuOption)
+                }
+            })
+
             let callFuncWithArgs = event => {
                 if(event.target != newMenuOption && event.target.tagName != 'SPAN') return null
                 if(event.type == 'keydown' && event.key != 'Enter') return null
@@ -143,8 +151,7 @@ class MenuBlock extends ProtoBlock {
                 console.log(actionObject)
                 let argsFromForm = Array.from(newMenuOption.querySelectorAll('form > *'), argument => argument.value) // This is kind of funny, if you call Array.from with a single node (instead of a node list) it grabs the children of that node, neat.) Could also be Array.from(this.querySelectorAll('form > *'))
                 actionObject.func.call(this, ...argsFromForm)
-                newMenuOption.replaceWith(oldMenuOption)
-                menuBlock.toggleVisibility('hidden')
+                menuBlock.destroyMenu()
             }
 
             newMenuOption.addEventListener('click', callFuncWithArgs)
@@ -154,6 +161,5 @@ class MenuBlock extends ProtoBlock {
             // var args = prompt('what should I pass to ' + actionObject.func.name)
             // actionObject.func.call(this, args)
         }
-        return becomeAction
     }
 }

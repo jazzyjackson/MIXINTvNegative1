@@ -107,7 +107,7 @@ class ProtoBlock extends HTMLElement {
     become(block = this.constructor){
         // shell-block is the tagName of a ShellBlock, two different ways to make the same thing,
         // depending on whether become was called with a reference to a class or just the string of a tagName
-        var newBlock = typeof block == 'string' ? document.createElement(block) 
+        var newBlock = typeof block == 'string' ? document.createElement(block.includes('-') ? block : block + '-block') // shell-block or shell both return shell-block
                                                 : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
