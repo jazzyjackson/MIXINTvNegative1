@@ -15,8 +15,11 @@ class MenuBlock extends ProtoBlock {
             })
             this.shadowParent.addEventListener('blur', event => {
                 console.log("BLUR")
-                
+                console.log(document.activeElement)
                 setTimeout(()=>{
+                    console.log("BLUR NEXT")
+                    console.log(this)
+                    console.log(document.activeElement)
                     if(!this.contains(document.activeElement)){
                         this.destroyMenu()
                     }

@@ -7,7 +7,7 @@
 
 :host > * {
   width: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
-  transition: left 0.25s, width 0.25s, opacity 0.25s;
+  transition: left 2.5s, width 2.5s, opacity 2.5s;
   position: absolute;
   border-left: 2px solid black;
   box-sizing: border-box;

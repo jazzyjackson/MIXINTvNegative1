@@ -3,16 +3,17 @@ class TextareaBlock extends ProtoBlock {
         super()
         console.log("constructing textarea")
         this.addEventListener('init', () => {
-            console.log("textrea initialized")
             this.header = this.shadowRoot.querySelector('header')
+            this.headerTitle = this.shadowRoot.querySelector('header-title')
             this.textarea = this.shadowRoot.querySelector('textarea')
             if(this.props.src){
                 this.fetchFile(this.props.src)
-                this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely editing the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
+                this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely edit the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
             }else{
                 this.props = {src: prompt("I need a name for this new file:")}
             }
-            this.header.textContent = this.props.src
+            this.headerTitle.textContent = this.props.src
+            console.log("textrea initialized")            
         })
     }
 
@@ -21,7 +22,7 @@ class TextareaBlock extends ProtoBlock {
     }
 
     fetchFile(source){
-        this.header.textContent = '...'        
+        this.headerTitle.textContent = '...'        
         this.props = {lastUpdate: Date.now()} 
         fetch(source, {
             method: 'get',
@@ -29,7 +30,7 @@ class TextareaBlock extends ProtoBlock {
             redirect: 'error' 
         })
         .then(response => {
-            this.header.textContent = response.url.slice(location.origin.length)
+            this.headerTitle.textContent = response.url.slice(location.origin.length)
             return response
         })
         .then(response => response.text())

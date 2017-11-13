@@ -15,23 +15,40 @@ class MultiplexBlock extends ProtoBlock {
             while(this.shadowRoot.children.length <= this.showMax){
                 this.shadowRoot.appendChild(new BecomeBlock)
             }
+            console.log("init recalc")
+            this.reCalculateChildren()     
 
-            this.reCalculateChildren()                        
             this.watchChildren = new MutationObserver(event => {
-                let childrenDelta = event[0].addedNodes.length - event[0].removedNodes.length
+                event[0].addedNodes.forEach(newChild => {
+                    console.log("INIT", newChild.initialized)
+                    let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n                
+                    // let enclosedNewChild = newChild
+                    let nthIndex = this.whatChildIsThis(newChild)
+                    this.deflate(newChild)                    
+                    if(nthIndex > lastVisibleIndex){
+                        this.showStart += 1 // will synchronously trigger a recalc, setting style left to destination postion      
+                        newChild.style.left = parseInt(newChild.style.left) + (100 / this.showMax) + '%'
+                    } else {
+                        this.reCalculateChildren()                                    
+                    }
+                    this.inflate(newChild)
+                })
 
-                /* if there's a new child, animate its creation */
-                let newChild = event[0].addedNodes[0]
-                let nthIndex = this.whatChildIsThis(newChild)
-                let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n
-                if(nthIndex > lastVisibleIndex || childrenDelta < 0){
-                    this.showStart = childrenDelta + parseInt(this.props["show-start"])                                                                
+
+                event[0].removedNodes.forEach(oldChild => {
+                    let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index                    
+                    if(this.shadowRoot.children.length < lastVisibleIndex){
+                        this.showStart -= 1
+                    }
+                    this.reCalculateChildren()                                                    
+                })
+
+
+                if(event[0].addedNodes.length == event[0].removedNodes.length){
+                    this.reCalculateChildren()                                
                 }
-                this.reCalculateChildren()
-                childrenDelta && this.animateNewChild(newChild)                
-
             })
-            this.watchChildren.observe(this.shadowRoot, {childList: true, attributes: true})
+            this.watchChildren.observe(this.shadowRoot, {childList: true})
             this.addEventListener('keydown', event => {
                 /* modify max and start with ctrl+shift+[wasd] */
                 if(!(event.ctrlKey & event.shiftKey)) return null
@@ -51,6 +68,7 @@ class MultiplexBlock extends ProtoBlock {
     }
 
     attributeChangedCallback(){
+        console.log("attribute recalc")
         this.reCalculateChildren()
     }
 
