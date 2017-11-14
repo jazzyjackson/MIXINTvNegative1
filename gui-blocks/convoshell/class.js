@@ -16,18 +16,7 @@ class ConvoshellBlock extends ProtoBlock {
             
             let username = document.querySelector('meta[user-identity]').getAttribute('user-identity')
             this.headerTitle.textContent = `${username}@${location.hostname} talking to self`
-            this.form.addEventListener('submit', event => {
-                event.preventDefault()
-                if(this.getAttribute('mode') == 'party'){
-                    // fetch POST message, disable submit until POST is finished
-                } else {
-                    let shellout = new ShelloutBlock({action: this.input.value, autofocus: false})
-                    this.convoBody.insertBefore(shellout, this.convoForm)
-                    this.input.value = ''
-                    this.input.focus()
-                    // shellout.addEventListener('load', () => this.form.scrollIntoView())                    
-                }
-            })
+            this.form.addEventListener('submit', this.handleSubmit.bind(this))
             this.form.addEventListener('keydown', event => {
                 if(event.type == 'keydown' && event.key == 'Enter'){
                     event.stopPropagation()
@@ -37,6 +26,18 @@ class ConvoshellBlock extends ProtoBlock {
             setTimeout(() => this.input.focus(), 100)
 
         })
+    }
+
+    handleSubmit(event){
+        event.preventDefault()
+        if(this.getAttribute('mode') == 'party'){
+            // fetch POST message, disable submit until POST is finished
+        } else {
+            let shellout = new ShelloutBlock({action: this.input.value, autofocus: false})
+            this.convoBody.insertBefore(shellout, this.convoForm)
+            this.input.value = ''
+            this.input.focus()
+        }
     }
 
     scrollToBottom(){

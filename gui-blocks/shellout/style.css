@@ -1,5 +1,5 @@
 :host {
-  position: absolute;
+  position: relative !important; /* pierce shadowroot what? */
   display: flex;
   flex-direction: column;
   left: 0;
@@ -12,6 +12,10 @@
 
 header {
   padding: 3px;
+}
+
+textarea {
+  display: none;
 }
 
 * {

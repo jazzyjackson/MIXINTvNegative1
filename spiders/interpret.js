@@ -17,11 +17,19 @@ var chat = message => new Promise((resolve, reject)=> {
 })
 
 process.stdin.on('data', input => {
-    chat(input.toString())
+    // assign input to heard, whether or not it's enclosed in quotes (valid JSON)
+    try {
+        var heard = JSON.parse(input.toString())
+    } catch(e){
+        var heard = input.toString()
+    }
+    // input is freshley decoded base64 string from client, which must have been JSON encoded before being converted to base64
+    // base64 is necessary to pass special characters along to chatscript since I'm invoking chatscript as a child process, shell and all
+    chat(heard)
     .then(response => {
         try {
             // lol just see if parse doesn't throw an error and put it back
-            process.stdout.write(JSON.stringify(JSON.parse(response)))
+            process.stdout.write(response)
         } catch(e) {
             // if it didn't parse, wrap it in a little JSON object before sending it back
             process.stdout.write(JSON.stringify({say: response}))

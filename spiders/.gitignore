@@ -1,3 +1,4 @@
 *
 !.gitignore
-# ignore everything in here except me
+!interpret.js
+# ignore everything in here except me, oh you can have interpret.js too

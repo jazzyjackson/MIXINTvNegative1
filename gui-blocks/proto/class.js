@@ -5,7 +5,6 @@ There is no custom element. no document.createElement('proto-block'), just, clas
 class ProtoBlock extends HTMLElement {
     constructor(props){
         super()
-        this.props = props
         this.addEventListener('init', () => {
             this.initialized = true
             var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
@@ -14,6 +13,13 @@ class ProtoBlock extends HTMLElement {
             this.attachShadow({mode: 'open'})
             this.shadowRoot.appendChild(template.content.cloneNode(true))
             this.shadowParent = this.getRootNode().host // might want this.getRootNode().host if this block would be nested somehow, but I'm not expected that to happen.
+            
+            /* if these don't exist it's no big deal,
+            but it's a good standard that a headerTitle and a textarea exist */
+            this.header = this.shadowRoot.querySelector('header-title') || this.shadowRoot.querySelector('header')
+            this.textarea = this.shadowRoot.querySelector('textarea')    
+            // just because they need to exist to pass name and textcontent in        
+            this.props = props
         })
     }
 
