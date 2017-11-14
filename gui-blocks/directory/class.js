@@ -11,6 +11,21 @@ class DirectoryBlock extends ProtoBlock {
             
             /* if src attribute wasn't set before being connected, set it as the current src */
             this.props.src || this.setAttribute('src', location.pathname)
+            console.log("GONNA TEST ", this.props.src)
+            if(/\/$/.test(this.props.src) == false){
+                console.log("FAILED TEST ", this.props.src)
+                // if directory block was initialized with a src that didn't end in a slash,
+                // find the index of the last slash and slice everything else off
+                var lastSlashIndex = this.props.src.split('').reverse().join('').indexOf('/')
+                console.log("found slash at ", lastSlashIndex)
+
+                this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
+
+                console.log("setting src as ", this.props.src.slice(0, -lastSlashIndex))
+                console.log("src is ", this.props.src)
+                
+                // /docs/utilities.csv becomes /docs/
+            }
             this.fetchDirectory(this.props.src)
             .then(listText => this.generateIcons(listText))
         })
@@ -49,6 +64,7 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     fetchDirectory(pathname){ 
+        console.log("FETCHING ", pathname)
         this.headerTitle.textContent = '...'      
         this.props = {lastUpdate: Date.now()} 
         return fetch(this.listFunc(pathname), {

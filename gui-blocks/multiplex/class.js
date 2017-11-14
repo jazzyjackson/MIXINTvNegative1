@@ -1,24 +1,28 @@
 class MultiplexBlock extends ProtoBlock {
     constructor(){
         super()
+
         if(this.constructor.name == "MultiplexBlock"){
             throw new Error("MultiplexBlock is a prototype for vsplit, hsplit, fibonacciplexer and others, but it cannot exist on its own; it prescribes no method for calculating the size of its children")
         }
         this.addEventListener('init', () => {
+            console.log("init multiplexer")
+            console.log(this.shadowRoot.childElementCount)
+        
             /* hoist child nodes of custom element INTO the shadowRoot of this */
             Array.from(this.children, child => this.shadowRoot.appendChild(child))
-            /* some default attributes */
-            this.showStart || (this.showStart = 1) //0th is style tag
-            this.showMax || (this.showMax = 2)
-
-            /* but this is a split, so if I wasn't initialized with children, lets make some new ones */
-            while(this.shadowRoot.children.length <= this.showMax){
+            // if the only childElement is the style, append a couple of become-blocks
+            if(this.shadowRoot.childElementCount == 1){
+                this.shadowRoot.appendChild(new BecomeBlock)
                 this.shadowRoot.appendChild(new BecomeBlock)
             }
-            console.log("init recalc")
-            this.reCalculateChildren()     
 
-            this.watchChildren = new MutationObserver(event => {
+            /* some default attributes */
+            this.showStart || (this.showStart = 1) //0th is style tag
+            this.showMax || (this.showMax = 2) // attribute change will fire reCalculateChildren()
+            // new MutationObserver(...).observe(this.shadowRoot.children)
+            // watch child nodes for new nodes, deleted nodes, and replaced nodes
+            new MutationObserver(event => {
                 event[0].addedNodes.forEach(newChild => {
                     if(!Array.from(this.shadowRoot.children).includes(newChild)){
                         // mutation from further down the tree, no action required
@@ -37,19 +41,23 @@ class MultiplexBlock extends ProtoBlock {
 
 
                 event[0].removedNodes.forEach(oldChild => {
-                    let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index                    
+                    let lastVisibleIndex = this.showStart + this.showMax
                     if(this.shadowRoot.children.length < lastVisibleIndex){
                         this.showStart -= 1
+                        lastVisibleIndex--
                     }
+                    let lastVisibleChild = this.shadowRoot.children[lastVisibleIndex - 1] || this.shadowRoot.children[1]
+                    lastVisibleChild.focus()
                     this.reCalculateChildren()                                                    
                 })
 
-
+                // if 'become' was called, a node will be destroyed with a fresh one in its place
+                // addedNodes will equal removedNodes, and I'll need to give the new node new dimensions
                 if(event[0].addedNodes.length == event[0].removedNodes.length){
                     this.reCalculateChildren()                                
                 }
-            })
-            this.watchChildren.observe(this.shadowRoot, {childList: true})
+            }).observe(this.shadowRoot, {childList: true})
+
             this.addEventListener('keydown', event => {
                 /* modify max and start with ctrl+shift+[wasd] */
                 if(!(event.ctrlKey & event.shiftKey)) return null

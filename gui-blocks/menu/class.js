@@ -8,17 +8,18 @@ class MenuBlock extends ProtoBlock {
             })
             this.shadowParent.setAttribute('tabIndex', 0) // make any block with a menu focusable
             this.shadowParent.addEventListener('keydown', event => {   
+                console.log("parent keydown", event)
                 if(event.target != this.shadowParent) return null // don't react of event bubbled through this node, also 'this' is still MenuBlock
                 event.key == 'Enter' && this.createMenu()
                 event.key == 'Escape' && (this.destroyMenu() || this.shadowParent.focus())
             })
-            // this.shadowParent.addEventListener('blur', event => {
-            //     setTimeout(()=>{
-            //         if(!this.contains(document.activeElement)){
-            //             this.destroyMenu()
-            //         }
-            //     })
-            // })
+            this.shadowParent.addEventListener('blur', event => {
+                if(event.relatedTarget){
+                    // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
+                    this.destroyMenu()
+                    
+                }
+            })
         })
     }   
     
@@ -30,15 +31,15 @@ class MenuBlock extends ProtoBlock {
         if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active.")
         
         this.setAttribute('active','true')
-        console.log("creating menu")
-        console.log(this.shadowParent)
-        console.log(this.shadowParent.actionMenu)
         // maybe inspect actionMenu and throw a warning for duplicate names? 
-        this.appendActionList(this.shadowParent.actionMenu)
+        let newListElement = this.appendActionList(this.shadowParent.actionMenu)
+        
+        newListElement.style.top = this.shadowParent.header.getClientRects()[0].height 
+        console.log(newListElement)
         // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
     }
 
-    destroyMenu(){
+    destroyMenu(){        
         this.removeAttribute('active') // so this.props.active is undefined, falsey
         var list = this.shadowRoot.querySelector('ul')
         list && list.remove()
@@ -77,6 +78,7 @@ class MenuBlock extends ProtoBlock {
             list.appendChild(actionItem)
         })
         this.shadowRoot.appendChild(list)
+        return list
     }
 
     createActionFor(actionObject){
@@ -109,9 +111,9 @@ class MenuBlock extends ProtoBlock {
             let nameSpan = document.createElement('span')
             nameSpan.textContent = 'this.' + actionObject.func.name + '(' //I'll use old textContent cuz it already has those non-breaking spaces/hyphens stuck in
             let formNode = document.createElement('form')
-            formNode.addEventListener('submit', event => event.preventDefault()) // actually don't submit if someone goes and hits enter
             formNode.addEventListener('click', event => event.stopPropagation()) // capture form clicks so they don't fire "destroyMenu() higher up"
-            Array.isArray(actionObject.args) && actionObject.args.forEach(argObject => {
+            // if you have actionObject.default it better be an array of functions with the same length as actionObject.args
+            Array.isArray(actionObject.args) && actionObject.args.forEach((argObject, argIndex) => {
                 let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
                 let argNode = document.createElement(formType)
                 argNode.setAttribute('tabIndex', 0)
@@ -123,8 +125,16 @@ class MenuBlock extends ProtoBlock {
                         optionNode.textContent = argOption
                         argNode.appendChild(optionNode)
                     })
+                    if(actionObject.default){
+                        console.log("setting select to", actionObject.default[argIndex](this))
+                        argNode.value = actionObject.default[argIndex](this) // pass context
+                    }
+                    
                 } else {
                     argNode.setAttribute('placeholder', argObject[formType])
+                    if(actionObject.default){
+                        argNode.value = actionObject.default[argIndex](this) // pass context
+                    }
                 }
             })
             let closeSpan = document.createElement('span')
@@ -145,18 +155,18 @@ class MenuBlock extends ProtoBlock {
             })
 
             let callFuncWithArgs = event => {
-                if(event.target != newMenuOption && event.target.tagName != 'SPAN') return null
+                console.log("CALL FUNC", event)
+                if(event.type == 'click' && event.target != newMenuOption && event.target.tagName != 'SPAN') return null
                 if(event.type == 'keydown' && event.key != 'Enter') return null
-                console.log("Calling")
-                console.log(actionObject)
+                event.stopPropagation()
+                event.preventDefault()                
                 let argsFromForm = Array.from(newMenuOption.querySelectorAll('form > *'), argument => argument.value) // This is kind of funny, if you call Array.from with a single node (instead of a node list) it grabs the children of that node, neat.) Could also be Array.from(this.querySelectorAll('form > *'))
                 actionObject.func.call(this, ...argsFromForm)
-                menuBlock.destroyMenu()
             }
 
             newMenuOption.addEventListener('click', callFuncWithArgs)
             newMenuOption.addEventListener('keydown', callFuncWithArgs)
-
+            formNode.addEventListener('submit', callFuncWithArgs)
             /* modifies the menuOption, adds an event listener to execute after collecting options */
             // var args = prompt('what should I pass to ' + actionObject.func.name)
             // actionObject.func.call(this, args)

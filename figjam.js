@@ -32,6 +32,11 @@ let defaultFig = {
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
             "process-identity": process.pid
         }},
+        {"meta":{
+            // need to find a way to determine if process was started in the same directory as its assets
+            // client needs to know if it should use relative or full file paths
+            "root-directory": process.cwd()
+        }},
         {"link": {
             /* base64 representation of a blank favicon to prevent the browser from asking for nonexistent file */
             "rel":"icon",
@@ -60,7 +65,9 @@ let defaultFig = {
     "blocks": ["directory","become","textarea","table","shellout","convoshell"],
     "frames": ["hsplit","vsplit","thread"],
     "body": [
-        {"become-block": {}}
+        {"vsplit-block": {
+            "childNodes": [{"become-block":{}}]
+        }}
     ]
 }
 

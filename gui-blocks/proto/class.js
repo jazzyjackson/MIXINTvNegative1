@@ -22,7 +22,7 @@ class ProtoBlock extends HTMLElement {
             {"become": {
                 func: this.prototype.become,
                 args: [{select: window.defaultFig.blocks}],
-                default: [ctx => ctx.tagName.toLowerCase()],
+                default: [ctx => ctx.tagName.split('-')[0].toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
             }},
             {"remove from window": {
@@ -111,6 +111,9 @@ class ProtoBlock extends HTMLElement {
                                                 : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
+        setTimeout(() => {
+            newBlock.focus()
+        },100)
         // I'm expecting the element that has been replaced to be garbage collected
         return newBlock
     }

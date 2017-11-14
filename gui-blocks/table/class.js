@@ -1,11 +1,11 @@
 class TableBlock extends TextareaBlock {
     constructor(){
         super()
+
         this.addEventListener('init', () => {
             this.table = this.shadowRoot.querySelector('table')
         })
 
-        
         // this load will fire when the fetch for the file (in src attribute) completes
         this.addEventListener('load', () => {
             // this promise will resolve immediately if the script is already available
@@ -42,8 +42,7 @@ class TableBlock extends TextareaBlock {
 
     // add row and add column tables 
     // dimensions can be announced in props
-    // hint to hit esc to commit to 
-
+    // hint to hit esc to exit edit mode
 
 }
 

@@ -30,11 +30,16 @@ class HsplitBlock extends MultiplexBlock {
     }
 
     reCalculateChildren(){
-        let height = 100 / this.showMax
-        let start = this.showStart
-        Array.from(this.shadowRoot.children, (child, nth) => {
-            child.style.height = `${height}%`
-            child.style.top = `${height * (nth - start)}%`
-        })
+        switch(this.shadowRoot.childElementCount - 1){
+            case 0: this.shadowRoot.appendChild(new BecomeBlock); break;
+            case 1: this.shadowRoot.children[1].style.height = '100%'; this.shadowRoot.children[1].style.top = '0px'; break;
+            default: 
+                let height = 100 / this.showMax
+                let start = this.showStart
+                Array.from(this.shadowRoot.children, (child, nth) => {
+                    child.style.height = `${height}%`
+                    child.style.top = `${height * (nth - start)}%`
+                })
+        }
     }
 }

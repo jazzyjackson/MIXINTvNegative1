@@ -35,6 +35,10 @@ require(SSL_READY ? 'https' : 'http')
 function forkProcess(request){
     var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
     var command = decodeURIComponent(request.url.split('?')[1])
+    // this could read an environment variable that forces you to talk to bot
+    // bot could be programmed to post to server as its own user and get a pid back
+    // user could then subscribe to pid for updates... hmmmm
+    // switchboard would have to provide a way to address processes
     var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
     subprocess_registry[String(subprocess.pid)] = subprocess
 
@@ -54,20 +58,20 @@ function messageProcess(pid, command){
 
 function streamFile(request, response){
     /* response.setHeader('x-githash', process.env.githash) // send metadata about what version of a file was requested */
-    fs.createReadStream(request.url.split('?')[0].slice(1))
+    fs.createReadStream(decodeURIComponent(request.url.split('?')[0].slice(1)))
     .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
     .pipe(response)
 }
 
 function saveBody(request, response){
     /* might automatically launch git commit here... */
-    request.pipe(fs.createWriteStream('.' + request.url, 'utf8'))
+    request.pipe(fs.createWriteStream('.' + decodeURIComponent(request.url), 'utf8'))
     .on('finish', function(){ response.writeHead(201); response.end() })
     .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
 }
 
 function deleteFile(request, response){
-    fs.unlink('.' + request.url, function(err){ 
+    fs.unlink('.' + decodeURIComponent(request.url), function(err){ 
         response.writeHead( err ? 500 : 204); 
         response.end(JSON.stringify(err))
     })
