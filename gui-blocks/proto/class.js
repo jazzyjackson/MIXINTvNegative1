@@ -178,4 +178,26 @@ class ProtoBlock extends HTMLElement {
         /* if node is child of component, return the array index, else -1 */
         return Array.from(this.shadowRoot.children).indexOf(node)
     }
+
+    resolvePath(pathname){
+        /* just does transforms like 
+            /../../docs/ => /docs/
+            /docs/././downloads/ => /docs/downloads/
+            /docs/../ => /
+        It does so by splitting pathname into parts and iterating over the array
+        for each part, I do a look ahead: 
+            if next part is .., mark this one for deletion (unless its the first part, or this would destroy the leading slash)
+            if this part is .., mark for deletion
+            if this part is ., mark for deletion
+            otherwise leave it alone
+        So "mark" is just "push 'true' to bitmask" which will be used to filter it at the end
+        */
+        let pathParts = pathname.split('/')
+        let bitmask = pathParts.map((part, index) => {
+            return pathParts[index + 1] == '..' && index != 0
+            || part == '..'
+            || part == '.'
+        })
+        return pathParts.filter((e,i) => !bitmask[i]).join('/')
+    }
 }
