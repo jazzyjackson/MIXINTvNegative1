@@ -59,6 +59,7 @@ let defaultFig = {
                 }`
         }}
     ],
+
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
     "prereq": ["proto","multiplex","menu"],
@@ -90,6 +91,7 @@ module.exports = async function(request, response){
     response.write(`\n`)
     response.write(`<script> window.defaultFig = ${JSON.stringify(defaultFig)} </script>`)
     
+    // after (or while?) writing head, calculate the hash of the prerequisite configuration, check if a file exists, oh also switchboard should be its own user so files it creates are unreadable by other users
     // Set is an ordered iterable with unique keys. So we set it with the default list of blocks, 
     // and if the figtree also has a list of blocks, add them, but ignore duplicates, and keep the order
     var requisiteBlocks = new Set(defaultFig.prereq.concat(defaultFig.blocks, defaultFig.frames))

@@ -40,9 +40,11 @@ li {
   color: white;
   margin: 3px;
   padding: 3px;
+  padding-left: 6px;
 }
 
 li:hover, li:focus {
+  padding-left: 3px;
   border-left: 3px solid cornflowerblue;
 }
 

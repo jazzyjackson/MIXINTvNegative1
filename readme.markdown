@@ -74,11 +74,22 @@ Take a look at the configuration file by simply requesting it:
 coltenj.com/figtrees/markdownEditor.json
 coltenj.com/figtrees/chatInStyle.json
 ### Compatibility
-If you started PolyInt on a machine with an old NodeJS version (Node 0.10.0 is the latest in many older linux distros), a limited set of features will still work fine, and I'm working on some bash scripts to help upgrade node on different architectures, stay tuned
+The intention is for the backend server to work the same on any system with NodeJS > 0.10.0, when the streams interface was upgraded to do more than just pipe. This is to facilitate switchboard.js being able to inspect the streams its proxying. If you you'll be accessing operator.js directly, I think it will work even on older installations, but all the repo's I've seen so far have at least 0.10.0.
+
+I was writing lost of fancy promisified / async / await code that required Node 8+, but was disappointed with the effort it takes to upgrade Node on older linux distros, ARM architectures, and android devices. So making the code a little uglier to be compatible with the ANCIENT (2014 lol) version of nodeJS was prioritized. 
 
 you can also set an environment flag called "retrograde" to serve an html/css/js document that doesn't use any new features from the past 10 years if you want to target Internet Explorer 6 and son on.
 
 # other ways of putting it 
+Polymorphic Interface is a
+...file for making files
+...chatroom for making chatroom
+...program for making programs
+...website for making websites
+...server for making servers
+...art for making art
+...chatbot for making chatbots
+
 The logical conclusion of chunked response streams and custom elements. I can pull the data necessary to build elements on the fly and then pull up whatever content I want from any source.
 
 I also want to avoid re-implementing functioanlity that's been built into unix machines for decades. So I'm using bash builtins, coreutils, and the features of the TCP/IP stack whenever I can.
