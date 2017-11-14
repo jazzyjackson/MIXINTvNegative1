@@ -14,7 +14,7 @@ let defaultFig = {
         {"meta":{
             /* force the browser to scale the body to the device width, helps with mobile screens */
             "name":"viewport",
-            "content":"width=device-width, initial-scale=1"
+            "content":"width=device-width, initial-scale=1.5"
         }},
         {"meta":{
             /* let the browser know there's utf8 going on */

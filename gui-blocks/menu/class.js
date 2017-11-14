@@ -126,7 +126,6 @@ class MenuBlock extends ProtoBlock {
                         argNode.appendChild(optionNode)
                     })
                     if(actionObject.default){
-                        console.log("setting select to", actionObject.default[argIndex](this))
                         argNode.value = actionObject.default[argIndex](this) // pass context
                     }
                     
@@ -151,7 +150,19 @@ class MenuBlock extends ProtoBlock {
             newMenuOption.addEventListener('blur', event => {
                 if(!newMenuOption.contains(event.relatedTarget)){
                     newMenuOption.replaceWith(oldMenuOption)
+                } else {
+                    /* for the case that a child of the menu option (likely a form element)
+                        was focused, but then moved away from, we listen for blurs from children, too */
+                    event.relatedTarget.addEventListener('blur', event => {
+                        if(!newMenuOption.contains(event.relatedTarget)){
+                            newMenuOption.replaceWith(oldMenuOption)
+                        }
+                    })
                 }
+                /* I'm only crossing my fingers that adding nested anonymous listeners enclosing DOM nodes
+                    doesn't cause memory leaks, but when one of these is finally called the entire parent tree
+                    (the <ul> containing all the menu options) is destroyed (or at least I mean for it to be)
+                    freeing the nodes to garbage collection, but if I left a path to GC root I am truly sorry */
             })
 
             let callFuncWithArgs = event => {

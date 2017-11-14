@@ -32,6 +32,12 @@
   background-color: cornflowerblue;  
 }
 
+
+:host-context([active]):host {
+  width: 100%;
+  height: 100%;
+}
+
 :host-context([active]):host:after {
   transform: rotate(45deg);
   background-color: cornflowerblue;
