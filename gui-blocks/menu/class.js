@@ -7,17 +7,19 @@ class MenuBlock extends ProtoBlock {
                                   : this.createMenu()
             })
             this.shadowParent.setAttribute('tabIndex', 0) // make any block with a menu focusable
-            this.shadowParent.addEventListener('keydown', event => {   
-                console.log("parent keydown", event)
-                if(event.target != this.shadowParent) return null // don't react of event bubbled through this node, also 'this' is still MenuBlock
-                event.key == 'Enter' && this.createMenu()
-                event.key == 'Escape' && (this.destroyMenu() || this.shadowParent.focus())
+            this.shadowParent.addEventListener('keydown', event => { 
+                if(event.key == 'Escape'){
+                    this.destroyMenu()
+                    this.shadowParent.focus()
+                }
+                if(event.path[0] == this.shadowParent && event.key == 'Enter'){
+                    this.createMenu()                 
+                }
             })
             this.shadowParent.addEventListener('blur', event => {
                 if(event.relatedTarget){
                     // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
                     this.destroyMenu()
-                    
                 }
             })
             setTimeout(()=>this.shadowParent.focus(),100)        
@@ -170,14 +172,16 @@ class MenuBlock extends ProtoBlock {
             let callFuncWithArgs = event => {
                 if(event.type == 'click' && event.target != newMenuOption && event.target.tagName != 'SPAN') return null
                 if(event.type == 'keydown' && event.key != 'Enter') return null
+                event.preventDefault() // in case of a submit event, don't actually submit
                 event.stopPropagation()
-                event.preventDefault()                
+                // if newMenuOptions is still attached to the DOM, replace it with oldMenuOption
+                // if a function call mutates / causes shadowParent to lose focus, the menu will be destroy, and replace would otherwise throw an error
+                // but if a function call completes without the menu getting destroyed, I want to revert to old menu option
+                
                 let argsFromForm = Array.from(newMenuOption.querySelectorAll('form > *'), argument => argument.value) // This is kind of funny, if you call Array.from with a single node (instead of a node list) it grabs the children of that node, neat.) Could also be Array.from(this.querySelectorAll('form > *'))
-                actionObject.func.call(this, ...argsFromForm)
-                newMenuOption.replaceWith(oldMenuOption)   
-                setTimeout(()=>{
-                    oldMenuOption.focus()                      
-                })           
+                actionObject.func.call(this, ...argsFromForm)  
+                menuBlock.destroyMenu()
+                this.focus() 
             }
 
             newMenuOption.addEventListener('click', callFuncWithArgs)
