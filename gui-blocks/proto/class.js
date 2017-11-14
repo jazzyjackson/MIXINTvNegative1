@@ -198,6 +198,7 @@ class ProtoBlock extends HTMLElement {
             || part == '..'
             || part == '.'
         })
+        // bit mark will be like [undefined, true, true, undefined], the true values are the ones we want to filter out, so !invert the bitmask
         return pathParts.filter((e,i) => !bitmask[i]).join('/')
     }
 }

@@ -50,6 +50,7 @@ class TextareaBlock extends ProtoBlock {
     }
 
     download(filename){
+        // fyi if you download a hidden file chrome, at least, is likely to mutate your filename, dropping the leading dot
         let a = document.createElement('a')
         a.setAttribute('download', filename.split('/').slice(-1)) // strip full path from filename
         a.setAttribute('href', filename)

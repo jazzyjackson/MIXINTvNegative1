@@ -10,7 +10,8 @@ class DirectoryBlock extends ProtoBlock {
             this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a switch for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
             
             /* if src attribute wasn't set before being connected, set it as the current src */
-            this.props.src || this.setAttribute('src', location.pathname)
+            this.setAttribute('src', this.resolvePath(this.props.src || '/'))
+            
             if(/\/$/.test(this.props.src) == false){
                 // if directory block was initialized with a src that didn't end in a slash,
                 // find the index of the last slash and slice everything else off
@@ -18,6 +19,7 @@ class DirectoryBlock extends ProtoBlock {
                 this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
                 // /docs/utilities.csv becomes /docs/
             }
+            this.headerTitle.textContent = this.props.src
             this.fetchDirectory(this.props.src)
             .then(listText => this.generateIcons(listText))
         })
@@ -71,17 +73,11 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     fetchDirectory(pathname){ 
-        console.log("FETCHING ", pathname)
-        this.headerTitle.textContent = '...'      
-        this.props = {lastUpdate: Date.now()} 
+        this.setAttribute('lastUpdate', Date.now())
         return fetch(this.listFunc(pathname), {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
-        })
-        .then(response => {
-            this.headerTitle.textContent = response.url.split('?')[0].slice(location.origin.length)
-            return response
         })
         .then(response => response.text())
     }
