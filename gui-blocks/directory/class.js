@@ -31,8 +31,23 @@ class DirectoryBlock extends ProtoBlock {
         })
     }
 
+    static get actions(){
+        return [
+            {"download archive": {
+                func: this.prototype.archive,
+                args: [{input: "pathname"}],
+                default: [ctx => ctx.getAttribute('src')],
+                info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
+            }},
+        ]
+    }
+
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
+    }
+
+    archive(source){
+        // fetch('/xz etc')
     }
 
     get knownFormats(){
