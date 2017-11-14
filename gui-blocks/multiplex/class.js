@@ -46,7 +46,7 @@ class MultiplexBlock extends ProtoBlock {
                         this.showStart -= 1
                         lastVisibleIndex--
                     }
-                    let lastVisibleChild = this.shadowRoot.children[lastVisibleIndex - 1] || this.shadowRoot.children[1]
+                    let lastVisibleChild = this.shadowRoot.children[lastVisibleIndex] || this.shadowRoot.children[1]
                     lastVisibleChild.focus()
                     this.reCalculateChildren()                                                    
                 })

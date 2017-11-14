@@ -20,6 +20,7 @@ class MenuBlock extends ProtoBlock {
                     
                 }
             })
+            setTimeout(()=>this.shadowParent.focus(),100)        
         })
     }   
     

@@ -33,20 +33,20 @@ class ProtoBlock extends HTMLElement {
                 func: this.prototype.inspectOrModify,
                 args: [{"select": ["style.css","class.js","template.html"]}]
             }},
-            {"view":[
-                {"fullscreen frame": {
+            // {"view":[
+            //     {"fullscreen frame": {
     
-                }},
-                {"fullscreen block": {
+            //     }},
+            //     {"fullscreen block": {
                     
-                }},
-                {"add frame": {
+            //     }},
+            //     {"add frame": {
     
-                }},
-                {"swap frame": {
+            //     }},
+            //     {"swap frame": {
     
-                }}
-            ]}
+            //     }}
+            // ]}
             /* new child, new sibling -> templates */
         ]
   }
@@ -111,9 +111,6 @@ class ProtoBlock extends HTMLElement {
                                                 : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
-        setTimeout(() => {
-            newBlock.focus()
-        },100)
         // I'm expecting the element that has been replaced to be garbage collected
         return newBlock
     }
@@ -123,14 +120,12 @@ class ProtoBlock extends HTMLElement {
             let existingScripts = Array.from(document.head.getElementsByTagName('script'))
             if(existingScripts.some(script => filename == script.getAttribute('src'))){
                 // if the script already exists, resolve
-                console.log(filename + " AVAILABLE")
                 resolve()
             } else {
                 // else resolve once the newly appended script is done loading
                 let newScript = document.createElement('script')
                 newScript.setAttribute('src', filename)
                 newScript.addEventListener('load', () => {
-                    console.log(filename + " LOADED")
                     resolve()
                 })
                 document.head.appendChild(newScript)
@@ -149,12 +144,8 @@ class ProtoBlock extends HTMLElement {
     set props(data){
         if(!data) return data // exit in the case of this.props = this.options, but options was undefined
         if(typeof data != 'object') throw new Error("Set props requires an object to update from")
-        
         Object.keys(data).forEach(key => {
-            let newData = data[key]
-            let oldData = this.getAttribute(key)
-            /* check if attribute is truthy, append data to existing attributes, create attribute otherwise */
-            this.setAttribute(key, oldData ? oldData + newData : newData)
+            this.setAttribute(key, data[key])
         })
         return this.props
     }

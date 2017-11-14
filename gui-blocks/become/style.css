@@ -42,3 +42,7 @@ li {
   padding: 3px;
 }
 
+li:hover, li:focus {
+  border-left: 3px solid cornflowerblue;
+}
+

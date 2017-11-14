@@ -169,7 +169,6 @@ class DirectoryBlock extends ProtoBlock {
         document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
         newSibling.props = { src: newSource }
         this.insertSibling(newSibling)
-        newSibling.focus()
         // this is kind of a dumb hack to prevent any animations from starting from position left: 0
         // don't be visible until 'nextTick' of event loop, assuming any style applied via mutation observer get applied before starting an animation
         newSibling.style.display = "none"

@@ -13,19 +13,21 @@ class BecomeBlock extends ProtoBlock {
     }
 
     buildBlockList(){      
-        console.log('defaultFig', defaultFig.blocks.concat(defaultFig.frames)) 
         let possibleBlocks = defaultFig.blocks.concat(defaultFig.frames).map(classname => classname + '-block')      
         console.log("Available", possibleBlocks)
         let blockList = document.createElement('ul')
         possibleBlocks.forEach(block => {
             let blockListItem = document.createElement('li')
             blockListItem.setAttribute('block-name', block)
+            blockListItem.setAttribute('tabIndex', 0)
             blockListItem.textContent = block.split('-')[0]
-            blockListItem.addEventListener('click', event => {
+            let becomeFunc = event => {
+                if(event.type == 'keydown' && event.key != 'Enter') return null // ignore nonEnter key events
                 let enclosedElement = block
-                console.log("replacing become with", block)
                 this.replaceWith(document.createElement(enclosedElement))
-            })
+            }
+            blockListItem.addEventListener('click', becomeFunc)
+            blockListItem.addEventListener('keydown', becomeFunc)
             blockList.appendChild(blockListItem)
         })
         this.shadowRoot.querySelector('block-list').appendChild(blockList)

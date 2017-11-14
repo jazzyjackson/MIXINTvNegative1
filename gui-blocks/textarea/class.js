@@ -5,11 +5,11 @@ class TextareaBlock extends ProtoBlock {
             this.header = this.shadowRoot.querySelector('header')
             this.headerTitle = this.shadowRoot.querySelector('header-title')
             this.textarea = this.shadowRoot.querySelector('textarea')
-            if(this.props.src){
+            if(this.props.src && this.props.src.slice(-1) != '/'){
                 this.fetchFile(this.props.src)
                 this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely edit the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
             }else{
-                this.props = {src: prompt("I need a name for this new file:")}
+                this.props = {src: (this.props.src || '') + prompt("I need a name for this new file:")}
             }
             this.headerTitle.textContent = this.props.src
         })
@@ -18,10 +18,16 @@ class TextareaBlock extends ProtoBlock {
     static get actions(){
         return [
             {"get link": {
-                func: this.prototype.become,
-                args: [{select: window.defaultFig.blocks}],
-                default: [ctx => ctx.tagName.toLowerCase()],
-                info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
+                func: this.prototype.copy2clipboard,
+                args: [{input: "filename"}],
+                default: [ctx => location.origin + ctx.getAttribute('src')],
+                info: "Copies link to clipboard. Not plugged in yet, but you can copy the link manually."
+            }},
+            {"download": {
+                func: this.prototype.download,  
+                args: [{input: "filename"}],
+                default: [ctx => location.origin + ctx.getAttribute('src')],
+                info: "Creates an ephemeral <a href download> tag and clicks on it for you."
             }},
             {"overwrite": {
                 func: this.prototype.overwrite,
@@ -41,6 +47,17 @@ class TextareaBlock extends ProtoBlock {
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))                
+    }
+
+    download(filename){
+        let a = document.createElement('a')
+        a.setAttribute('download', filename.split('/').slice(-1)) // strip full path from filename
+        a.setAttribute('href', filename)
+        a.click()
+    }
+
+    copy2clipboard(filename){
+        
     }
 
     interpret(command){
