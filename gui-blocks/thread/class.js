@@ -1,6 +1,6 @@
 class ThreadBlock extends ProtoBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
         this.addEventListener('init', () => {
             this.form = this.shadowRoot.querySelector('form')
             this.addButton = this.shadowRoot.querySelector('add-button')

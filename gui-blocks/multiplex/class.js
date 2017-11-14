@@ -1,6 +1,6 @@
 class MultiplexBlock extends ProtoBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
 
         if(this.constructor.name == "MultiplexBlock"){
             throw new Error("MultiplexBlock is a prototype for vsplit, hsplit, fibonacciplexer and others, but it cannot exist on its own; it prescribes no method for calculating the size of its children")

@@ -1,6 +1,6 @@
 class VsplitBlock extends MultiplexBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
     }
 
     connectedCallback(){

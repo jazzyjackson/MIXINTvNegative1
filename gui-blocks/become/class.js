@@ -1,6 +1,6 @@
 class BecomeBlock extends ProtoBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
         this.addEventListener('init', () => {
             this.waitForDOM().then(()=>{
                 this.buildBlockList()

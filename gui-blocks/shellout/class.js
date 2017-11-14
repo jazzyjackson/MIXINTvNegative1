@@ -1,6 +1,6 @@
 class ShelloutBlock extends ProtoBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
         this.addEventListener('init', () => {
             this.header = this.shadowRoot.querySelector('header')
             this.shell = this.shadowRoot.querySelector('data-shell')

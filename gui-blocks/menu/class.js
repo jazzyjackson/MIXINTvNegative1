@@ -1,6 +1,6 @@
 class MenuBlock extends ProtoBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
         this.addEventListener('init', () => {
             this.addEventListener('click', event => {
                 this.props.active ? this.destroyMenu()
@@ -29,7 +29,7 @@ class MenuBlock extends ProtoBlock {
     }
 
     createMenu(){
-        if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active.")
+        if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active. Hit 'esc' to destroy menu.")
         
         this.setAttribute('active','true')
         // maybe inspect actionMenu and throw a warning for duplicate names? 
@@ -40,7 +40,8 @@ class MenuBlock extends ProtoBlock {
         // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
     }
 
-    destroyMenu(){        
+    destroyMenu(){   
+        // not sure why I can't call menuBlock.destroyMenu() :/     
         this.removeAttribute('active') // so this.props.active is undefined, falsey
         var list = this.shadowRoot.querySelector('ul')
         list && list.remove()
@@ -167,13 +168,16 @@ class MenuBlock extends ProtoBlock {
             })
 
             let callFuncWithArgs = event => {
-                console.log("CALL FUNC", event)
                 if(event.type == 'click' && event.target != newMenuOption && event.target.tagName != 'SPAN') return null
                 if(event.type == 'keydown' && event.key != 'Enter') return null
                 event.stopPropagation()
                 event.preventDefault()                
                 let argsFromForm = Array.from(newMenuOption.querySelectorAll('form > *'), argument => argument.value) // This is kind of funny, if you call Array.from with a single node (instead of a node list) it grabs the children of that node, neat.) Could also be Array.from(this.querySelectorAll('form > *'))
                 actionObject.func.call(this, ...argsFromForm)
+                newMenuOption.replaceWith(oldMenuOption)   
+                setTimeout(()=>{
+                    oldMenuOption.focus()                      
+                })           
             }
 
             newMenuOption.addEventListener('click', callFuncWithArgs)

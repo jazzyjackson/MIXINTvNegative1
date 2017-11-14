@@ -1,6 +1,6 @@
 class TextareaBlock extends ProtoBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
         this.addEventListener('init', () => {
             this.header = this.shadowRoot.querySelector('header')
             this.headerTitle = this.shadowRoot.querySelector('header-title')

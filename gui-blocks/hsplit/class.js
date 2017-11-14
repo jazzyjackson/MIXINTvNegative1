@@ -1,6 +1,6 @@
 class HsplitBlock extends MultiplexBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
     }
 
     connectedCallback(){

@@ -3,8 +3,9 @@ it's only meant to hold the utility methods that all blocks are expected to inhe
 There is no custom element. no document.createElement('proto-block'), just, class extends ProtoBlock */
 
 class ProtoBlock extends HTMLElement {
-    constructor(){
+    constructor(props){
         super()
+        this.props = props
         this.addEventListener('init', () => {
             this.initialized = true
             var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)

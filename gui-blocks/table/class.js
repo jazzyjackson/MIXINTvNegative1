@@ -1,6 +1,6 @@
 class TableBlock extends TextareaBlock {
-    constructor(){
-        super()
+    constructor(props){
+        super(props)
 
         this.addEventListener('init', () => {
             this.table = this.shadowRoot.querySelector('table')
