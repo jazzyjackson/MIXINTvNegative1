@@ -14,17 +14,36 @@ class PersonalityshellBlock extends ConvoshellBlock {
         if(this.getAttribute('mode') == 'party'){
             // fetch POST message, disable submit until POST is finished
         } else {
+            var encodedInput = btoa(JSON.stringify(this.input.value))            
             // since I'm feeding this to interpret via bash, I probably need to base64 it to exclude control characters
-            let encodedInput = btoa(JSON.stringify(this.input.value))
             let shellout = new ShelloutBlock({
                 header: this.input.value,
-                action: `printf ${encodedInput} | base64 --decode | node interpret`, 
+                action: this.input.value,
                 autofocus: false, 
-                cwd: '/spiders/'
             })
+
             this.convoBody.insertBefore(shellout, this.convoForm)
             this.input.value = ''
             this.input.focus()
+
+            // if the shellout finished with an error,
+            // replace it with a newer, better, shellout,
+            // instead passing the same input to spiders/interpret.js
+            shellout.addEventListener('load', () => {
+                if(shellout.props['exit-code'] != 0){
+                    var errmsg = shellout.props.stderr
+                    // somehow I'd like to pass this err back to chatscript, OOB, so chatscript can tell me what went wrong
+                    var personalityOut = new ShelloutBlock({
+                        header: shellout.props.header,
+                        action: `printf ${encodedInput} | base64 --decode | node interpret`, 
+                        autofocus: false, 
+                        cwd: '/spiders/'
+                    })
+                    shellout.replaceWith(personalityOut)
+                    console.log("shell", shellout)
+                    console.log("person", personalityOut)
+                }
+            })
         }
     }
 
