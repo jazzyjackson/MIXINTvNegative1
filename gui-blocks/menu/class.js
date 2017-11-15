@@ -22,16 +22,12 @@ class MenuBlock extends ProtoBlock {
                     this.destroyMenu()
                 }
             })
-            console.log("At menu init, autofocus is " + this.shadowParent.getAttribute('autofocus'))
-            setTimeout(()=>{
-                console.log("After 100ms, autofocus is " + this.shadowParent.getAttribute('autofocus'))
-            },100)
             
             if(this.shadowParent.getAttribute('autofocus') != "false"){
                 // this is kind of sloppy but I don't see a problem with it,
                 // but could become a problem if the component loads especially slow
                 // I think I need a more robust way to fire a 'load' event when the shadowRoot is "ready"
-                // setTimeout(()=> this.shadowParent.focus(),100)
+                setTimeout(()=> this.shadowParent.focus(),100)
             }
         })
     }   
