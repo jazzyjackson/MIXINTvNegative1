@@ -6,6 +6,7 @@ class ProtoBlock extends HTMLElement {
     constructor(props){
         super()
         this.addEventListener('init', () => {
+            console.log("proto called from",this.tagName)
             this.initialized = true
             var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
             if(!template) return console.error(`${this.tagName} has no template`)
@@ -21,6 +22,8 @@ class ProtoBlock extends HTMLElement {
             this.props = props
             this.header && (this.header.textContent = this.props.header || this.props.src || 'untitled')
             // if there's a become attribute, play along
+            console.log("proto finished ",this.tagName)
+            
         })
     }
 

@@ -43,7 +43,6 @@ class MenuBlock extends ProtoBlock {
         let newListElement = this.appendActionList(this.shadowParent.actionMenu)
         
         newListElement.style.top = this.shadowParent.header.getClientRects()[0].height 
-        console.log(newListElement)
         // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
     }
 

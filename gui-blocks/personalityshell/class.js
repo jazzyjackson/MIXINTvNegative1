@@ -11,9 +11,11 @@ class PersonalityshellBlock extends ConvoshellBlock {
     // overwriting the handleSubmit function in ConvoShell
     handleSubmit(event){
         event.preventDefault()
+        if(!this.input.value.trim()) this.input.value = '...'
         if(this.getAttribute('mode') == 'party'){
             // fetch POST message, disable submit until POST is finished
         } else {
+            // primary shellout goes with 
             var encodedInput = btoa(JSON.stringify(this.input.value))            
             // since I'm feeding this to interpret via bash, I probably need to base64 it to exclude control characters
             let shellout = new ShelloutBlock({
@@ -25,13 +27,14 @@ class PersonalityshellBlock extends ConvoshellBlock {
             this.convoBody.insertBefore(shellout, this.convoForm)
             this.input.value = ''
             this.input.focus()
-
             // if the shellout finished with an error,
             // replace it with a newer, better, shellout,
             // instead passing the same input to spiders/interpret.js
             shellout.addEventListener('load', () => {
-                if(shellout.props['exit-code'] != 0){
+                // if exit code is truthy (non-zero) ask the bot what to do (but by the way the props are strings so parseInt)
+                if(Boolean(parseInt(shellout.props['exit-code']))){
                     var errmsg = shellout.props.stderr
+                    console.log("personality replaced this error:", errmsg)
                     // somehow I'd like to pass this err back to chatscript, OOB, so chatscript can tell me what went wrong
                     var personalityOut = new ShelloutBlock({
                         header: shellout.props.header,
@@ -40,8 +43,6 @@ class PersonalityshellBlock extends ConvoshellBlock {
                         cwd: '/spiders/'
                     })
                     shellout.replaceWith(personalityOut)
-                    console.log("shell", shellout)
-                    console.log("person", personalityOut)
                 }
             })
         }

@@ -2,6 +2,8 @@ class ShelloutBlock extends ProtoBlock {
     constructor(props){
         super(props)
         this.addEventListener('init', () => {
+            console.log("shellout called from", this.tagName)
+            
             this.stdout = this.shadowRoot.querySelector('data-stdout')
             this.stderr = this.shadowRoot.querySelector('data-stderr')
             this.error = this.shadowRoot.querySelector('data-error')
@@ -15,6 +17,14 @@ class ShelloutBlock extends ProtoBlock {
         this.initialized || this.dispatchEvent(new Event('init'))
     }
 
+    disconnectedCallback(){
+        // this only fires if a shellout node was explicitely removed from the DOM tree
+        // this DOES NOT FIRE when a user navigates away from the page 
+        // if(this.pid && (this.props['exit-code'] || this.props['exit-signal'])){
+        console.log(this, "was disconnected")
+        // }        
+    }
+
     get workingDirectory(){
         return this.getAttribute('cwd') || location.pathname
     }
@@ -24,6 +34,9 @@ class ShelloutBlock extends ProtoBlock {
         return [
             'pid',
             'eval',
+            'timeout',
+            'newSibling',
+            'become',
             'stdout',
             'stderr',
             'error',
@@ -40,6 +53,17 @@ class ShelloutBlock extends ProtoBlock {
             case 'error': 
                 this[attr].textContent += newValue;
                 this.textarea.textContent += newValue;   
+                break;
+            case 'timeout':
+                // this will need to parse chatbot response and set a timeout that's cancelled on submit...
+                // var time = parseInt(newValue)
+                // for now let's just immediately submit chat response so chatscript can trigger programs for us
+                this.shadowParent.appendChild(new ShelloutBlock({
+                    header: newValue,
+                    action: `printf ${btoa(JSON.stringify(newValue))} | base64 --decode | node interpret`, 
+                    autofocus: false, 
+                    cwd: '/spiders/'
+                }));
                 break;
             case 'eval':
                 eval(newValue);
