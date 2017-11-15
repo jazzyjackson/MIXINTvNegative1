@@ -39,6 +39,7 @@ function forkProcess(request){
     // bot could be programmed to post to server as its own user and get a pid back
     // user could then subscribe to pid for updates... hmmmm
     // switchboard would have to provide a way to address processes
+    console.log(command)
     var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
     subprocess_registry[String(subprocess.pid)] = subprocess
 
@@ -100,6 +101,7 @@ function streamSubProcess(request, response){
     subprocess.on('error', function(err){ 
         response.writeHead(500); 
         response.end(JSON.stringify(err)) 
+        // does close fire before or after or at all in the case of an error?
     })
 
     subprocess.stdout.pipe(response, {end: false}) // end: false - don't close pipe on receiving null bytes
@@ -113,30 +115,54 @@ function streamSubProcess(request, response){
 
 function subscribe2events(request, response){
     response.setHeader('Content-Type', 'text/event-stream')
-    var pushEvent = function(name,data){
-        response.write(['event: ', name, '\n',
-                        'data: ', data ? JSON.stringify(data) : '', '\n',
-                        '\n'].join(''))
-    }
-
-    /* start the subprocess and send the pid to client */
+    // create a child_process object
     var subprocess = forkProcess(request)
-    
-    pushEvent('pid', subprocess.pid)
+    // construct a function with a closure around the response object to write all future events until process exit
+    var pushEvent = function(data){     
+        // data might be a buffer, JSON parse it until you can't
+        if(Buffer.isBuffer(data)){
+            data = data.toString()
+        }
+
+        if(typeof data == 'object'){
+            return response.write('data: ' + JSON.stringify(data) + '\n\n')
+        }
+        
+        try {
+            return response.write('data: ' + JSON.stringify(JSON.parse(data.toString())) + '\n\n')
+        } catch(e) {
+            // if I was just passed a string, wrap it up, announce it as stderr or stdout
+            let responseObject = {}
+            this === subprocess.stdout ? responseObject.stdout = data :
+            this === subprocess.stderr ? responseObject.stderr = data :
+                                         responseObject.default= data ;
+
+            return response.write('data: ' + JSON.stringify(responseObject) + '\n\n')
+        }
+    }
+    // once the function is constructed I can send the pid of the process to allow signals to be sent */    
+    pushEvent({pid: subprocess.pid})
     /* start sending an empty heartbeat event every 15 seconds until process closes, to keep connection open */
-    var heartbeat = setInterval(function(){pushEvent(':heartbeat')},15000)
+    var heartbeat = setInterval(function(){
+        pushEvent(':heartbeat')
+    },15000)
     /* push error, data, and close events from the subprocess */
-    subprocess.on('error', function(error){ pushEvent('error', error) })
-    subprocess.stdout.on('data', function(data){ pushEvent('stdout',data.toString()) })
-    subprocess.stderr.on('data', function(data){ pushEvent('stderr',data.toString()) })
-    subprocess.on('close', (code,signal) => {
+    subprocess.stdout.on('data', pushEvent)
+    subprocess.stderr.on('data', pushEvent)
+
+    subprocess.on('error', function(error){ 
+        pushEvent({error: error.toString()}) 
+    })
+    subprocess.on('close', function(code,signal){
+        // signal might be KILL or TERM or otherwise null
+        // if it was falsey, send exit code instead, which may be falsey
+        // best case scenario of course is exit-code 0
+        pushEvent(signal ? {"exit-signal": signal } 
+                         : {"exit-code": code })
         clearInterval(heartbeat) // stop trying to send heartbeats
-        pushEvent('close', {code: code, signal: signal})
         response.end() // and close the connection. client should close the eventSource when receiving 'close' event
     })
 }
-
-
 
 function trySSL(key, cert){
     /* force HTTP server and skip reading files */

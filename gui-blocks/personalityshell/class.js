@@ -17,7 +17,7 @@ class PersonalityshellBlock extends ConvoshellBlock {
             // since I'm feeding this to interpret via bash, I probably need to base64 it to exclude control characters
             let encodedInput = btoa(JSON.stringify(this.input.value))
             let shellout = new ShelloutBlock({
-                name: this.input.value,
+                header: this.input.value,
                 action: `printf ${encodedInput} | base64 --decode | node interpret`, 
                 autofocus: false, 
                 cwd: '/spiders/'

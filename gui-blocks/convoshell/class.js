@@ -33,7 +33,11 @@ class ConvoshellBlock extends ProtoBlock {
         if(this.getAttribute('mode') == 'party'){
             // fetch POST message, disable submit until POST is finished
         } else {
-            let shellout = new ShelloutBlock({action: this.input.value, autofocus: false})
+            let shellout = new ShelloutBlock({
+                header: this.input.value,
+                action: this.input.value, 
+                autofocus: false
+            })
             this.convoBody.insertBefore(shellout, this.convoForm)
             this.input.value = ''
             this.input.focus()

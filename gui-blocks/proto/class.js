@@ -12,14 +12,15 @@ class ProtoBlock extends HTMLElement {
 
             this.attachShadow({mode: 'open'})
             this.shadowRoot.appendChild(template.content.cloneNode(true))
-            this.shadowParent = this.getRootNode().host // might want this.getRootNode().host if this block would be nested somehow, but I'm not expected that to happen.
-            
+            this.shadowParent = this.getRootNode().host 
             /* if these don't exist it's no big deal,
             but it's a good standard that a headerTitle and a textarea exist */
             this.header = this.shadowRoot.querySelector('header-title') || this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')    
             // just because they need to exist to pass name and textcontent in        
             this.props = props
+            this.header && (this.header.textContent = this.props.header || this.props.src || 'untitled')
+            // if there's a become attribute, play along
         })
     }
 

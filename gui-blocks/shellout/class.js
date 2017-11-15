@@ -5,9 +5,7 @@ class ShelloutBlock extends ProtoBlock {
             this.stdout = this.shadowRoot.querySelector('data-stdout')
             this.stderr = this.shadowRoot.querySelector('data-stderr')
             this.error = this.shadowRoot.querySelector('data-error')
-            
-            this.workingDirectory = this.getAttribute('cwd') || location.pathname
-            
+                        
             if(!this.props.action) this.props = {action: prompt('I need a bash command to execute:')}
             this.subscribeToShell(this.props.action)
         })
@@ -17,61 +15,65 @@ class ShelloutBlock extends ProtoBlock {
         this.initialized || this.dispatchEvent(new Event('init'))
     }
 
+    get workingDirectory(){
+        return this.getAttribute('cwd') || location.pathname
+    }
+
     static get observedAttributes() {
-        return ['name','pid','stdout','stderr','err','say']
+        // possible object properties you expect spiders to return
+        return [
+            'pid',
+            'eval',
+            'stdout',
+            'stderr',
+            'error',
+            'exit-signal',
+            'exit-code',
+        ]
     }
 
     attributeChangedCallback(attr, oldValue, newValue) {
-        console.log(attr)
-        console.log(this)
         switch(attr){
-            case 'name': this.header.textContent = newValue; break;
-            case 'say': this.stdout.textContent = newValue; break;
             // for either stderr, stdout, or err, append value to appropriate shell category, but also append to hidden textarea incase block is transformed or saved to disk. 
             case 'stdout':
             case 'stderr':
             case 'error': 
-                this[attr].textContent += this.digestJSON(newValue) || ''               
+                this[attr].textContent += newValue;
+                this.textarea.textContent += newValue;   
                 break;
             case 'eval':
-                eval(newValue); break;
+                eval(newValue);
+                break;
             case 'newSibling':
                 // this should be an object that includes, src, action, become, etc
-                this.insertSibling(new ProtoBlock(JSON.parse(newValue))); break;
+                this.insertSibling(new ProtoBlock(JSON.parse(newValue))); 
+                break;
+            case 'become':
+                // hmmm make sure that I have the attributes I need before becoming the new thing 
+                if(this.shell.readyState == 0) this.become(newValue)
+                else this.addEventListener('load', () => this.become(newValue))
+                break;
+            case 'exit-signal':
+            case 'exit-code':
+                this.shell.close()
+                this.dispatchEvent(new Event('load')) // done loading
             default:
                 console.log("You didn't give me anything to do with " + attr)
         }
-        this.scrollToBottom()
+        this.scrollParentToBottom()
     }        
     /* needs an action to flip attribute word wrap */
     /* might want to generalize a method for chooosing among attributes */
     /* or just, each element has an attribute submenu, and a dropdown provided for each thing to customize */
-    scrollToBottom(){
+    scrollParentToBottom(){
         // ask the parentNode to scroll down, if it has a method to do so
+        // I forget why I can't just do this.scrollIntoView(), I think it tried to scroll the whole viewport, instead of the immediate parent
         !this.getAttribute('ignoreUpdate')
         && this.shadowParent
         && this.shadowParent.scrollToBottom
         && this.shadowParent.scrollToBottom()
+        // instead of scrolling I could also keep track of whether there has been an update since the div was last in view, have a little tooltip, scroll up to see new data 
     }
-
-    digestJSON(possibleJSON){
-        var responseData = JSON.parse(possibleJSON)        
-        try {
-            this.props = JSON.parse(responseData)
-            this.textarea.textContent = responseData;                    
-            // at first I was apprehensive about tryint to parse every single message coming from shell output, this might be a lot
-            // but I figure, JSON.parse fails really quick, like first character isn't what it expected quick, so I don't think this actually has a lot of overhead, we'll see.
-        } catch(e) {
-            // no big deal, it didn't work out, keep falling down and fill out like normal
-            if(typeof responseData == 'object'){
-                this.props = responseData
-            } else {
-                this.textarea.textContent += responseData
-                return responseData
-            }
-        }
-    }
-
 
     sendSignal(signal){
         if(this.props['exit-code'] || this.props['exit-signal']) throw new Error("You shouldn't try to kill a process that's already over.")
@@ -94,41 +96,15 @@ class ShelloutBlock extends ProtoBlock {
             credentials: 'same-origin',            
             headers: { "x-for-pid": this.props.pid }
         })
-    
     }
 
     subscribeToShell(command){
-        let shell = new EventSource(this.workingDirectory + '?' + encodeURIComponent(command) , {credentials: "same-origin"})
-        /* the idea is,
-            listen for all messages...
-            if the event.name is JSON, for each in JSON.parse(event.data){setAttribute(event.name, event.data[name])
-            not JSON ? setAttribute(event.name, JSON.parse(event.data)) // still json parse because quotes and special chars are JSON escaped, hopefully
-            do the error formatting somewhere else
-            I think I have to limit myself to a hardcoded list of acceptable attributes, but that's probably for the best. Different things I have plans for...
-        
-            well, if this is gonna be a subscription anyway, I might just be stuck on listening to stdout
-            So really, I have to check if stdout is doubly wrapped JSON, and just digest that...
-            But I could still have attributeChangedCallback to do various things once stdout does its digestion
-        */
-
-        shell.addEventListener('pid', event => {
-            this.setAttribute('pid', event.data)
-        })
-        shell.addEventListener('stdout', event => {
-            this.setAttribute('stdout', event.data)
-        })
-        shell.addEventListener('stderr', event => {
-            this.setAttribute('stdout', event.data)
-        })
-        shell.addEventListener('error', event => {
-            this.setAttribute('stdout', event.data)            
+        this.shell = new EventSource(this.workingDirectory + '?' + encodeURIComponent(command) , {
+            credentials: "same-origin"
         })
 
-        shell.addEventListener('close', event => {
-            shell.close()
-            var exit = JSON.parse(event.data) // coerce number into string so 0 isn't falsey? IIRC
-            exit.signal ? this.setAttribute('exit-signal', exit.signal)
-                        : this.setAttribute('exit-code', exit.code)
+        this.shell.addEventListener('message', event => {
+            this.props = JSON.parse(event.data)
         })
     }
 }  
