@@ -6,6 +6,7 @@ class ProtoBlock extends HTMLElement {
     constructor(props){
         super()
         this.addEventListener('init', () => {
+            this.props = props // props is set twice - once because attributes may need to exist for menu            
             console.log("proto called from",this.tagName)
             this.initialized = true
             var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
@@ -19,10 +20,10 @@ class ProtoBlock extends HTMLElement {
             this.header = this.shadowRoot.querySelector('header-title') || this.shadowRoot.querySelector('header')
             this.textarea = this.shadowRoot.querySelector('textarea')    
             // just because they need to exist to pass name and textcontent in        
-            this.props = props
             this.header && (this.header.textContent = this.props.header || this.props.src || 'untitled')
             // if there's a become attribute, play along
             console.log("proto finished ",this.tagName)
+            this.props = props // and again so that attributeChangedCallback is fired on ancestors                      
             
         })
     }

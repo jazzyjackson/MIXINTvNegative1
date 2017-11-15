@@ -21,7 +21,10 @@ class ShelloutBlock extends ProtoBlock {
         // this only fires if a shellout node was explicitely removed from the DOM tree
         // this DOES NOT FIRE when a user navigates away from the page 
         // if(this.pid && (this.props['exit-code'] || this.props['exit-signal'])){
-        console.log(this, "was disconnected")
+        console.log("disconnected", this)
+        // if(this.pid && !this.props['exit-code'] && !this.props['exit-signal']){
+        //     this.sendSignal("KILL")
+        // }       
         // }        
     }
 
