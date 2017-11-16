@@ -32,7 +32,7 @@ class ProtoBlock extends HTMLElement {
         this.addEventListener('ready', () => {
             this.props = props 
             if(this.child['header-title'] || this.child['header'] && !this.header){
-                this.header = this.props.header || this.props.src || 'untitled'
+                this.header = this.props.header || this.props.src || this.props.action || 'untitled'
             }
             if(!this.props.src && !this.props.action){
                 this.readyState = "complete"

@@ -14,8 +14,13 @@ class ShelloutBlock extends ProtoBlock {
     constructor(props){
         super(props)
         this.addEventListener('ready', () => {
-            if(!this.props.action && !this.data) this.props = {action: prompt('I need a bash command to execute:')}
-            this.subscribeToShell(this.props.action)
+            if(!this.data){
+                if(!this.props.action){
+                    this.props = {action: prompt('I need a bash command to execute:')}
+                }
+                this.subscribeToShell(this.props.action)
+            }
+
         })
     }
     
@@ -130,12 +135,20 @@ class ShelloutBlock extends ProtoBlock {
     }
 
     subscribeToShell(command){
+        console.log("SUBSCRIBE")
+        console.log(this.workingDirectory + '?' + encodeURIComponent(command) ,)
         this.shell = new EventSource(this.workingDirectory + '?' + encodeURIComponent(command) , {
             credentials: "same-origin"
         })
 
         this.shell.addEventListener('message', event => {
+            // at the very least each message (event.data) will looks like 
+            // {pid: 123}
+            // {stdout: some output from a program}
+            // {exit-code: 0}
             this.props = JSON.parse(event.data)
+            // every JSON property received updates the HTML attribute of the same name
+            // setting off any attached attribute observers
         })
     }
 }  

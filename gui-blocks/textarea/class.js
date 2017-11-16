@@ -39,7 +39,7 @@ class TextareaBlock extends ProtoBlock {
             {"interpret": {
                 func: this.prototype.interpret,
                 args: [{input: "command"}],   
-                default: [ctx => ctx.textarea.textContent.slice(0,2) == '#!'
+                default: [ctx => ctx.data.slice(0,2) == '#!'
                                     ? `chmod +x .${ctx.getAttribute('src')} && .${ctx.getAttribute('src')}`
                                     : `cat .${ctx.getAttribute('src')} | xargs echo`]
             }},
@@ -68,6 +68,7 @@ class TextareaBlock extends ProtoBlock {
     }
 
     interpret(command){
+        console.log(command)
         this.insertSibling(new ShelloutBlock({action: command}))
     }
 
