@@ -2,23 +2,16 @@ class TableBlock extends TextareaBlock {
     constructor(props){
         super(props)
 
-        this.addEventListener('init', () => {
-            this.table = this.shadowRoot.querySelector('table')
-        })
-
-        this.addEventListener('ready', () => {
-            
-        })
-
         // this load will fire when the fetch for the file (in src attribute) completes
         this.addEventListener('load', () => {
             // this promise will resolve immediately if the script is already available
             this.attachGlobalScript('/gui-blocks/table/assets/papa.js').then(()=>{
-                this.data = Papa.parse(this.textarea.value).data
-                this.table.style.display = 'none' 
-                this.buildTable(this.data)
-                this.textarea.style.display = 'none'
-                this.table.style.display = 'table'
+                this.parsedData = Papa.parse(this.data).data
+                
+                this.child['table'].style.display = 'none' 
+                this.buildTable(this.parsedData)
+                this.child['textarea'].style.display = 'none'
+                this.child['table'].style.display = 'table'
             })
         })
     }

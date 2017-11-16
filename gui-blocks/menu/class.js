@@ -41,8 +41,7 @@ class MenuBlock extends ProtoBlock {
         if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active. Hit 'esc' to destroy menu.")
         this.setAttribute('active','true')
         let newListElement = this.appendActionList(this.shadowParent.actionMenu)
-        console.log("parent header is", this.shadowParent.header.getClientRects()[0].height )
-        newListElement.style.top = this.shadowParent.header.getClientRects()[0].height 
+        newListElement.style.top = this.shadowParent.child['header'].getClientRects()[0].height + 'px' 
         // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
     }
 

@@ -17,12 +17,16 @@ class ProtoBlock extends HTMLElement {
            
             this.attachShadow({mode: 'open'})
             this.shadowRoot.appendChild(template.content.cloneNode(true))
+            this.shadowParent = this.getRootNode().host 
+            
             // get an array of all nodes, convert it to a set (leave only unique values
             Array.from(this.shadowRoot.querySelectorAll(':not([ignore])'), child => {
-                if(child.tagName in this.child) throw new Error(`${this.tagName} contains duplicate nodes. Give each node a unique tag name in order to automatically reference each child by name. If you wish to ignore certain nodes set their ignore attribute.`)
-                this.child[child.tagName.toLowerCase()] = child
+                if(child.tagName in this.child){
+                    throw new Error(`${this.tagName} contains duplicate nodes. Give each node a unique tag name in order to automatically reference each child by name. If you wish to ignore certain nodes set their ignore attribute.`)
+                } else {
+                    this.child[child.tagName.toLowerCase()] = child
+                }
             })
-            this.shadowParent = this.getRootNode().host 
         })
         // called after all the init listeners have been fired (must be synchronous)
         this.addEventListener('ready', () => {
@@ -30,7 +34,12 @@ class ProtoBlock extends HTMLElement {
             if(this.child['header-title'] || this.child['header'] && !this.header){
                 this.header = this.props.header || this.props.src || 'untitled'
             }
-            this.readyState = "complete"
+            if(!this.props.src && !this.props.action){
+                this.readyState = "complete"
+            } else {
+                this.readyState = "loading"
+                this.addEventListener('load', () => this.readyState = "complete")
+            }
         })
     }
 

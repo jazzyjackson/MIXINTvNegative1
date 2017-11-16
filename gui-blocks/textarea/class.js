@@ -60,7 +60,11 @@ class TextareaBlock extends ProtoBlock {
     }
 
     copy2clipboard(filename){
-        
+        document.execCommand('copy');
+        this.addEventListener('copy', event => {
+            event.preventDefault()
+            event.clipboardData.setData('text/plain', filename);
+        })
     }
 
     interpret(command){

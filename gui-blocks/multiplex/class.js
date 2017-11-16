@@ -34,6 +34,8 @@ class MultiplexBlock extends ProtoBlock {
                         this.deflate(newChild)                    
                         if(nthIndex > lastVisibleIndex){
                             this.showStart += 1 // will synchronously trigger a recalc, setting style left to destination postion      
+                        } else {
+                            this.reCalculateChildren()                                                    
                         }
                         this.inflate(newChild)
                     })
@@ -45,8 +47,6 @@ class MultiplexBlock extends ProtoBlock {
                             this.showStart -= 1
                             lastVisibleIndex--
                         }
-                        let lastVisibleChild = this.shadowRoot.children[lastVisibleIndex] || this.shadowRoot.children[1]
-                        lastVisibleChild.focus()
                         this.reCalculateChildren()                                                    
                     })
     

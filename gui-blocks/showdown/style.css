@@ -24,6 +24,11 @@ textarea {
   flex: 1;
   resize: none;
 }
+
+showdown-container {
+  overflow: auto;
+  padding: 5px;
+}
 /* 
 .textContainer {
   width: 100%;

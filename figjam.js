@@ -63,7 +63,7 @@ let defaultFig = {
     /* just fyi this array needs to be in the order of inheritence i.e. start with proto, read, go from there */
     /* any element in the blocks list will be registered as a custom compontent, so a class.js must go along with each of these */
     "prereq": ["proto","multiplex","menu"],
-    "blocks": ["directory","become","textarea","table","shellout","convoshell","personalityshell"],
+    "blocks": ["directory","become","textarea","table","shellout","convoshell","personalityshell","showdown"],
     "frames": ["hsplit","vsplit","thread"],
     "body": [
         {"vsplit-block": {

@@ -174,7 +174,7 @@ class DirectoryBlock extends ProtoBlock {
             // video: VideoBlock,
             code: TextareaBlock,
             file: TextareaBlock,
-            markdown: TextareaBlock,
+            markdown: ShowdownBlock,
             // geometry: TextareaBlock
         }
     }

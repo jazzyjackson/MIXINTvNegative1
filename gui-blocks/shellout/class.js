@@ -13,12 +13,6 @@ class ShelloutBlock extends ProtoBlock {
 
     constructor(props){
         super(props)
-        this.addEventListener('init', () => {
-            this.stdout = this.shadowRoot.querySelector('data-stdout')
-            this.stderr = this.shadowRoot.querySelector('data-stderr')
-            this.error = this.shadowRoot.querySelector('data-error')
-        })
-
         this.addEventListener('ready', () => {
             if(!this.props.action && !this.data) this.props = {action: prompt('I need a bash command to execute:')}
             this.subscribeToShell(this.props.action)
@@ -33,12 +27,9 @@ class ShelloutBlock extends ProtoBlock {
     disconnectedCallback(){
         // this only fires if a shellout node was explicitely removed from the DOM tree
         // this DOES NOT FIRE when a user navigates away from the page 
-        // if(this.pid && (this.props['exit-code'] || this.props['exit-signal'])){
-        console.log("disconnected", this)
-        // if(this.pid && !this.props['exit-code'] && !this.props['exit-signal']){
-        //     this.sendSignal("KILL")
-        // }       
-        // }        
+        if(this.props.pid && !this.props['exit-code'] && !this.props['exit-signal']){
+            this.sendSig("KILL")
+        }       
     }
 
     get workingDirectory(){
@@ -67,8 +58,8 @@ class ShelloutBlock extends ProtoBlock {
             case 'stdout':
             case 'stderr':
             case 'error': 
-                this[attr].textContent += newValue;
-                this.textarea.textContent += newValue;   
+                this.child['data-' + attr].textContent += newValue;
+                this.data += newValue;   
                 break;
             case 'timeout':
                 // this will need to parse chatbot response and set a timeout that's cancelled on submit...
@@ -90,7 +81,7 @@ class ShelloutBlock extends ProtoBlock {
                 break;
             case 'become':
                 // hmmm make sure that I have the attributes I need before becoming the new thing 
-                if(this.shell.readyState == 0) this.become(newValue)
+                if(this.shell.readyState == 0) this.become(newValue) //readyState set on load in protoblock
                 else this.addEventListener('load', () => this.become(newValue))
                 break;
             case 'exit-signal':
@@ -129,7 +120,7 @@ class ShelloutBlock extends ProtoBlock {
         if(this.props['exit-code'] || this.props['exit-signal']) throw new Error("There's no process to send follow up commands to.")        
         
         // echo the input to the stdout
-        this.stdout.textContent += command + '\n'
+        this.data += command + '\n'
         
         fetch('/?' + encodeURIComponent(command), {
             method: 'POST', 
