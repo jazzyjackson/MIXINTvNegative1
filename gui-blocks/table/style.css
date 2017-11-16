@@ -23,6 +23,7 @@
   textarea {
     flex: 1;
     resize: none;
+    white-space: nowrap;
   }
   /* 
   .textContainer {
