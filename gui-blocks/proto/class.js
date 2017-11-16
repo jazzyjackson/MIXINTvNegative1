@@ -31,6 +31,10 @@ class ProtoBlock extends HTMLElement {
         // called after all the init listeners have been fired (must be synchronous)
         this.addEventListener('ready', () => {
             this.props = props
+            if(this.props.become && this.constructor == ProtoBlock){
+                return this.become(this.props.become)
+                // don't fire the rest of this I think? the block that this becomes takes over...
+            }
             console.log(`${this.tagName} is ready with props`, this.props)
             if(this.child['header-title'] || this.child['header'] && !this.header){
                 this.header = this.props.header || this.props.src || this.props.action || 'untitled'
@@ -42,6 +46,11 @@ class ProtoBlock extends HTMLElement {
                 this.addEventListener('load', () => this.readyState = "complete")
             }
         })
+    }
+
+    connectedCallback(){
+        this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     get header(){
@@ -62,7 +71,7 @@ class ProtoBlock extends HTMLElement {
     }
 
     get data(){
-        return this.child['textarea'].textContent
+        return this.child['textarea'].value
     }
 
     /* get actions that should be exposed to menu block from this class */

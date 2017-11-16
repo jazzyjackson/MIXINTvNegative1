@@ -44,11 +44,12 @@ class ShelloutBlock extends ProtoBlock {
 
     static get observedAttributes() {
         // possible object properties you expect spiders to return
+        // don't forget attributes will always be coerced to lowercase
         return [
             'pid',
             'eval',
             'timeout',
-            'newSibling',
+            'newsibling',
             'become',
             'stdout',
             'stderr',
@@ -81,9 +82,9 @@ class ShelloutBlock extends ProtoBlock {
             case 'eval':
                 eval(newValue);
                 break;
-            case 'newSibling':
+            case 'newsibling':
                 // this should be an object that includes, src, action, become, etc
-                this.insertSibling(new ProtoBlock(JSON.parse(newValue))); 
+                this.shadowParent.insertSibling(new ProtoBlock(JSON.parse(newValue))); 
                 break;
             case 'become':
                 // hmmm make sure that I have the attributes I need before becoming the new thing 

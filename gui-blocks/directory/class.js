@@ -2,7 +2,7 @@ class DirectoryBlock extends ProtoBlock {
     constructor(props){
         super(props)
 
-        this.listFunc = (pathname) => `${pathname}?ls -ap1` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line */
+        this.listFunc = (pathname) => `${pathname}?ls -ap1L` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line, L: present symlinks to directories as directories */
         this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a switch for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
 
         this.addEventListener('ready', () => {
