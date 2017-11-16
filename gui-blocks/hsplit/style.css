@@ -8,8 +8,16 @@
 
 :host > * {
   height: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
-  transition: all 0.5s;
   position: absolute;
   border-bottom: 2px solid black;
   box-sizing: border-box;
+}
+
+:host > [deflate] {
+  opacity: 0;
+}
+
+:host > :not([deflate]) {
+  opacity: 1;
+  transition: opacity 0.25s;
 }

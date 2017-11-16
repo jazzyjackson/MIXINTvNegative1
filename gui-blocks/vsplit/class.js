@@ -9,14 +9,12 @@ class VsplitBlock extends MultiplexBlock {
     }
 
     deflate(node){
-        node.style.display = 'none' // hide
-        node.style.opacity = 0
-        node.style.display = null // show           
+        node.setAttribute('deflate', true)
     }
 
-    inflate(node){  
+    inflate(node){ 
         setTimeout(()=>{
-            node.style.opacity = 1              
+            node.removeAttribute('deflate')
         })
     }
 

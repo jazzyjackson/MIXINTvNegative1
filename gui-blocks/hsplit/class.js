@@ -9,27 +9,16 @@ class HsplitBlock extends MultiplexBlock {
     }
 
     deflate(node){
-        node.style.display = 'none' // hide
-        node.style.opacity = 0
-        console.log("deflating")
+        node.setAttribute('deflate', true)
     }
 
-    inflate(node){  
-        console.log("inflating")
-        if(node.style.top){
-            node.style.top = parseInt(node.style.top) + (100 / this.showMax) + '%'            
-        }
+    inflate(node){ 
         setTimeout(()=>{
-            console.log("inflating timeout")        
-            node.style.display = null // show   
-            node.style.opacity = 1        
-            // opacity is being transitioned to 1 and then removed
-            setTimeout(()=>{
-                this.reCalculateChildren() 
-            })                       
+            node.removeAttribute('deflate')
         })
     }
 
+    
     reCalculateChildren(){
         switch(this.shadowRoot.childElementCount - 1){
             case 0: this.shadowRoot.appendChild(new BecomeBlock); break;
