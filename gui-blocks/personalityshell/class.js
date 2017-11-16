@@ -12,21 +12,21 @@ class PersonalityshellBlock extends ConvoshellBlock {
     // overwriting the handleSubmit function in ConvoShell
     handleSubmit(event){
         event.preventDefault()
-        if(!this.input.value.trim()) this.input.value = '...'
+        if(!this.child['input'].value.trim()) this.child['input'].value = '...'
         if(this.getAttribute('mode') == 'party'){
             // fetch POST message, disable submit until POST is finished
         } else {
             // primary shellout goes with 
-            var encodedInput = btoa(JSON.stringify(this.input.value))            
+            var encodedInput = btoa(JSON.stringify(this.child['input'].value))            
             // since I'm feeding this to interpret via bash, I probably need to base64 it to exclude control characters
             let shellout = new ShelloutBlock({
-                header: this.input.value,
-                action: this.input.value,
+                header: this.child['input'].value,
+                action: this.child['input'].value,
                 autofocus: false, 
             })
 
-            this.convoBody.insertBefore(shellout, this.convoForm)
-            this.input.value = ''
+            this.child['convo-body'].insertBefore(shellout, this.child['convo-form'])
+            this.child['input'].value = ''
             // if the shellout finished with an error,
             // replace it with a newer, better, shellout,
             // instead passing the same input to spiders/interpret.js

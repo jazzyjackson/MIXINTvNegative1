@@ -30,7 +30,8 @@ class ProtoBlock extends HTMLElement {
         })
         // called after all the init listeners have been fired (must be synchronous)
         this.addEventListener('ready', () => {
-            this.props = props 
+            this.props = props
+            console.log(`${this.tagName} is ready with props`, this.props)
             if(this.child['header-title'] || this.child['header'] && !this.header){
                 this.header = this.props.header || this.props.src || this.props.action || 'untitled'
             }

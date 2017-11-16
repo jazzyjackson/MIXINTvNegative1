@@ -23,8 +23,8 @@ class TableBlock extends TextareaBlock {
 
     buildTable(arrayOfarrays){
         // destroy anything that's already there
-        while (this.table.firstChild) {
-            this.table.removeChild(this.table.firstChild)
+        while (this.child['table'].firstChild) {
+            this.child['table'].removeChild(this.child['table'].firstChild)
         }
         for(var row of arrayOfarrays){
             var tr = document.createElement('tr')
@@ -33,7 +33,7 @@ class TableBlock extends TextareaBlock {
                 td.textContent = datum
                 tr.appendChild(td)
             }
-            this.table.appendChild(tr)            
+            this.child['table'].appendChild(tr)            
         }
     }
 

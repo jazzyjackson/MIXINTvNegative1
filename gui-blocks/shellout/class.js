@@ -17,6 +17,7 @@ class ShelloutBlock extends ProtoBlock {
             if(!this.data){
                 if(!this.props.action){
                     this.props = {action: prompt('I need a bash command to execute:')}
+                    this.header = this.props.action
                 }
                 this.subscribeToShell(this.props.action)
             }

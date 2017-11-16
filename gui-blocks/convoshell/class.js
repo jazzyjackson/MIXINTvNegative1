@@ -10,26 +10,29 @@ class ConvoshellBlock extends ProtoBlock {
         this.addEventListener('init', () => {
             // identity represents username of node process that ran figjam.js to create this HTML
             this.identity = document.querySelector('meta[user-identity]').getAttribute('user-identity')
-            this.header = `${this.identity}@${location.hostname} talking to self`
             this.child['form'].addEventListener('submit', this.handleSubmit.bind(this))
             this.child['form'].addEventListener('keydown', event => {
                 if(event.type == 'keydown' && event.key == 'Enter'){
                     event.stopPropagation()
                 }
             })
+
+            this.child['input'].addEventListener('focus', () => this.setAttribute('talking', true))
+            this.child['input'].addEventListener('blur', () => this.setAttribute('talking', null))    
             // menu-block will attach a onready event to focus the parent
             // but that listener is attached before this one (when menu is attached to template's document fragment)
             // so this one will fire afterward, and refocus on the input
+                    
             this.addEventListener('ready', () => {
+                this.header = `${this.identity}@${location.hostname} talking to self`
                 this.child['input'].focus()
-                this.child['input'].addEventListener('focus', () => this.setAttribute('talking', true))
-                this.child['input'].addEventListener('blur', () => this.setAttribute('talking', null))    
             })
 
             this.addEventListener('resize', () => {
-                if(this.props.talking) this.input.focus()
+                if(this.props.talking) this.child['input'].focus()
             })
         })
+
     }
 
     handleSubmit(event){

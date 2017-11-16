@@ -73,7 +73,7 @@ class TextareaBlock extends ProtoBlock {
     }
 
     overwrite(source){
-        if(!confirm(`Please tell me it's O.K. to overwrite ${source.split('/').slice(-1)} with the current textContent`)){
+        if(!confirm(`Please tell me it's O.K. to overwrite ${source.split('/').slice(-1)} with the current data`)){
             /* 
             This is temporary until I make an auto-git-commit hook allowing you to undo a file save
             Here's a nice blog on how much better undo is than confirm: https://alistapart.com/article/neveruseawarning

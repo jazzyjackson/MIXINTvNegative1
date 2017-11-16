@@ -19,5 +19,5 @@
 
 :host > :not([deflate]) {
   opacity: 1;
-  transition: opacity 0.25s;
+  transition: opacity 0.15s;
 }
