@@ -6,6 +6,7 @@ class PersonalityshellBlock extends ConvoshellBlock {
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     // overwriting the handleSubmit function in ConvoShell
@@ -26,7 +27,6 @@ class PersonalityshellBlock extends ConvoshellBlock {
 
             this.convoBody.insertBefore(shellout, this.convoForm)
             this.input.value = ''
-            this.input.focus()
             // if the shellout finished with an error,
             // replace it with a newer, better, shellout,
             // instead passing the same input to spiders/interpret.js
@@ -52,6 +52,25 @@ class PersonalityshellBlock extends ConvoshellBlock {
 
     }
 
+    convoRest(){
+        // send :reset or getAttribute('botinit')
+    }
+
+    static get actions(){
+        return [
+            // something like this
+            // {"rebuild bot": {
+            //     func: this.prototype.rebuild,
+            //     args: [{select: ["harry","shelly"]}],
+            //     default: [ctx => ctx.getAttribute('botname')],
+            //     info: "If the bot is open to commands, you can send a :build command"
+            // }},
+            {"start over": {
+                func: this.prototype.convoReset,
+                info: "Sends a :reset command, or an init command if one exists"
+            }}
+        ]
+    }
 
     /*
         overwrite the submit method to hit up interpret

@@ -5,29 +5,54 @@ There is no custom element. no document.createElement('proto-block'), just, clas
 class ProtoBlock extends HTMLElement {
     constructor(props){
         super()
+        // each block will have an object references all it's children by their unique tagname
+        // this.child['form'] being a shortcut for this.shadowRoot.children.querySelector('form') 
+        this.child = {}
+
         this.addEventListener('init', () => {
-            this.props = props // props is set twice - once because attributes may need to exist for menu            
-            console.log("proto called from",this.tagName)
+            this.readyState = "loading"
             this.initialized = true
             var template = document.querySelector(`template[renders="${this.tagName.toLowerCase()}"]`)
-            if(!template) return console.error(`${this.tagName} has no template`)
-
+            if(!template) throw new Error(`${this.tagName} has no template`)
+           
             this.attachShadow({mode: 'open'})
             this.shadowRoot.appendChild(template.content.cloneNode(true))
+            // get an array of all nodes, convert it to a set (leave only unique values
+            Array.from(this.shadowRoot.querySelectorAll(':not([ignore])'), child => {
+                if(child.tagName in this.child) throw new Error(`${this.tagName} contains duplicate nodes. Give each node a unique tag name in order to automatically reference each child by name. If you wish to ignore certain nodes set their ignore attribute.`)
+                this.child[child.tagName.toLowerCase()] = child
+            })
             this.shadowParent = this.getRootNode().host 
-            /* if these don't exist it's no big deal,
-            but it's a good standard that a headerTitle and a textarea exist */
-            this.header = this.shadowRoot.querySelector('header-title') || this.shadowRoot.querySelector('header')
-            this.textarea = this.shadowRoot.querySelector('textarea')    
-            // just because they need to exist to pass name and textcontent in        
-            if(this.header && !this.header.textContent){
-                this.header.textContent = this.props.header || this.props.src || 'untitled'
-            } 
-            // if there's a become attribute, play along
-            console.log("proto finished ",this.tagName)
-            this.props = props // and again so that attributeChangedCallback is fired on ancestors                      
-            
         })
+        // called after all the init listeners have been fired (must be synchronous)
+        this.addEventListener('ready', () => {
+            this.props = props 
+            if(this.child['header-title'] || this.child['header'] && !this.header){
+                this.header = this.props.header || this.props.src || 'untitled'
+            }
+            this.readyState = "complete"
+        })
+    }
+
+    get header(){
+        let header = this.child['header-title'] || this.child['header']
+        if(!header) console.error(`${this.tagName} has no header node, failed to get.`)
+        return header.textContent
+    }
+
+    set header(newTextContent){
+        let header = this.child['header-title'] || this.child['header']
+        if(!header) console.error(`${this.tagName} has no header node, failed to set ${newTextContent}`)
+        else return header.textContent = newTextContent
+    }
+    
+    set data(newTextContent){
+        if(!this.child['textarea']) throw new Error(`${this.tagName} has no textarea node to record data`)
+        return this.child['textarea'].textContent = newTextContent
+    }
+
+    get data(){
+        return this.child['textarea'].textContent
     }
 
     /* get actions that should be exposed to menu block from this class */

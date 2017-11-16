@@ -1,20 +1,33 @@
 class ShelloutBlock extends ProtoBlock {
+
+    static get actions(){
+        return [
+            {"send signal": {
+                func: this.prototype.sendSig,
+                args: [{select: ["HUP","INT","QUIT","ABRT","KILL","ALRM","TERM","CONT","STOP"]}],
+                default: [() => "KILL"],
+                info: "If the process has not exited on its own, this sends the selected signal to PKILL, targeting the pid of the current process."
+            }},
+        ]
+    }
+
     constructor(props){
         super(props)
         this.addEventListener('init', () => {
-            console.log("shellout called from", this.tagName)
-            
             this.stdout = this.shadowRoot.querySelector('data-stdout')
             this.stderr = this.shadowRoot.querySelector('data-stderr')
             this.error = this.shadowRoot.querySelector('data-error')
-                        
-            if(!this.props.action) this.props = {action: prompt('I need a bash command to execute:')}
+        })
+
+        this.addEventListener('ready', () => {
+            if(!this.props.action && !this.data) this.props = {action: prompt('I need a bash command to execute:')}
             this.subscribeToShell(this.props.action)
         })
     }
     
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     disconnectedCallback(){
@@ -102,7 +115,7 @@ class ShelloutBlock extends ProtoBlock {
         // instead of scrolling I could also keep track of whether there has been an update since the div was last in view, have a little tooltip, scroll up to see new data 
     }
 
-    sendSignal(signal){
+    sendSig(signal){
         if(this.props['exit-code'] || this.props['exit-signal']) throw new Error("You shouldn't try to kill a process that's already over.")
         /* I have to figure out why the pid represents the shell on linux, but the process itself on darwin */
         /* anyway, I have to kill 'the parent of pid', or if that fails, try 'kill the pid' */

@@ -1,17 +1,12 @@
 class DirectoryBlock extends ProtoBlock {
     constructor(props){
         super(props)
-        this.addEventListener('init', () => {
-            this.header = this.shadowRoot.querySelector('header')
-            this.headerTitle = this.shadowRoot.querySelector('header-title')
-            this.fileList = this.shadowRoot.querySelector('file-list')
 
-            this.listFunc = (pathname) => `${pathname}?ls -ap1` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line */
-            this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a switch for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
-            
-            /* if src attribute wasn't set before being connected, set it as the current src */
-            this.setAttribute('src', this.resolvePath(this.props.src || '/'))
-            
+        this.listFunc = (pathname) => `${pathname}?ls -ap1` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line */
+        this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a switch for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
+
+        this.addEventListener('ready', () => {
+            this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
             if(/\/$/.test(this.props.src) == false){
                 // if directory block was initialized with a src that didn't end in a slash,
                 // find the index of the last slash and slice everything else off
@@ -19,7 +14,6 @@ class DirectoryBlock extends ProtoBlock {
                 this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
                 // /docs/utilities.csv becomes /docs/
             }
-            this.headerTitle.textContent = this.props.src
             this.fetchDirectory(this.props.src)
             .then(listText => this.generateIcons(listText))
         })
@@ -33,11 +27,29 @@ class DirectoryBlock extends ProtoBlock {
                 default: [ctx => ctx.getAttribute('src')],
                 info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
             }},
+            {"new directory": {
+
+            }},
+            {"new file": {
+
+            }}
         ]
+    }
+    
+    static get observedAttributes(){
+        return ['src']
+    }
+
+    attributeChangedCallback(attr, oldVal, newVal){
+        switch(attr){
+            case 'src': this.header = newVal; break;
+            // and also fetch, replace data, etc
+        }
     }
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     archive(source){
@@ -79,7 +91,10 @@ class DirectoryBlock extends ProtoBlock {
             credentials: 'same-origin',
             redirect: 'error'
         })
-        .then(response => response.text())
+        .then(response => {
+            this.dispatchEvent(new Event('load'))
+            return response.text()
+        })
     }
 
     fetchStat(pathname, filename){
@@ -113,9 +128,9 @@ class DirectoryBlock extends ProtoBlock {
             .map(name => this.makeMarkup({type: this.determineFileType(name), name: name}))
         
         // setting text of HTML creates subtree
-        this.fileList.innerHTML = folders.concat(files).join('\n')
+        this.child['file-list'].innerHTML = folders.concat(files).join('\n')
         // and then I attach event listeners to all the nodes that exist all of a sudden
-        Array.from(this.fileList.querySelectorAll('file-block'), node => {
+        Array.from(this.child['file-list'].querySelectorAll('file-block'), node => {
             node.details = node.querySelector('file-details')
             /* dblclick doesn't register for iphone, and focus will shift position in the middle of a dblclick */
             /* so I think I'll have to move the 'focus' css to a cusotm attribute, and determine whether to apply  */
@@ -165,19 +180,15 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     openFileFrom(node){
-        var newSibling = new this.blockFromFileType[node.getAttribute('filetype')]
         var trailingSlash = node.getAttribute('filetype') == 'directory' ? '/' : ''
         var newSource = this.props.src + node.getAttribute('title') + trailingSlash
-
+        
         document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
-        newSibling.props = { src: newSource }
-        this.insertSibling(newSibling)
+        
+        var fileBlock = this.blockFromFileType[node.getAttribute('filetype')]
+        this.insertSibling(new fileBlock({ src: newSource }))
         // this is kind of a dumb hack to prevent any animations from starting from position left: 0
         // don't be visible until 'nextTick' of event loop, assuming any style applied via mutation observer get applied before starting an animation
-        newSibling.style.display = "none"
-        setTimeout(()=>{
-             newSibling.style.display = null
-        })  
     }
 
     octal2symbol(filestat){

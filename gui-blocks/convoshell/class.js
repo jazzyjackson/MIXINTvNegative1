@@ -2,29 +2,33 @@ class ConvoshellBlock extends ProtoBlock {
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     constructor(props){
         super(props)
         this.addEventListener('init', () => {
-            this.convoForm = this.shadowRoot.querySelector('convo-form')
-            this.convoBody = this.shadowRoot.querySelector('convo-body')
-            this.form = this.shadowRoot.querySelector('form')
-            this.input = this.shadowRoot.querySelector('convo-form input')
-            this.header = this.shadowRoot.querySelector('header')
-            this.headerTitle = this.shadowRoot.querySelector('header-title')
-            
-            let username = document.querySelector('meta[user-identity]').getAttribute('user-identity')
-            this.headerTitle.textContent = `${username}@${location.hostname} talking to self`
-            this.form.addEventListener('submit', this.handleSubmit.bind(this))
-            this.form.addEventListener('keydown', event => {
+            // identity represents username of node process that ran figjam.js to create this HTML
+            this.identity = document.querySelector('meta[user-identity]').getAttribute('user-identity')
+            this.header = `${this.identity}@${location.hostname} talking to self`
+            this.child['form'].addEventListener('submit', this.handleSubmit.bind(this))
+            this.child['form'].addEventListener('keydown', event => {
                 if(event.type == 'keydown' && event.key == 'Enter'){
                     event.stopPropagation()
                 }
             })
-            this.setAttribute('autofocus', false)
-            setTimeout(() => this.input.focus(), 100)
+            // menu-block will attach a onready event to focus the parent
+            // but that listener is attached before this one (when menu is attached to template's document fragment)
+            // so this one will fire afterward, and refocus on the input
+            this.addEventListener('ready', () => {
+                this.child['input'].focus()
+                this.child['input'].addEventListener('focus', () => this.setAttribute('talking', true))
+                this.child['input'].addEventListener('blur', () => this.setAttribute('talking', null))    
+            })
 
+            this.addEventListener('resize', () => {
+                if(this.props.talking) this.input.focus()
+            })
         })
     }
 
@@ -32,25 +36,24 @@ class ConvoshellBlock extends ProtoBlock {
         event.preventDefault()
         if(this.getAttribute('mode') == 'party'){
             // fetch POST message, disable submit until POST is finished
-        } else {
+        } else {        
             let shellout = new ShelloutBlock({
-                header: this.input.value,
-                action: this.input.value, 
+                header: this.child['input'].value,
+                action: this.child['input'].value,
                 autofocus: false
             })
-            this.convoBody.insertBefore(shellout, this.convoForm)
-            this.input.value = ''
-            this.input.focus()
+            this.child['convo-body'].insertBefore(shellout, this.child['convo-form'])
+            this.child['input'].value = ''
         }
     }
 
     scrollToBottom(){
-        this.convoBody.scrollTop = Number.MAX_SAFE_INTEGER
+        this.child['convo-body'].scrollTop = Number.MAX_SAFE_INTEGER
     }
 
     static get actions(){
         return [
-
+            /* maybe I can open top in a new sibling */
         ]
     }
 

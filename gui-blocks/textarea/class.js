@@ -2,16 +2,17 @@ class TextareaBlock extends ProtoBlock {
     constructor(props){
         super(props)
         this.addEventListener('init', () => {
-            this.header = this.shadowRoot.querySelector('header')
-            this.headerTitle = this.shadowRoot.querySelector('header-title')
-            this.textarea = this.shadowRoot.querySelector('textarea')
+
+        })
+        this.addEventListener('ready', () => {
             if(this.props.src && this.props.src.slice(-1) != '/'){
                 this.fetchFile(this.props.src)
                 // this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely edit the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
-            }else{
+            } else {
+                // if this.props.src is a directory, use that as a prefix to the new filename. so if you make a directory become a text area, that's a way to make a new file in that directory.
                 this.props = {src: (this.props.src || '') + prompt("I need a name for this new file:")}
+                // oh yeah new file can just be "this.become(text-area)" or "this.insertSibling(new TextareaBlock({src: this.props.src})"
             }
-            this.headerTitle.textContent = this.props.src
         })
     }
 
@@ -46,7 +47,8 @@ class TextareaBlock extends ProtoBlock {
     }
 
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))                
+        this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     download(filename){
@@ -62,9 +64,7 @@ class TextareaBlock extends ProtoBlock {
     }
 
     interpret(command){
-        let newSibling = new ShelloutBlock()
-        newSibling.props = {action: command}
-        this.insertSibling(newSibling)
+        this.insertSibling(new ShelloutBlock({action: command}))
     }
 
     overwrite(source){
@@ -80,7 +80,7 @@ class TextareaBlock extends ProtoBlock {
             method: 'put',
             credentials: 'same-origin',
             redirect: 'error',
-            body: this.textarea.value
+            body: this.data
         }).then(console.log).catch(console.error) 
         // .then fetch post git add $source && git commit -m "prompt(what should the message be" ? maybe something like this
 
@@ -89,27 +89,22 @@ class TextareaBlock extends ProtoBlock {
     }
 
     fetchFile(source){
-        this.headerTitle.textContent = '...'        
         this.props = {lastUpdate: Date.now()} 
         fetch(source.split('/').map(encodeURIComponent).join('/'), {
             method: 'get',
             credentials: 'same-origin',
             redirect: 'error' 
         })
-        .then(response => {
-            this.headerTitle.textContent = response.url.slice(location.origin.length)
-            return response
-        })
         .then(response => response.text())
         .then(text => {
-            this.textarea.textContent = text
+            this.data = text
         })
         .then(() => {
             this.dispatchEvent(new Event('load'))
         })
         .catch(error => {
             this.props = {error}
-            this.textarea.textContent = error
+            this.data = error
         })
     }
 }

@@ -6,6 +6,10 @@ class TableBlock extends TextareaBlock {
             this.table = this.shadowRoot.querySelector('table')
         })
 
+        this.addEventListener('ready', () => {
+            
+        })
+
         // this load will fire when the fetch for the file (in src attribute) completes
         this.addEventListener('load', () => {
             // this promise will resolve immediately if the script is already available
@@ -21,7 +25,7 @@ class TableBlock extends TextareaBlock {
 
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
-
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     buildTable(arrayOfarrays){

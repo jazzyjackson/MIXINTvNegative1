@@ -12,10 +12,12 @@ class MenuBlock extends ProtoBlock {
                     this.destroyMenu()
                     this.shadowParent.focus()
                 }
+                // chrome only, event targets get retargeted to top level node, only way to check actualy key down target is with event.path, chrome only
                 if(event.path[0] == this.shadowParent && event.key == 'Enter'){
                     this.createMenu()                 
                 }
             })
+
             this.shadowParent.addEventListener('blur', event => {
                 if(event.relatedTarget){
                     // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
@@ -23,26 +25,23 @@ class MenuBlock extends ProtoBlock {
                 }
             })
             
-            if(this.shadowParent.getAttribute('autofocus') != "false"){
-                // this is kind of sloppy but I don't see a problem with it,
-                // but could become a problem if the component loads especially slow
-                // I think I need a more robust way to fire a 'load' event when the shadowRoot is "ready"
-                setTimeout(()=> this.shadowParent.focus(),100)
-            }
+            this.shadowParent.addEventListener('ready', () => {
+                // if parentNode was passed an autofocus prop, the attribute will be truthy, don't focus on parent
+                this.shadowParent.getAttribute('autofocus') || this.shadowParent.focus()
+            })
         })
     }   
     
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))        
+        this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     createMenu(){
         if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active. Hit 'esc' to destroy menu.")
-        
         this.setAttribute('active','true')
-        // maybe inspect actionMenu and throw a warning for duplicate names? 
         let newListElement = this.appendActionList(this.shadowParent.actionMenu)
-        
+        console.log("parent header is", this.shadowParent.header.getClientRects()[0].height )
         newListElement.style.top = this.shadowParent.header.getClientRects()[0].height 
         // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
     }

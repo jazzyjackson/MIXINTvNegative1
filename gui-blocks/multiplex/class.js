@@ -6,10 +6,8 @@ class MultiplexBlock extends ProtoBlock {
             throw new Error("MultiplexBlock is a prototype for vsplit, hsplit, fibonacciplexer and others, but it cannot exist on its own; it prescribes no method for calculating the size of its children")
         }
         this.addEventListener('init', () => {
-            console.log("init multiplexer")
-            console.log(this.shadowRoot.childElementCount)
-        
             /* hoist child nodes of custom element INTO the shadowRoot of this */
+            // my version of slotting. Should I be using slots for this? 
             Array.from(this.children, child => this.shadowRoot.appendChild(child))
             // if the only childElement is the style, append a couple of become-blocks
             if(this.shadowRoot.childElementCount == 1){
@@ -22,40 +20,42 @@ class MultiplexBlock extends ProtoBlock {
             this.showMax || (this.showMax = 2) // attribute change will fire reCalculateChildren()
             // new MutationObserver(...).observe(this.shadowRoot.children)
             // watch child nodes for new nodes, deleted nodes, and replaced nodes
-            new MutationObserver(event => {
-                event[0].addedNodes.forEach(newChild => {
-                    if(!Array.from(this.shadowRoot.children).includes(newChild)){
-                        // mutation from further down the tree, no action required
-                        return null
+            new MutationObserver(events => {
+                events.forEach(event => {
+                    event.addedNodes.forEach(newChild => {
+                        if(!Array.from(this.shadowRoot.children).includes(newChild)){
+                            // mutation from further down the tree, no action required
+                            return null
+                        }
+                        console.log("INIT", newChild.props)
+                        let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n                
+                        // let enclosedNewChild = newChild
+                        let nthIndex = this.whatChildIsThis(newChild)
+                        this.deflate(newChild)                    
+                        if(nthIndex > lastVisibleIndex){
+                            this.showStart += 1 // will synchronously trigger a recalc, setting style left to destination postion      
+                        }
+                        this.inflate(newChild)
+                    })
+    
+    
+                    event.removedNodes.forEach(oldChild => {
+                        let lastVisibleIndex = this.showStart + this.showMax
+                        if(this.shadowRoot.children.length < lastVisibleIndex){
+                            this.showStart -= 1
+                            lastVisibleIndex--
+                        }
+                        let lastVisibleChild = this.shadowRoot.children[lastVisibleIndex] || this.shadowRoot.children[1]
+                        lastVisibleChild.focus()
+                        this.reCalculateChildren()                                                    
+                    })
+    
+                    // if 'become' was called, a node will be destroyed with a fresh one in its place
+                    // addedNodes will equal removedNodes, and I'll need to give the new node new dimensions
+                    if(event.addedNodes.length == event.removedNodes.length){
+                        this.reCalculateChildren()                                
                     }
-                    console.log("INIT", newChild.props)
-                    let lastVisibleIndex = this.showStart + this.showMax - 1 // -1 to get to Array Index n                
-                    // let enclosedNewChild = newChild
-                    let nthIndex = this.whatChildIsThis(newChild)
-                    this.deflate(newChild)                    
-                    if(nthIndex > lastVisibleIndex){
-                        this.showStart += 1 // will synchronously trigger a recalc, setting style left to destination postion      
-                    }
-                    this.inflate(newChild)
                 })
-
-
-                event[0].removedNodes.forEach(oldChild => {
-                    let lastVisibleIndex = this.showStart + this.showMax
-                    if(this.shadowRoot.children.length < lastVisibleIndex){
-                        this.showStart -= 1
-                        lastVisibleIndex--
-                    }
-                    let lastVisibleChild = this.shadowRoot.children[lastVisibleIndex] || this.shadowRoot.children[1]
-                    lastVisibleChild.focus()
-                    this.reCalculateChildren()                                                    
-                })
-
-                // if 'become' was called, a node will be destroyed with a fresh one in its place
-                // addedNodes will equal removedNodes, and I'll need to give the new node new dimensions
-                if(event[0].addedNodes.length == event[0].removedNodes.length){
-                    this.reCalculateChildren()                                
-                }
             }).observe(this.shadowRoot, {childList: true})
 
             this.addEventListener('keydown', event => {
@@ -82,7 +82,8 @@ class MultiplexBlock extends ProtoBlock {
     }
 
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))                
+        this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     // reCalculateChildren defined by subclasses, vsplit, hsplit, fibonacciplex

@@ -9,12 +9,12 @@ class BecomeBlock extends ProtoBlock {
     }
 
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))                
+        this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     buildBlockList(){      
         let possibleBlocks = defaultFig.blocks.concat(defaultFig.frames).map(classname => classname + '-block')      
-        console.log("Available", possibleBlocks)
         let blockList = document.createElement('ul')
         possibleBlocks.forEach(block => {
             let blockListItem = document.createElement('li')
@@ -23,6 +23,10 @@ class BecomeBlock extends ProtoBlock {
             blockListItem.textContent = block.split('-')[0]
             let becomeFunc = event => {
                 if(event.type == 'keydown' && event.key != 'Enter') return null // ignore nonEnter key events
+                // that was surprising. this event... I don't know how it happened but 
+                // I replaced becomeblock with an element with a form, where a focused the form on ready
+                // and somehow this event right here fired off the submit callback on the form. But that element didn't exist on keydown, so yea I'm surprised
+                event.preventDefault()
                 let enclosedElement = block
                 this.replaceWith(document.createElement(enclosedElement))
             }
@@ -30,6 +34,6 @@ class BecomeBlock extends ProtoBlock {
             blockListItem.addEventListener('keydown', becomeFunc)
             blockList.appendChild(blockListItem)
         })
-        this.shadowRoot.querySelector('block-list').appendChild(blockList)
+        this.child['block-list'].appendChild(blockList)
     }
 }

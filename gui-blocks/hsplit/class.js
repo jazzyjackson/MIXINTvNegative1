@@ -4,7 +4,8 @@ class HsplitBlock extends MultiplexBlock {
     }
 
     connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))        
+        this.initialized || this.dispatchEvent(new Event('init'))
+                         && this.dispatchEvent(new Event('ready'))
     }
 
     deflate(node){
