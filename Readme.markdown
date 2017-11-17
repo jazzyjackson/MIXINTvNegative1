@@ -25,6 +25,8 @@ make mini: to run without downloading anything else, total size < 1MB
 make medium: to download useful external projects: showdown for rendering markdown files, codemirror for editing code, papa parse for working with csv and tabular data. Less than 10MB.
 make max: clone the ChatScript project, including an entire local instance of Wordnet, an English dictionary and meaning-map. Uncompressed ~ 1GB
 
+If you're running behind a load balancer or reverse proxy already and want all the internal requests to be HTTP, you can set an environment variable to "DISABLE_SSL" and neither switchboard nor operator will check for certificate files.
+
 # Operator.js
 Operator.js will connect your calls - fulfilling network requests in one of six ways:
 

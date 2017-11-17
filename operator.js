@@ -6,13 +6,13 @@ var bookkeeper  = require('./bookkeeper')
 var inspect     = require('util').inspect
 var spawn       = require('child_process').spawn
 var figjam      = chooseFigJam()
-var key, cert
+var keycert     = {}
 var subprocess_registry = {}
 /* try to read key and certificate from disk and enable HTTPS if true */
-var SSL_READY  = trySSL(key, cert)       
+var SSL_READY  = trySSL(keycert) // mutates keycert object to contain key and cert. if object has key/cert properties already, those values are used as filenames and overwritten with file contents
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
-.createServer(SSL_READY && {key: key, cert: cert})
+.createServer(SSL_READY && keycert)
 .on('request', function(req,res){  
     /* recursive ternary tests conditions until success */
     /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) : /* from new EventSource (SSE) */
@@ -51,13 +51,15 @@ function forkProcess(request){
 }
 
 function messageProcess(pid, command){
-    console.log("PID", pid)
-    console.log("Command", JSON.stringify(command + os.EOL))
     // I'm assuming that piping to stdin of a nonexistant process will fail right away, messageProcess should be called in a try/catch block
     subprocess_registry[pid].stdin.write(command + os.EOL) // there is an option to have a callback if the write throws errors, but I'm only anticipating errors when the subprocess doesn't exist.
 }
 
 function streamFile(request, response){
+
+    request.url.split('?')[0].includes('.svg') && response.setHeader('Content-Type','image/svg+xml')
+    request.url.split('?')[0].includes('.css') && response.setHeader('Content-Type','text/css')
+
     /* response.setHeader('x-githash', process.env.githash) // send metadata about what version of a file was requested */
     fs.createReadStream(decodeURIComponent(request.url.split('?')[0].slice(1)))
     .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
@@ -164,21 +166,6 @@ function subscribe2events(request, response){
     })
 }
 
-function trySSL(key, cert){
-    /* force HTTP server and skip reading files */
-    return false
-    if(process.env.DISABLE_SSL) return false
-    try {
-        /* blocking, but only once at start up */
-        key = fs.readFileSync('key')
-        cert = fs.readFileSync('cert')
-        return true // only sets SSL_READY if reading both files succeeded
-    } catch(SSL_ERROR){
-        bookkeeper.log({SSL_ERROR: SSL_ERROR})
-        return false
-    }
-}
-
 function chooseFigJam(){
     /* figjam does a kind of webpack-y thing and streams all the files in order over a single request */
     /* but its an async/await situation compatible with node 8+, so check if we want to use it here */
@@ -191,5 +178,19 @@ function chooseFigJam(){
         }
     } else {
         return require('./figjam') // figjam is passed requests, also serves retrograde if it doesn't recognize the user agent
+    }
+}
+
+function trySSL(keycert){
+    /* force HTTP server and skip reading files */
+    if(process.env.DISABLE_SSL) return false
+    try {
+        /* blocking, but only once at start up */
+        keycert.key = fs.readFileSync(keycert.key || 'key')
+        keycert.cert = fs.readFileSync(keycert.cert || 'cert')
+        return true // only sets SSL_READY if reading both files succeeded
+    } catch(SSL_ERROR){
+        bookkeeper.log({SSL_ERROR: SSL_ERROR})
+        return false
     }
 }
