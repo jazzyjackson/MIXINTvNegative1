@@ -3,7 +3,7 @@ process.platform.includes('win32') && process.exit(console.log("Please start me 
 var os          = require('os')
 var fs          = require('fs')
 var bookkeeper  = require('./bookkeeper')
-var inspect    = require('util').inspect
+var inspect     = require('util').inspect
 var spawn       = require('child_process').spawn
 var figjam      = chooseFigJam()
 var key, cert
@@ -190,6 +190,6 @@ function chooseFigJam(){
             .pipe(response)
         }
     } else {
-        return require('./figjam')
+        return require('./figjam') // figjam is passed requests, also serves retrograde if it doesn't recognize the user agent
     }
 }
