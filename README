@@ -19,6 +19,12 @@ When you start Poly-Int on your machine, you're given a link that makes it acces
 
 When connected to a Poly-Int, you're served a graph of web-components that can be modified with code and content you write yourself. Whenever you arrange an environment with content and capabilities that are useful to you, the whole arrangement can be cloned to run on any other computer, using git remotes to synchronize content if desired. This allows for shared documents and chatrooms that are available offline and synchronize when connected.
 
+# Starting Poly-Int
+git clone ...
+make mini: to run without downloading anything else, total size < 1MB
+make medium: to download useful external projects: showdown for rendering markdown files, codemirror for editing code, papa parse for working with csv and tabular data. Less than 10MB.
+make max: clone the ChatScript project, including an entire local instance of Wordnet, an English dictionary and meaning-map. Uncompressed ~ 1GB
+
 # Operator.js
 Operator.js will connect your calls - fulfilling network requests in one of six ways:
 
