@@ -1,7 +1,7 @@
 let keymaker      = require('./keymaker')
 let child_process = require('child_process')
 let http          = require('http')
-// operatorRegistry is just a key:value store with a method for 
+// operatorRegistry is just a key:value store with a method for spinning up a child process as a user with their own group permissions
 class operatorRegistry {
     constructor(){
         this.registerOperator('default')
@@ -12,6 +12,7 @@ class operatorRegistry {
         // constructs a promise, assigns it to this[id], returns this[id]
         return this[identity] = new Promise((resolve, reject) => {
             // TO DO: start child process using identity this request, something like sudo -u ${identity} sh -c command 
+            // check if user exists on system, useradd otherwise - what about passwords? not sure.
             // https://askubuntu.com/questions/294736/run-a-shell-script-as-another-user-that-has-no-password
             // only files that this identity has permission to read will be served and execute
             let server = child_process.spawn('./operator.js', [0]) // call for an operator on port 0, system will assign available port
