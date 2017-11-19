@@ -25,6 +25,10 @@ textarea {
   resize: none;
   white-space: nowrap;  
 }
+
+:host-context([whitespace="wrap"]) textarea {
+  white-space: normal;
+}
 /* 
 .textContainer {
   width: 100%;

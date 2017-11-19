@@ -43,6 +43,13 @@ class TextareaBlock extends ProtoBlock {
                                     ? `chmod +x .${ctx.getAttribute('src')} && .${ctx.getAttribute('src')}`
                                     : `cat .${ctx.getAttribute('src')} | xargs echo`]
             }},
+            {"toggle word wrap": {
+                func: HTMLElement.prototype.setAttribute,
+                args: [{label: "whitespace"},{select: ["wrap","no wrap"]}],
+                default: [() => "whitespace", ctx => {
+                    return ctx.getAttribute("whitespace") == "wrap" ? "no wrap" : "wrap"
+                }]
+            }}
         ]
     }
 

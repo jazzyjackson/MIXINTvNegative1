@@ -82,3 +82,7 @@ form > *:focus {
 form {
   display: inline-block;
 }
+
+form > *:not(:last-child)::after{
+  content: ','
+}
