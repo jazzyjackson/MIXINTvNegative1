@@ -40,9 +40,10 @@ class ProtoBlock extends HTMLElement {
                 this.header = this.props.header || this.props.src || this.props.action || 'untitled'
             }
             if(!this.props.src && !this.props.action){
+                // consider yourself complete if no actions or sources were assigned                
                 this.readyState = "complete"
             } else {
-                this.readyState = "loading"
+                // otherwise wait for the operation (operations depends on particular block) to fire a load event
                 this.addEventListener('load', () => this.readyState = "complete")
             }
         })
@@ -77,15 +78,15 @@ class ProtoBlock extends HTMLElement {
     /* get actions that should be exposed to menu block from this class */
     static get actions(){
         return [
+            {"remove from window": {
+                func: HTMLElement.prototype.remove,
+                info: "Calls this.remove()"
+            }},
             {"become": {
                 func: this.prototype.become,
                 args: [{select: window.defaultFig.blocks}],
                 default: [ctx => ctx.tagName.split('-')[0].toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
-            }},
-            {"remove from window": {
-                func: HTMLElement.prototype.remove,
-                info: "Calls this.remove()"
             }},
             {"inspect or modify": {
                 func: this.prototype.inspectOrModify,
@@ -123,7 +124,7 @@ class ProtoBlock extends HTMLElement {
         let nameOf = object => Object.keys(object)[0]
         var actionNames = new Set()
         
-        this.superClassChain.forEach(superClass => {
+        this.superClassChain.reverse().forEach(superClass => {
             var actions = superClass.actions
             actions.forEach(action => {
                 if(!actionNames.has(nameOf(action))){
