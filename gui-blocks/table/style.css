@@ -1,3 +1,8 @@
+* {
+    font-family: monospace;
+    box-sizing: border-box;
+}
+
 :host {
     position: absolute;
     display: flex;
@@ -8,37 +13,24 @@
     height: 100%;
     background: white;
     display: flex;
-  }
+}
   
-  header {
+header {
     background: black;
     color: white;
     padding: 3px;
-  }
+}
+
   
-  * {
-    font-family: monospace;
-  }
-  
-  textarea {
+:host > textarea {
     flex: 1;
     resize: none;
     white-space: nowrap;
-  }
-  /* 
-  .textContainer {
-    width: 100%;
-    height: 100%;
-  }
-  
-  .textContainer textarea {
-    width: 100%;
-    height: 100%;
-  } */
+}
 
-  table-container {
-      overflow: auto;
-  }
+table-container {
+    overflow: auto;
+}
 
 table {
     border-spacing: 0;
@@ -46,4 +38,25 @@ table {
 
 td {
     border: 1px solid #c3bebe;
+    position: relative;
+    white-space: pre;
+}
+
+:host-context([whitespace="wrap"]) td {
+    white-space: normal;
+}
+
+td textarea {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+    resize: none;
+}
+
+footer {
+    display: none;
+    background: black;
+    color: white;
 }
