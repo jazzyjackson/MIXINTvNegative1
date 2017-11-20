@@ -88,7 +88,7 @@ class TableBlock extends TextareaBlock {
     updateTable(cellToUpdate){
         let colIndex = cellToUpdate.cellIndex
         let rowIndex = cellToUpdate.parentElement.rowIndex
-        this.parsedData[rowIndex][colIndex] = cellToUpdate.firstChild.value
+        this.parsedData[rowIndex][colIndex] = cellToUpdate.firstChild.value.trim() // throw out newlines
         this.data = Papa.unparse(this.parsedData)
         this.buildTable(this.parsedData)
         this.child['table'].children[rowIndex].children[colIndex].focus()
