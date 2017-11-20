@@ -66,6 +66,7 @@ class TextareaBlock extends ProtoBlock {
         a.click()
     }
 
+    // this doesn't work yet but I havent really looked into it, maybe I'm using firefox function?
     copy2clipboard(filename){
         document.execCommand('copy');
         this.addEventListener('copy', event => {

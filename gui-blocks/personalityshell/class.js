@@ -4,11 +4,6 @@ class PersonalityshellBlock extends ConvoshellBlock {
         super(props)
     }
 
-    connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))
-                         && this.dispatchEvent(new Event('ready'))
-    }
-
     // overwriting the handleSubmit function in ConvoShell
     handleSubmit(event){
         event.preventDefault()
@@ -52,7 +47,12 @@ class PersonalityshellBlock extends ConvoshellBlock {
 
     }
 
-    convoRest(){
+    chatscriptStart(){
+        // "ChatScript" must have been added to environment path
+        fetch('')
+    }
+
+    convoRestart(){
         // send :reset or getAttribute('botinit')
     }
 
@@ -65,9 +65,13 @@ class PersonalityshellBlock extends ConvoshellBlock {
             //     default: [ctx => ctx.getAttribute('botname')],
             //     info: "If the bot is open to commands, you can send a :build command"
             // }},
-            {"start over": {
-                func: this.prototype.convoReset,
+            {"restart convo": {
+                func: this.prototype.convoRestart,
                 info: "Sends a :reset command, or an init command if one exists"
+            }},
+            {"start ChatScript": {
+                func: this.prototype.chatscriptStart(),
+                info: "Sends a command to the server to start ChatScript as a background process."
             }}
         ]
     }

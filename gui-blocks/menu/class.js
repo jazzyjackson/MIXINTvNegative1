@@ -163,17 +163,17 @@ class MenuBlock extends ProtoBlock {
             // So you always have to click twice to invoke
             // instead of accidentally leaving this.remove() open while you try to click on the one next to
             newMenuOption.addEventListener('blur', event => {
-                // if(!newMenuOption.contains(event.relatedTarget)){
-                //     newMenuOption.replaceWith(oldMenuOption)
-                // } else {
-                //     /* for the case that a child of the menu option (likely a form element)
-                //         was focused, but then moved away from, we listen for blurs from children, too */
-                //     event.relatedTarget.addEventListener('blur', event => {
-                //         if(!newMenuOption.contains(event.relatedTarget)){
-                //             newMenuOption.replaceWith(oldMenuOption)
-                //         }
-                //     })
-                // }
+                if(!newMenuOption.contains(event.relatedTarget)){
+                    newMenuOption.replaceWith(oldMenuOption)
+                } else {
+                    /* for the case that a child of the menu option (likely a form element)
+                        was focused, but then moved away from, we listen for blurs from children, too */
+                    event.relatedTarget.addEventListener('blur', event => {
+                        if(!newMenuOption.contains(event.relatedTarget)){
+                            newMenuOption.replaceWith(oldMenuOption)
+                        }
+                    })
+                }
                 /* I'm only crossing my fingers that adding nested anonymous listeners enclosing DOM nodes
                     doesn't cause memory leaks, but when one of these is finally called the entire parent tree
                     (the <ul> containing all the menu options) is destroyed (or at least I mean for it to be)
