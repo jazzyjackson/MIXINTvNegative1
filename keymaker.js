@@ -1,14 +1,11 @@
-const https = require('https')
 /* authorization is two step: magicurl -> valid session?; magiculr -> identity profile */
 /* only the first call is necessary for every request, seshcache keeps a local copy of the identity profile to avoid making unneccessary API calls */
 const seshcache = {} 
 // read file sync, blocking, happens once at start up
-const authini = process.env.authconfig ? require('fs').readFileSync(process.env.authconfig).toString() : ""
-// I could npm install ini but I could also just split filter map reduce over the .ini file
-const authConfig = authini.split('\n')
-                          .filter(line => line.includes('=') && !line.includes('#'))
-                          .map(kv => ({[kv.split('=')[0]]: kv.split('=').slice(1).join('')}))
-                          .reduce((a,b) => Object.assign(a,b))
+const authConfig = JSON.parse(require('fs').readFileSync("keyconfig.json").toString())[process.env.sso || 'localhost']
+
+const agent = require('https')
+
 // extract all the necessary values from the imported config
 // haven't decided what happens if you don't specify an authconfig, redirected to the readme? logged in as nobody? yea... logged in as nobody
 const { callbackURL, SSOURL, SSOquery, checkAuthDomain, cookieDomain, identityKey} = authConfig
@@ -47,7 +44,7 @@ function getSessionID(magicurl){
     return new Promise((resolve,reject) => {
         var checkAuthRoute = '/am/amapi/user/session/'
         var authKeyName = 'isAuthorized' // expected to be type Boolean true
-        https.get(checkAuthDomain + checkAuthRoute + magicurl, response => {
+        request.get(checkAuthDomain + checkAuthRoute + magicurl, response => {
             var resBuffers = []
             response.on('data', data => resBuffers.push(data))
             response.on('end', () => {
@@ -63,7 +60,7 @@ function getSessionID(magicurl){
 function getProfile(sessionID){
     return new Promise((resolve,reject) => {
         var checkIdentityRoute = '/am/amapi/user/profile_core/'
-        https.get(checkAuthDomain + checkIdentityRoute + sessionID, response => {
+        request.get(checkAuthDomain + checkIdentityRoute + sessionID, response => {
             var resBuffers = []
             response.on('data', data => resBuffers.push(data))
             response.on('end', () => {

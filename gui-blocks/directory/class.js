@@ -28,12 +28,38 @@ class DirectoryBlock extends ProtoBlock {
                 info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
             }},
             {"new directory": {
-
+                func: this.prototype.mkdir,
+                args: [{input: "directory name"}],
+                default: [ctx => Date.now()],
+                info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
             }},
             {"new file": {
-
+                func: this.prototype.touch,
+                args: [{input: "filename"}],
+                default: [ctx => Date.now() + '.txt'],
+                info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
             }}
         ]
+    }
+
+    mkdir(dirname){
+        return fetch(this.props.src + '?' + encodeURIComponent(`mkdir ${dirname}`), {
+            method: 'post',
+            credentials: 'same-origin',
+            redirect: 'error'
+        })
+        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .catch(console.error)
+    }
+
+    touch(filename){
+        return fetch(this.props.src + '?' + encodeURIComponent(`touch ${filename}`), {
+            method: 'post',
+            credentials: 'same-origin',
+            redirect: 'error'
+        })
+        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .catch(console.error)        
     }
     
     static get observedAttributes(){

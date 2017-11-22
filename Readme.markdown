@@ -9,15 +9,17 @@ Cooperating may include:
 - Building applications and artwork for yourself and others
 
 Your network may include:
-- close friends and family
-- your local wifi router
 - co-workers and acquaintences
 - transoceanic fiber optics
+- close friends and family
 - chatbot personalities that control computers
+- your local wifi router
 
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on your local network whether or not you have a connection to the world-wide-web.
 
 When connected to a Poly-Int, you're served a graph of web-components that can be modified with code and content you write yourself. Whenever you arrange an environment with content and capabilities that are useful to you, the whole arrangement can be cloned to run on any other computer, using git remotes to synchronize content if desired. This allows for shared documents and chatrooms that are available offline and synchronize when connected.
+
+Alongside acting as a file server, Poly-Int can execute programs in response to web requests in the vein of cgi scripts or amazon lambda functions. The complete functionality is provided by 4 programs: the operator, the switchboard, the keymaker, and figjam. Connectors to interface with chatbots are provided as spiders.
 
 # Starting Poly-Int
 git clone ...
@@ -26,6 +28,24 @@ make medium: to download useful external projects: showdown for rendering markdo
 make max: clone the ChatScript project, including an entire local instance of Wordnet, an English dictionary and meaning-map. Uncompressed ~ 1GB
 
 If you're running behind a load balancer or reverse proxy already and want all the internal requests to be HTTP, you can set an environment variable to "DISABLE_SSL" and neither switchboard nor operator will check for certificate files.
+
+# Working with Owners, Groups, and the World with Switchboard.js
+
+Many collaboration and file sharing tools require all participants to register an account with the service where they can choose what other accounts have access to their files - these accounts are managed by a web server that provides an authentication and access scheme of its own. I wanted to avoid re-implementing access control in my own application when *nix operating systems have sophisticated permissions capabilities built-in. 
+
+Switchboard.js is my implementation of a reverse-proxy service that authenticates web requests and fulfills the requests by passing them to a nodejs microserver. An instance of operator.js is launched as a child process of switchboard.js, and it's called with `sudo -u` to run the microserver process as the identity associated with an incoming web request.
+
+In this way, whatever permissions granted to a *nix id determine what files and programs can be accessed via web request. 
+
+On *nix systems, every file/program/directory has true/false values for whether it can be read, overwritten, and run as an executable program. In human-readable (or 'symbolic') form this is expressed as 'rwx' for read-write-execute. 
+These rwx permissions can be different for the creator of the file (called the __owner__), a __group__ (lists of particular identities that should be allowed to access the file), and __world__, sometimes called __other__, meaning, everybody else (including the special identity *nobody*).
+
+So `rwx r-x ---` means the owner/creator can read, overwrite, and execute their own file, members of a group can read the file and run it as a program, but everybody else is prevented from any access. (If the directory the file is in is readable by the world, the world can see the file is there but can't read it. If a directory has its world permissions set to --- than no one else can see that the directory is there at all).
+
+# Magic URLs and cookies with Keyconfig and Keymaker.js
+
+Switchboard.js handles creating accounts and proxying requests to the right child process, but before it can do that it needs to know who the incoming request belongs to. Keymaker.js includes some regex to check for a session ID in the cookie and the 
+
 
 # Operator.js
 Operator.js will connect your calls - fulfilling network requests in one of six ways:
@@ -57,9 +77,6 @@ require(SSL_READY ? 'https' : 'http')
  _See annotated code in guide/operator.js_
 
 
-# Switchboard.js
-Now, it might seem crazy to just expose a computer's filesystem and system shells to the network - but this is how mainframe timeshare systems have worked for decades: you let anyone call the machine up, but assign them a userid with appropriate permissions. So anyone can make a request to remove files (rm -rf) or Poweroff the machine, but if they don't have permissions, their request is politely declined. This layer of protection and precise management of who can and can't modify the system is built into the various Unixes, so whether you're on Linux or MacOSX or Windows Subsystem for Linux (Windows 10), Switchboard.js can generate permissions profiles for the participants of your network. You're given control of who has permission to view and add files to your machine, and all requests are handled by a child processes running as that account.
-_More info and annotated code in guide/switchboard.js_
 
 # Figtree.js
 
@@ -131,3 +148,4 @@ tying in back end api's from the front-end is as easy as POSTing a command
 
 Adding functionality:
 Functionality may come in the form of a program in any language kept in the spiders directory, to be executed on command for any user, or as new definitions for custom components, or a combination thereof: custom elements that rely on some back end functionality.
+

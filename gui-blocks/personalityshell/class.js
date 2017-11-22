@@ -35,7 +35,7 @@ class PersonalityshellBlock extends ConvoshellBlock {
                         header: shellout.props.header,
                         action: `printf ${encodedInput} | base64 --decode | node interpret`, 
                         autofocus: false, 
-                        cwd: '/spiders/'
+                        cwd: '/spiders/basic/'
                     })
                     shellout.replaceWith(personalityOut)
                 }

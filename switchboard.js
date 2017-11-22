@@ -63,6 +63,6 @@ http.createServer(async (request, response) => {
             proxyResponse.pipe(response)
         }))
     }
-}).listen(process.env.PORT || 5000)
+}).listen(process.env.PORT || 3000).on('listening', function(){ console.log("Started a switchboard on port", this.address().port) })
 /* it would be fun to open a port for making new sessions. spin up an internal http server, listen for requests from chatscript ... if switchboard is started in the same shell as chatscript, they can communicate with environment variables create an operator as a username, make a magic url, send JSON back to chatscript, eval location.pathname += ?magicurl=$magicurl */
 /* then suddenly you can write chatscript sphinxes that let you log on once you answer some questions */

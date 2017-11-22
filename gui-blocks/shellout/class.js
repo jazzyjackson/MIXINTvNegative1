@@ -76,7 +76,7 @@ class ShelloutBlock extends ProtoBlock {
                     header: newValue,
                     action: `printf ${btoa(JSON.stringify(newValue))} | base64 --decode | node interpret`, 
                     autofocus: false, 
-                    cwd: '/spiders/'
+                    cwd: '/spiders/basic/'
                 }));
                 break;
             case 'eval':

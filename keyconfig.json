@@ -1,0 +1,17 @@
+{"info": {
+    "protocol":"is the identification server encrypted? I'll switch between http or https according to this.",
+    "callbackURL":"callback URL is the destination the authentication page should redirect you to on success",
+    "SSOURL":"SSOURL + SSOquery will be concatenated with callbackURL to form the URL that non-identities will be redirected to",
+    "SSOquery":"SSOURL + SSOquery will be concatenated with callbackURL to form the URL that non-identities will be redirected to",
+    "checkAuthDomain":"this is the domain that hosts the API to check whether a user is logged in",
+    "cookieDomain":"this is the domain name of this server in order to tell the client to send me cookies",
+    "identityKey":"identityKey is the property returned by the identity profile API call that represents the string to use as an identity "
+},"localhost": {
+    "protocol":"http",
+    "callbackURL":"localhost:5000",
+    "SSOURL":"localhost:5000",
+    "SSOquery":"redirurl=",
+    "checkAuthDomain":"localhost",
+    "cookieDomain":"localhost",
+    "identityKey":"id"
+}}

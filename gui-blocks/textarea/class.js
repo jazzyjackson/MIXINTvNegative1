@@ -18,6 +18,12 @@ class TextareaBlock extends ProtoBlock {
 
     static get actions(){
         return [
+            {"overwrite": {
+                func: this.prototype.overwrite,
+                args: [{input: "filename"}],
+                default: [ctx => ctx.getAttribute('src')],
+                info: "Write file to disk with given source as pathname"
+            }},
             {"get link": {
                 func: this.prototype.copy2clipboard,
                 args: [{input: "filename"}],
@@ -29,12 +35,6 @@ class TextareaBlock extends ProtoBlock {
                 args: [{input: "filename"}],
                 default: [ctx => location.origin + ctx.getAttribute('src')],
                 info: "Creates an ephemeral <a href download> tag and clicks on it for you."
-            }},
-            {"overwrite": {
-                func: this.prototype.overwrite,
-                args: [{input: "filename"}],
-                default: [ctx => ctx.getAttribute('src')],
-                info: "Write file to disk with given source as pathname"
             }},
             {"interpret": {
                 func: this.prototype.interpret,
@@ -49,8 +49,24 @@ class TextareaBlock extends ProtoBlock {
                 default: [() => "whitespace", ctx => {
                     return ctx.getAttribute("whitespace") == "wrap" ? "no wrap" : "wrap"
                 }]
+            }},
+            {"delete from disk": {
+                func: this.prototype.rm,
+                args: [{label: ""}],
+                default: [()=>this.props.src],
+                info: "sends the 'rm' command to delete this file from disk."
             }}
         ]
+    }
+
+    rm(){
+        return fetch('/?' + encodeURIComponent(`rm ./${this.props.src}`), {
+            method: 'post',
+            credentials: 'same-origin',
+            redirect: 'error'
+        })
+        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .catch(console.error)
     }
 
     connectedCallback(){
