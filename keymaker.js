@@ -15,7 +15,9 @@ var formatCookie = key => 'magicurl=' + key + ';Path=/;Domain=' + cookieDomain
 async function identify(request, response){
     /* first check if there is a key in the cookie or in the url. If not, exit.  */
     var key = findKey(request.url) || findKey(request.headers.cookie)
-    if(!key) return key
+    // if environment variable 'no key OK' is truthy, set ID as 'nobody', allowing users without authorization cookies to interact with the server.
+    // else, request.id will be undefined and switchboard will redirect 
+    if(!key) return request.id = process.env.nokeyok && 'nobody'
 
     /* wait for SSO to verify that a given key is still valid / logged in, if not, erase key from cookie and exit */
     var isAuthorized = await getSessionID(key)

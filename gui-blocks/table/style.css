@@ -30,6 +30,7 @@ header {
 
 table-container {
     overflow: auto;
+    flex: 1;
 }
 
 table {

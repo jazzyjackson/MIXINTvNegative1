@@ -8,7 +8,7 @@ class operatorRegistry {
     }
 
     // sticking it as a static method so require is only called once and used by all instances
-    registerOperator(identity){
+    registerOperator(identity, optuid){
         // constructs a promise, assigns it to this[id], returns this[id]
         return this[identity] = new Promise((resolve, reject) => {
             // TO DO: start child process using identity this request, something like sudo -u ${identity} sh -c command 
@@ -49,8 +49,9 @@ http.createServer(async (request, response) => {
         response.writeHead(302, { 'Location': '//' + request.url.split('?')[0] })
         response.end()
     } else {
+        console.log(Object.keys(operators))
         /* if an operator was never created for this identity, fine, use the default operator */
-        let proxyDestination = await (operators[request.id] || /* operators.registerOperator(request.id) || */ operators['default'])
+        let proxyDestination = await (operators[request.id] || operators.registerOperator(request.id) || operators['default'])
         request.pipe(http.request({
             hostname: proxyDestination.hostname,
             port: proxyDestination.port,

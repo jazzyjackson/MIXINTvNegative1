@@ -175,9 +175,9 @@ class ProtoBlock extends HTMLElement {
     }
 
     attachGlobalScript(filename){
-        return new Promise(function(resolve, reject){
+        return new Promise((resolve, reject) => {
             let existingScripts = Array.from(document.head.getElementsByTagName('script'))
-            if(existingScripts.some(script => filename == script.getAttribute('src'))){
+            if(existingScripts.some(script => script.getAttribute('src') == filename)){
                 // if the script already exists, resolve
                 resolve()
             } else {
@@ -192,10 +192,28 @@ class ProtoBlock extends HTMLElement {
         })
     }
 
+    loadLocalStyle(filename){
+        return new Promise((resolve, reject) => {
+            let existingStyles = Array.from(this.shadowRoot.children)
+            if(existingStyles.some(style => style.getAttribute('href') == filename)){
+                resolve()
+            } else {
+                let newStyle = document.createElement('link')
+                newStyle.setAttribute('rel', 'stylesheet')
+                newStyle.setAttribute('href',filename)
+                newStyle.addEventListener('load', () => {
+                    resolve()
+                })
+                this.shadowRoot.insertBefore(newStyle, this.shadowRoot.firstElementChild)
+            }
+        })
+    }
+
     inspectOrModify(filename){
         let filepath = `/gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
         // TextBlock.from(filepath)
         // eventually CodeMirrorBlock
+        // set 'target' of codemirror as selector of a node
         // maybe use DirectoryBlocks function to open the appropriate block
         // open TextBlock from the source code, might be class.js
     }
@@ -256,7 +274,7 @@ class ProtoBlock extends HTMLElement {
             || part == '..'
             || part == '.'
         })
-        // bit mark will be like [undefined, true, true, undefined], the true values are the ones we want to filter out, so !invert the bitmask
+        // bit mask will be like [false, true, true, false], the true values are the ones we want to filter out, so !invert the bitmask
         return pathParts.filter((e,i) => !bitmask[i]).join('/')
     }
 }

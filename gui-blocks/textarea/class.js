@@ -52,8 +52,6 @@ class TextareaBlock extends ProtoBlock {
             }},
             {"delete from disk": {
                 func: this.prototype.rm,
-                args: [{label: ""}],
-                default: [()=>this.props.src],
                 info: "sends the 'rm' command to delete this file from disk."
             }}
         ]
@@ -65,7 +63,7 @@ class TextareaBlock extends ProtoBlock {
             credentials: 'same-origin',
             redirect: 'error'
         })
-        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .then(()=>{ this.remove() }) // calling this.become with no argument re-creates / re-loads the current block from src
         .catch(console.error)
     }
 
