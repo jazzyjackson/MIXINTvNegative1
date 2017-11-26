@@ -42,12 +42,16 @@ class MultiplexBlock extends ProtoBlock {
     
     
                     event.removedNodes.forEach(oldChild => {
+                        let nth = oldChild.getAttribute('tabindex')
                         let lastVisibleIndex = this.showStart + this.showMax
                         if(this.shadowRoot.children.length < lastVisibleIndex){
                             this.showStart -= 1
                             lastVisibleIndex--
                         }
-                        this.reCalculateChildren()                                                    
+                        this.reCalculateChildren()   
+                        // focus whatever child has the new tabindex equal to the old one
+                        let replacementChild = this.shadowRoot.querySelector(`[tabindex="${nth}"]`)
+                        replacementChild && replacementChild.focus()                                            
                     })
     
                     // if 'become' was called, a node will be destroyed with a fresh one in its place

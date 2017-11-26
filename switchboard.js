@@ -1,69 +1,205 @@
-let keymaker      = require('./keymaker')
-let child_process = require('child_process')
-let http          = require('http')
-// operatorRegistry is just a key:value store with a method for spinning up a child process as a user with their own group permissions
-class operatorRegistry {
-    constructor(){
-        this.registerOperator('default')
-    }
+#!/usr/local/bin/node
+process.platform.includes('win32') && process.exit(console.log("Please start me on something unixy."))
+var os          = require('os')
+var fs          = require('fs')
+var bookkeeper  = require('./bookkeeper')
+var inspect     = require('util').inspect
+var spawn       = require('child_process').spawn
+var figjam      = chooseFigJam()
+var keycert     = {}
+var subprocess_registry = {}
+/* try to read key and certificate from disk and enable HTTPS if true */
+var SSL_READY  = trySSL(keycert) // mutates keycert object to contain key and cert. if object has key/cert properties already, those values are used as filenames and overwritten with file contents
+/* check if private key and certificate were read properly and start server  */ 
+require(SSL_READY ? 'https' : 'http')
+.createServer(SSL_READY && keycert)
+.on('request', function(req,res){  
+    /* recursive ternary tests conditions until success */
+    /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) : /* from new EventSource (SSE) */
+    /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           : /* url path w/ trailing slash */
+    req.method == 'GET'                               ? streamFile(req,res)       :
+    req.method == 'PUT'                               ? saveBody(req,res)         :
+    req.method == 'POST'                              ? streamSubProcess(req,res) :
+    req.method == 'DELETE'                            ? deleteFile(req,res)       :
+    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
+    res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
+})
+.listen(process.argv[2] || 3000)       
+.on('listening', function(){ console.log(this.address().port) })
 
-    // sticking it as a static method so require is only called once and used by all instances
-    registerOperator(identity, optuid){
-        // constructs a promise, assigns it to this[id], returns this[id]
-        return this[identity] = new Promise((resolve, reject) => {
-            // TO DO: start child process using identity this request, something like sudo -u ${identity} sh -c command 
-            // check if user exists on system, useradd otherwise - what about passwords? not sure.
-            // https://askubuntu.com/questions/294736/run-a-shell-script-as-another-user-that-has-no-password
-            // only files that this identity has permission to read will be served and execute
-            let server = child_process.spawn('./operator.js', [0]) // call for an operator on port 0, system will assign available port
-            server.stdout.on('data', port => {
-                resolve({
-                    // keep a reference to the child_process so it can be killed or inspected
-                    process: server,
-                    // operator.js will print the port it's assigned by the system
-                    port: parseInt(port.toString()), 
-                    // you could conceivably use registerOperator to spawn a server on a remote machine and 
-                    // return its IP address here, but right now everything happens on localhost
-                    hostname: 'localhost'
-                })
-            })
-            server.stderr.on('data', reject)
-            server.on('error', reject)
-        })
+/* start listening on port 3000 unless another number was passed as argument */
+/* once the server is listening, print the port number to stdout             */
+/* switchboard will request port 0, which assigns a random, unused port      */
+
+/************************************* Function definitions to fulfill requests **************************************/
+
+function forkProcess(request){
+    var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
+    var command = decodeURIComponent(request.url.split('?')[1])
+    // this could read an environment variable that forces you to talk to bot
+    // bot could be programmed to post to server as its own user and get a pid back
+    // user could then subscribe to pid for updates... hmmmm
+    // switchboard would have to provide a way to address processes
+    console.log(command)
+    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
+    subprocess_registry[String(subprocess.pid)] = subprocess
+
+    subprocess.on('close', () => {
+        delete subprocess_registry[subprocess.pid] //forgeddaboutit
+    })
+    
+    return subprocess
+}
+
+function messageProcess(pid, command){
+    // I'm assuming that piping to stdin of a nonexistant process will fail right away, messageProcess should be called in a try/catch block
+    subprocess_registry[pid].stdin.write(command + os.EOL) // there is an option to have a callback if the write throws errors, but I'm only anticipating errors when the subprocess doesn't exist.
+}
+
+function streamFile(request, response){
+
+    request.url.split('?')[0].includes('.svg') && response.setHeader('Content-Type','image/svg+xml')
+    request.url.split('?')[0].includes('.css') && response.setHeader('Content-Type','text/css')
+
+    /* response.setHeader('x-githash', process.env.githash) // send metadata about what version of a file was requested */
+    fs.createReadStream(decodeURIComponent(request.url.split('?')[0].slice(1)))
+    .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
+    .pipe(response)
+}
+
+function saveBody(request, response){
+    /* might automatically launch git commit here... */
+    request.pipe(fs.createWriteStream('.' + decodeURIComponent(request.url), 'utf8'))
+    .on('finish', function(){ response.writeHead(201); response.end() })
+    .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
+}
+
+function deleteFile(request, response){
+    fs.unlink('.' + decodeURIComponent(request.url), function(err){ 
+        response.writeHead( err ? 500 : 204); 
+        response.end(JSON.stringify(err))
+    })
+}
+
+function sendStat(request,response){
+    fs.stat('.' + decodeURIComponent(request.url), function(err, stat){ 
+        response.writeHead( err ? 500 : 200); 
+        response.end(JSON.stringify(err || stat))
+    })
+}
+
+function streamSubProcess(request, response){
+    // if the request is for an ongoing process, it will carry a x-for-pid header
+    // processes started previously 
+    // processes are registered per switchboard, so in a multi-user enviornment, users can't try to send messages (control chars etc) to other users' processes
+    if(request.headers && request.headers["x-for-pid"]){
+        try {
+            messageProcess(request.headers["x-for-pid"], decodeURIComponent(request.url.split('?')[1]))
+            response.writeHead(204)
+            return response.end()
+        } catch(err){
+            response.writeHead(500)
+            return response.end(inpsect(err))
+        }
+    }
+    
+    var subprocess = forkProcess(request)
+    /* check for pid in parameters, pipe body to existing process if available, else throw 'no process with that pid' */
+    response.setHeader('Content-Type', 'application/octet-stream')
+    response.setHeader('Trailer', 'Exit-Code') // not really supported by anyone yet, but it will be useful once browsers can read trailers.
+
+    subprocess.on('error', function(err){ 
+        response.writeHead(500); 
+        response.end(JSON.stringify(err)) 
+        // does close fire before or after or at all in the case of an error?
+    })
+
+    subprocess.stdout.pipe(response, {end: false}) // end: false - don't close pipe on receiving null bytes
+    subprocess.stderr.pipe(response, {end: false})
+
+    subprocess.on('close', (code,signal) => {
+        response.addTrailers({'Exit-Code': code || signal})
+        response.end()
+    })    
+}
+
+function subscribe2events(request, response){
+    response.setHeader('Content-Type', 'text/event-stream')
+    // create a child_process object
+    var subprocess = forkProcess(request)
+    // construct a function with a closure around the response object to write all future events until process exit
+    var pushEvent = function(data){     
+        // data might be a buffer, JSON parse it until you can't
+        if(Buffer.isBuffer(data)){
+            data = data.toString()
+        }
+
+        if(typeof data == 'object'){
+            return response.write('data: ' + JSON.stringify(data) + '\n\n')
+        }
+        
+        try {
+            return response.write('data: ' + JSON.stringify(JSON.parse(data.toString())) + '\n\n')
+        } catch(e) {
+            // if I was just passed a string, wrap it up, announce it as stderr or stdout
+            let responseObject = {}
+            this === subprocess.stdout ? responseObject.stdout = data :
+            this === subprocess.stderr ? responseObject.stderr = data :
+                                         responseObject.default= data ;
+
+            return response.write('data: ' + JSON.stringify(responseObject) + '\n\n')
+        }
+    }
+    // once the function is constructed I can send the pid of the process to allow signals to be sent */    
+    pushEvent({pid: subprocess.pid})
+    /* start sending an empty heartbeat event every 15 seconds until process closes, to keep connection open */
+    var heartbeat = setInterval(function(){
+        pushEvent(':heartbeat')
+    },15000)
+    /* push error, data, and close events from the subprocess */
+    subprocess.stdout.on('data', pushEvent)
+    subprocess.stderr.on('data', pushEvent)
+
+    subprocess.on('error', function(error){ 
+        pushEvent({error: error.toString()}) 
+    })
+    subprocess.on('close', function(code,signal){
+        // signal might be KILL or TERM or otherwise null
+        // if it was falsey, send exit code instead, which may be falsey
+        // best case scenario of course is exit-code 0
+        pushEvent(signal ? {"exit-signal": signal } 
+                         : {"exit-code": code })
+        clearInterval(heartbeat) // stop trying to send heartbeats
+        response.end() // and close the connection. client should close the eventSource when receiving 'close' event
+    })
+}
+
+
+function chooseFigJam(){
+    /* figjam does a kind of webpack-y thing and streams all the files in order over a single request */
+    /* but its an async/await situation compatible with node 8+, so check if we want to use it here */
+    /* otherwise just return retrograde.html instead of building pages at time of request */
+    if(parseInt(process.env.RETROGRADE) || parseInt(process.versions.node) < 8){
+        return function(request, response){
+            fs.createReadStream('retrograde.html')
+            .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
+            .pipe(response)
+        }
+    } else {
+        return require('./figjam') // figjam is passed requests, also serves retrograde if it doesn't recognize the user agent
     }
 }
 
-let operators = new operatorRegistry
-
-/* assigns operators.default a promise to listen. get port with (await operators.default).port, pid by (await operators.default).process.pid */
-
-http.createServer(async (request, response) => {
-    await keymaker.identify(request, response)
-	if( request.id == undefined ){
-        /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get a magicurl */
-        response.writeHead(302, { 'Location': keymaker.authRedirect })
-        response.end()
-    } else if(request.url.includes('magicurl=')){
-        /* if a request has an identity but also has magicurl in its querystring, 
-           redirect to requested pathname minus the query string - entirely cosmetic */
-        response.writeHead(302, { 'Location': '//' + request.url.split('?')[0] })
-        response.end()
-    } else {
-        console.log(Object.keys(operators))
-        /* if an operator was never created for this identity, fine, use the default operator */
-        let proxyDestination = await (operators[request.id] || operators.registerOperator(request.id) || operators['default'])
-        request.pipe(http.request({
-            hostname: proxyDestination.hostname,
-            port: proxyDestination.port,
-            path: request.url,
-            headers: request.headers,
-            method: request.method,
-            agent: false
-        }, proxyResponse => {
-            response.writeHeader(proxyResponse.statusCode, proxyResponse.headers)
-            proxyResponse.pipe(response)
-        }))
+function trySSL(keycert){
+    /* force HTTP server and skip reading files */
+    if(process.env.DISABLE_SSL) return false
+    try {
+        /* blocking, but only once at start up */
+        keycert.key = fs.readFileSync(keycert.key || 'key')
+        keycert.cert = fs.readFileSync(keycert.cert || 'cert')
+        return true // only sets SSL_READY if reading both files succeeded
+    } catch(SSL_ERROR){
+        bookkeeper.log({SSL_ERROR: SSL_ERROR})
+        return false
     }
-}).listen(process.env.PORT || 3000).on('listening', function(){ console.log("Started a switchboard on port", this.address().port) })
-/* it would be fun to open a port for making new sessions. spin up an internal http server, listen for requests from chatscript ... if switchboard is started in the same shell as chatscript, they can communicate with environment variables create an operator as a username, make a magic url, send JSON back to chatscript, eval location.pathname += ?magicurl=$magicurl */
-/* then suddenly you can write chatscript sphinxes that let you log on once you answer some questions */
+}
