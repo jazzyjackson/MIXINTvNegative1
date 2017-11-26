@@ -39,7 +39,8 @@ class VsplitBlock extends MultiplexBlock {
                 let width = 100 / this.showMax
                 let start = this.showStart
                 Array.from(this.shadowRoot.children, (child, nth) => {
-                    child.setAttribute('tabIndex', nth)
+                    // if nth is visible, set tabIndex as +nth, if invisible, it should not be reachable via tabindex, so -nth
+                    child.setAttribute('tabIndex', nth >= this.showStart && nth < this.showStart + this.showMax ? nth : -nth)
                     child.style.width = `${width}%`
                     child.style.left = `${width * (nth - start)}%`
                     child.dispatchEvent(new Event("resize"))
