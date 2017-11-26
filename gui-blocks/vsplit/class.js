@@ -30,6 +30,7 @@ class VsplitBlock extends MultiplexBlock {
                 this.shadowRoot.appendChild(new BecomeBlock); break;
             case 1: 
                 this.shadowRoot.children[1].setAttribute('tabIndex',1)
+                this.shadowRoot.children[1].focus()
                 this.shadowRoot.children[1].style.width = '100%'; 
                 this.shadowRoot.children[1].style.left = '0px'; 
                 this.shadowRoot.children[1].dispatchEvent(new Event("resize"))
