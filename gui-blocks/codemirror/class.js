@@ -16,8 +16,9 @@ class CodemirrorBlock extends TextareaBlock {
                      // if whitespace value is "wrap" set lineWrapping to true, else lineWrapping is false (default)
                     lineWrapping: this.getAttribute('whitespace') == 'wrap',
                 })
+                this.theme = this.getAttribute('theme') || CodeMirror.preferredTheme || "default"
+                this.keymap = this.getAttribute('keymap') || CodeMirror.preferredKeyMap || "default"
                 // retrigger attributechangedcallback after loading codemirror
-                this.props = this.props
                 // cm.save commits the editor contents into this.data (this.child['textarea']) which is referenced for file overwrite and so on.
                 this.cm.on('blur', () => {
                     this.cm.save()
@@ -44,7 +45,7 @@ class CodemirrorBlock extends TextareaBlock {
             }},
             {"set keymap": {
                 func: HTMLElement.prototype.setAttribute,
-                args: [{label: "keymap"}, {select: ["vim","sublime", "emacs"]}],
+                args: [{label: "keymap"}, {select: ["default","vim","sublime", "emacs"]}],
                 default: [()=>"keymap", ctx => ctx.getAttribute('keymap') || "vim"]
             }}
         ]
@@ -70,22 +71,26 @@ class CodemirrorBlock extends TextareaBlock {
     set keymap(newMap){
         if(!this.cm) return null
         this.setAttribute('keymap', newMap)
-        this.attachGlobalScript(`/gui-blocks/codemirror/assets/keymap/${newMap}.js`)
+        CodeMirror.preferredKeyMap = newMap
+        if(newMap == 'default') this.cm.setOption('keyMap', newMap)        
+        else this.attachGlobalScript(`/gui-blocks/codemirror/assets/keymap/${newMap}.js`)
             .then(()=> this.cm.setOption('keyMap', newMap))
     }
 
     set mode(newMode){
         if(!this.cm) return null        
         this.setAttribute('mode', newMode)        
-        if(newMode == 'null') return "Nothing needs to be done"
-        this.fetchModePrerequisites(newMode)
+        if(newMode == 'null') this.cm.setOption('mode', newMode)
+        else this.fetchModePrerequisites(newMode)
             .then(()=> this.cm.setOption('mode', newMode))
     }
 
     set theme(newTheme){
         if(!this.cm) return null        
         this.setAttribute('theme', newTheme)
-        this.loadLocalStyle(`/gui-blocks/codemirror/assets/theme/${newTheme}.css`)
+        CodeMirror.preferredTheme = newTheme
+        if(newTheme == 'default') return this.cm.setOption('theme', newTheme)     
+        else this.loadLocalStyle(`/gui-blocks/codemirror/assets/theme/${newTheme}.css`)
             .then(()=> this.cm.setOption('theme', newTheme))
     }
 
