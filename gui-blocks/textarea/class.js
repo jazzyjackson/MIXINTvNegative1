@@ -10,11 +10,13 @@ class TextareaBlock extends ProtoBlock {
                 // this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely edit the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
             } else {
                 // if this.props.src is a directory, use that as a prefix to the new filename. so if you make a directory become a text area, that's a way to make a new file in that directory.
-                this.props = {src: (this.props.src || '') + prompt("I need a name for this new file:")}
+                this.props = {src: (this.props.src || '/') + prompt("I need a name for this new file:")}
+                this.header = this.props.src
                 // oh yeah new file can just be "this.become(text-area)" or "this.insertSibling(new TextareaBlock({src: this.props.src})"
             }
         })
     }
+
 
     static get actions(){
         return [
@@ -63,13 +65,11 @@ class TextareaBlock extends ProtoBlock {
             credentials: 'same-origin',
             redirect: 'error'
         })
-        .then(()=>{ this.remove() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .then(()=>{
+            this.remove()
+            docu
+        }) // calling this.become with no argument re-creates / re-loads the current block from src
         .catch(console.error)
-    }
-
-    connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))
-                         && this.dispatchEvent(new Event('ready'))
     }
 
     download(filename){
@@ -80,8 +80,8 @@ class TextareaBlock extends ProtoBlock {
         a.click()
     }
 
-    // this doesn't work yet but I havent really looked into it, maybe I'm using firefox function?
     copy2clipboard(filename){
+        // this doesn't work yet but I havent really looked into it, maybe I'm using firefox function?
         document.execCommand('copy');
         this.addEventListener('copy', event => {
             event.preventDefault()
@@ -105,7 +105,7 @@ class TextareaBlock extends ProtoBlock {
 
         fetch(source.split('/').map(encodeURIComponent).join('/'), {
             method: 'put',
-            credentials: 'same-origin',
+            credentials: 'same-origin', 
             redirect: 'error',
             body: this.data
         }).then(console.log).catch(console.error) 

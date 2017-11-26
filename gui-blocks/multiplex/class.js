@@ -50,7 +50,8 @@ class MultiplexBlock extends ProtoBlock {
                         }
                         this.reCalculateChildren()   
                         // focus whatever child has the new tabindex equal to the old one
-                        this.shadowRoot.querySelector(`[tabindex="${nth}"]`).focus()                                            
+                        let replacementChild = this.shadowRoot.querySelector(`[tabindex="${nth}"]`)
+                        replacementChild && replacementChild.focus()                                            
                     })
     
                     // if 'become' was called, a node will be destroyed with a fresh one in its place
