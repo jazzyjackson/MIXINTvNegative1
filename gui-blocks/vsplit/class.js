@@ -2,7 +2,10 @@ class VsplitBlock extends MultiplexBlock {
     constructor(props){
         super(props)
     }
-
+    // auto rotate width / height
+    // on recalc number via tabindex
+    // on recalc due to removedchild, grab tabindex and focus its replacement
+    // on arrow left and right, increment the focused child
     connectedCallback(){
         this.initialized || this.dispatchEvent(new Event('init'))
                          && this.dispatchEvent(new Event('ready'))

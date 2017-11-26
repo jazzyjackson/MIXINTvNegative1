@@ -17,6 +17,7 @@ class TableBlock extends TextareaBlock {
     }
 
     set hint(newVal){
+        // if this.hint = null then hide the hint
         this.child['footer'].style.display = newVal ? "block" : "none"
         this.child['footer'].textContent = newVal
     }
@@ -93,7 +94,6 @@ class TableBlock extends TextareaBlock {
         this.buildTable(this.parsedData)
         this.child['table'].children[rowIndex].children[colIndex].focus()
         this.hint = "Your changes aren't saved to disk yet, use +overwrite."
-
     }
 
     // add row and add column tables 

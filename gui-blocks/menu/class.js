@@ -122,11 +122,11 @@ class MenuBlock extends ProtoBlock {
             Array.isArray(actionObject.args) && actionObject.args.forEach((argObject, argIndex) => {
                 let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
                 let argNode = document.createElement(formType)
-                argNode.setAttribute('tabIndex', 0)
                 formNode.appendChild(argNode)
                 switch(formType){
                     case "input":
                         argNode.setAttribute('placeholder', argObject[formType])
+                        argNode.setAttribute('tabIndex', 0)
                         if(actionObject.default && actionObject.default[argIndex]){
                             argNode.value = actionObject.default[argIndex](this) // pass context
                         }
@@ -136,6 +136,7 @@ class MenuBlock extends ProtoBlock {
                         argNode.value = argObject[formType]
                         break;
                     case "select":
+                        argNode.setAttribute('tabIndex', 0)                    
                         argObject[formType].forEach(argOption => {
                             let optionNode = document.createElement('option')
                             optionNode.setAttribute('value', argOption)
