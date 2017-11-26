@@ -6,7 +6,6 @@ class MenuBlock extends ProtoBlock {
                 this.props.active ? this.destroyMenu()
                                   : this.createMenu()
             })
-            this.shadowParent.setAttribute('tabIndex', 0) // make any block with a menu focusable
             this.shadowParent.addEventListener('keydown', event => { 
                 if(event.key == 'Escape'){
                     this.destroyMenu()

@@ -16,20 +16,20 @@ class ConvoshellBlock extends ProtoBlock {
                     event.stopPropagation()
                 }
             })
-
-            this.child['input'].addEventListener('focus', () => this.setAttribute('talking', true))
-            this.child['input'].addEventListener('blur', () => this.setAttribute('talking', null))    
+            // marked for removal. I can't remember why I had this code here.
+            // this.child['input'].addEventListener('focus', () => this.setAttribute('talking', true))
+            // this.child['input'].addEventListener('blur', () => this.setAttribute('talking', null))    
             // menu-block will attach a onready event to focus the parent
             // but that listener is attached before this one (when menu is attached to template's document fragment)
             // so this one will fire afterward, and refocus on the input
-                    
+            
             this.addEventListener('ready', () => {
                 this.header = `${this.identity}@${location.hostname} talking to self`
                 this.child['input'].focus()
             })
 
             this.addEventListener('resize', () => {
-                if(this.props.talking) this.child['input'].focus()
+                // if(this.props.talking) this.child['input'].focus()
             })
         })
 

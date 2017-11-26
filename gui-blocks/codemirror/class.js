@@ -1,9 +1,10 @@
 class CodemirrorBlock extends TextareaBlock {
   constructor(props){
       super(props)
-
       // this load will fire when the fetch for the file (in src attribute) completes
       this.addEventListener('load', () => {
+        console.log("PROPS", this.props)
+        
           // this promise will resolve immediately if the script is already available
             this.loadLocalStyle('/gui-blocks/codemirror/assets/lib/codemirror.css')
             .then(()=> this.attachGlobalScript('/gui-blocks/codemirror/assets/lib/codemirror.js'))
@@ -14,8 +15,12 @@ class CodemirrorBlock extends TextareaBlock {
                     lineNumbers: true,
                      // if whitespace value is "wrap" set lineWrapping to true, else lineWrapping is false (default)
                     lineWrapping: this.getAttribute('whitespace') == 'wrap',
-                    mode: this.getAttribute('mode') || null,
-                    theme: this.getAttribute('theme') || "default"
+                })
+                // retrigger attributechangedcallback after loading codemirror
+                this.props = this.props
+                // cm.save commits the editor contents into this.data (this.child['textarea']) which is referenced for file overwrite and so on.
+                this.cm.on('blur', () => {
+                    this.cm.save()
                 })
                 return this.attachGlobalScript('/gui-blocks/codemirror/assets/mode/meta.js')
             })
@@ -40,7 +45,7 @@ class CodemirrorBlock extends TextareaBlock {
             {"set keymap": {
                 func: HTMLElement.prototype.setAttribute,
                 args: [{label: "keymap"}, {select: ["vim","sublime", "emacs"]}],
-                default: [()=>"keymap", ctx => ctx.getAttribute('keymap')]
+                default: [()=>"keymap", ctx => ctx.getAttribute('keymap') || "vim"]
             }}
         ]
     }
@@ -63,22 +68,23 @@ class CodemirrorBlock extends TextareaBlock {
     }
 
     set keymap(newMap){
+        if(!this.cm) return null
         this.setAttribute('keymap', newMap)
         this.attachGlobalScript(`/gui-blocks/codemirror/assets/keymap/${newMap}.js`)
             .then(()=> this.cm.setOption('keyMap', newMap))
     }
 
     set mode(newMode){
+        if(!this.cm) return null        
         this.setAttribute('mode', newMode)        
         if(newMode == 'null') return "Nothing needs to be done"
-        if(!this.cm) throw new Error("You tried to set the mode before any codemirror existed.")
         this.fetchModePrerequisites(newMode)
             .then(()=> this.cm.setOption('mode', newMode))
     }
 
     set theme(newTheme){
+        if(!this.cm) return null        
         this.setAttribute('theme', newTheme)
-        if(!this.cm) throw new Error("You tried to set the mode before any codemirror existed.")
         this.loadLocalStyle(`/gui-blocks/codemirror/assets/theme/${newTheme}.css`)
             .then(()=> this.cm.setOption('theme', newTheme))
     }
@@ -93,9 +99,5 @@ class CodemirrorBlock extends TextareaBlock {
         } else {
             return attachmode(newMode)
         }
-    }
-
-    set color(colorscheme){
-
     }
 }
