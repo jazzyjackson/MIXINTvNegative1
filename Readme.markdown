@@ -47,8 +47,8 @@ So `rwx r-x ---` means the owner/creator can read, overwrite, and execute their 
 Switchboard.js handles creating accounts and proxying requests to the right child process, but before it can do that it needs to know who the incoming request belongs to. Keymaker.js includes some regex to check for a session ID in the cookie and the 
 
 
-# Operator.js
-Operator.js will connect your calls - fulfilling network requests in one of six ways:
+# Switchboard.js
+Switchboard.js routes your network requests in one of seven ways:
 
 - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
 - A GET request to a directory (ending in '/') is returned by generating the workspace/web application described by a 'figtree'
@@ -56,7 +56,7 @@ Operator.js will connect your calls - fulfilling network requests in one of six 
 - a PUT request to a file path will stream data from a caller to the operator's disk
 - a POST request creates a child process in a shell of its own and pipes the stdio between the operator and caller (aka server and client)
 - a DELETE request does what you expect
-
+- an OPTIONS request performs a `stat` call and returns an object containing inode, ctime, atime, permission and ownership
 
 
  ```js
@@ -71,6 +71,7 @@ require(SSL_READY ? 'https' : 'http')
     req.method == 'PUT'                               ? saveBody(req,res)         :
     req.method == 'POST'                              ? streamSubProcess(req,res) :
     req.method == 'DELETE'                            ? deleteFile(req,res)       :
+    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
     res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
 })
 ```
