@@ -73,11 +73,6 @@ class DirectoryBlock extends ProtoBlock {
         }
     }
 
-    connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))
-                         && this.dispatchEvent(new Event('ready'))
-    }
-
     archive(source){
         // fetch('/xz etc')
     }
@@ -88,12 +83,12 @@ class DirectoryBlock extends ProtoBlock {
             image: ['jpeg','jpg','png','gif','bmp','svg'],
             audio: ['ogg','flac','acc','mp3','wave','wav'],
             video: ['webm','mp4','avi'],
-            code: ['py','js','c','cs','top','html','css'],
             markdown: ['markdown','mdown','mkdn','md','mkd','mdwn'],
             geometry: ['stl','fbx','obj'],
             pdf: ['pdf'],
             msoffice: ['doc','docx','xlst','pptx'],
-            openoffice: ['odf']
+            openoffice: ['odf'],
+            code: ['dyalog','apl','pgp','asn','asn1','b','bf','c','h','cpp','c++','cc','cxx','hpp','h++','hh','hxx','cob','cpy','cs','clj','cljc','cljx','cljs','gss','cmake','cmake.in','coffee','cl','lisp','el','cyp','cypher','pyx','pxd','pxi','cr','css','cql','d','dart','diff','patch','dtd','dylan','dyl','intr','ecl','edn','e','elm','ejs','erb','erl','factor','forth','fth','4th','f','for','f77','f90','fs','s','feature','go','groovy','gradle','haml','hs','lhs','hx','hxml','aspx','html','htm','pro','jade','pug','java','jsp','js','json','map','jsonld','jsx','jl','kt','less','ls','lua','markdown','md','mkd','m','nb','mo','mps','mbox','nsh','nsi','nt','m','mm','ml','mli','mll','mly','m','oz','p','pas','jsonld','pl','pm','php','php3','php4','php5','phtml','pig','txt','text','conf','def','list','log','pls','ps1','psd1','psm1','properties','ini','in','proto','BUILD','bzl','py','pyw','pp','q','r','rst','spec','rb','rs','sas','sass','scala','scm','ss','scss','sh','ksh','bash','siv','sieve','slim','st','tpl','soy','rq','sparql','sql','nut','swift','text','ltx','v','tcl','textile','toml','1','2','3','4','5','6','7','8','9','ttcn','ttcn3','ttcnpp','cfg','ttl','ts','webidl','vb','vbs','vtl','v','vhd','vhdl','xml','xsl','xsd','xy','xquery','ys','yaml','yml','z80','mscgen','mscin','msc','xu','msgenny'],
         }
     }
 
@@ -179,11 +174,14 @@ class DirectoryBlock extends ProtoBlock {
         if(node.details.textContent) return null // already been done
         this.fetchStat(this.props.src, node.getAttribute('title'))
         .then(stat => {
+            console.log(stat)
+            let href=this.props.src + node.getAttribute('title')
             node.details.innerHTML += `
                 <data-mode>${this.octal2symbol(stat.mode)}</data-mode>
                 <data-atime>${this.makeDateString(stat.atime)}</data-atime>
                 <data-mtime>${this.makeDateString(stat.mtime)}</data-mtime>
-                <data-size>${stat.size}</data-size>
+                <data-size>${stat.size} bytes</data-size>
+                <data-src>source: <a href=${href}>${href}</a></data-src>
             `
         })
     }
@@ -198,9 +196,9 @@ class DirectoryBlock extends ProtoBlock {
             // image: ImageBlock,
             // audio: AudioBlock,
             // video: VideoBlock,
-            code: TextareaBlock,
             file: TextareaBlock,
             markdown: ShowdownBlock,
+            code: CodemirrorBlock,
             // geometry: TextareaBlock
         }
     }
