@@ -16,6 +16,7 @@
 export DISABLE_SSL := true
 export CHATSCRIPT  := /Users/colton.jackson/utilitybot/chatscript
 export cwd         := $(shell pwd)
+export BOT         := shelly
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
@@ -26,19 +27,24 @@ export ChatScriptExecutable := ChatScript
 endif
 
 default:
-	make bootchatscript
-	make nokey
+	make bootchatscript buildbot nokey
 
-nokey: 
+chownership:
+	# create operator user and operator group
+	# create basic group, add operator, all new users will be added to this group and whatever roles they come with
+	# iterate through spiders folder and change ownership to group of same name as folder 
+
+nokey: 	
 	chmod +x ./switchboard.js
 	env nokeyok=1 node operator
 
+buildbot:
+	cp -r $(cwd)/personalities/* $(CHATSCRIPT)/RAWDATA/
+	# send build command to chatscript
+	printf '":build $(BOT)"' | node spiders/basic/interpret.js
+
 bootchatscript:
-	# make a symlink between personalities folder and the ChatScript rawdata topics and all
-	stat personalities/RAWDATA || ln -s $(CHATSCRIPT)/RAWDATA $(cwd)/personalities/RAWDATA
 	# make ChatScript executable
 	chmod +x $(CHATSCRIPT)/BINARIES/$(ChatScriptExecutable)
 	# ChatScript should be started from within the chatscript directory, cd into it and then (;) start chatscript in the background (&)
-	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 buildfiles=$(cwd)/personalities &
-	# send build command to chatscript
-	echo '":build shelly"' | node spiders/basic/interpret.js
+	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 &

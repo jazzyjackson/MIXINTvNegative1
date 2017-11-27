@@ -1,0 +1,9 @@
+topic: ~bash keep repeat ()
+
+?: PING  (internet * work)
+   $$return.bash = [ ping -c 4 google.com ]
+   $$return.stdout = [ I'll ping google to find out. ]
+
+u: LS ([show what] * files)
+   $$return.bash = [ ls ]
+   $$return.stdout = [ I'll use 'ls' to list the files in this directory. ]

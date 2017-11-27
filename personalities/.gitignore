@@ -1,2 +1,1 @@
-*
-!.gitignore
+RAWDATA # this is a symlink created by make

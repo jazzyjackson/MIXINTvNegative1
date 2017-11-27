@@ -29,6 +29,10 @@ let defaultFig = {
             "user-identity": process.env.USER
         }},
         {"meta":{
+            // let the web interface know who this is, just for filling in attributes for 'who'
+            "default-bot": process.env.defaultBot
+        }},
+        {"meta":{
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
             "process-identity": process.pid
         }},

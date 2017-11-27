@@ -4,10 +4,10 @@ var os = require('os')
 
 var port = process.env.CSPORT || 1024
 var host = process.env.CSHOST || 'localhost'
-var identity = process.env.identity || 'unknown' /* not to be confused with 'nobody' */
-var botname = process.env.botname || 'harry'
+var identity = process.env.USER || 'unknown' /* not to be confused with 'nobody' */
+var botname = process.env.BOT || 'harry'
 
-var chat = message => new Promise((resolve, reject)=> {
+var chat = message => new Promise((resolve, reject)=> {    
     var client = net.createConnection({port: port, host: host})
     var buffers = []
     client.on('connect', () => client.write([identity,botname,message].join('\0') + '\0'))

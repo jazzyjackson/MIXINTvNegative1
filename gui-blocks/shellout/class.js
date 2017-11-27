@@ -48,6 +48,8 @@ class ShelloutBlock extends ProtoBlock {
         return [
             'pid',
             'eval',
+            'next',
+            'bash',
             'timeout',
             'newsibling',
             'become',
@@ -68,16 +70,14 @@ class ShelloutBlock extends ProtoBlock {
                 this.child['data-' + attr].textContent += newValue;
                 this.data += newValue;   
                 break;
-            case 'timeout':
+            case 'next':
                 // this will need to parse chatbot response and set a timeout that's cancelled on submit...
                 // var time = parseInt(newValue)
                 // for now let's just immediately submit chat response so chatscript can trigger programs for us
-                this.shadowParent.appendChild(new ShelloutBlock({
-                    header: newValue,
-                    action: `printf ${btoa(JSON.stringify(newValue))} | base64 --decode | node interpret`, 
-                    autofocus: false, 
-                    cwd: '/spiders/basic/'
-                }));
+                this.shadowParent.appendMessage(this.shadowParent.botShellout(newValue))
+                break;
+            case 'bash':
+                this.shadowParent.appendMessage(this.shadowParent.bashShellout(newValue))
                 break;
             case 'eval':
                 eval(newValue);
