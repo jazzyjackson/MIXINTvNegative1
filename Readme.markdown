@@ -22,12 +22,9 @@ When connected to a Poly-Int, you're served a graph of web-components that can b
 Alongside acting as a file server, Poly-Int can execute programs in response to web requests in the vein of cgi scripts or amazon lambda functions. The complete functionality is provided by 4 programs: the operator, the switchboard, the keymaker, and figjam. Connectors to interface with chatbots are provided as spiders.
 
 # Starting Poly-Int
-To start operator before setting up a user authentication strategy, set the environment variable "nokeyok" (no key ok):
-env nokeyok=1 node opeartor.js
-optionally with the desired port (default is 3000)
-env nokeyok=1 node operator 80
-(note .js is optional when starting programs with node)
+To start operator before setting up a user authentication strategy, just navigate to the root of the repo in a terminal and type the "make" command - the nokey recipe will run by default and start an operator on port 3000 by default.
 
+Once you add localhost, qa, and prod authentication schemes to keyconfig.json you can run "make localhost" or "make prod" etc to run make and start the server for those auth schemes.
 
 git clone ...
 make mini: to run without downloading anything else, total size < 1MB

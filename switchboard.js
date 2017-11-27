@@ -3,13 +3,14 @@ process.platform.includes('win32') && process.exit(console.log("Please start me 
 var os          = require('os')
 var fs          = require('fs')
 var bookkeeper  = require('./bookkeeper')
+var keymaker    = require('./keymaker')
 var inspect     = require('util').inspect
 var spawn       = require('child_process').spawn
 var figjam      = chooseFigJam()
 var keycert     = {}
 var subprocess_registry = {}
 /* try to read key and certificate from disk and enable HTTPS if true */
-var SSL_READY  = trySSL(keycert) // mutates keycert object to contain key and cert. if object has key/cert properties already, those values are used as filenames and overwritten with file contents
+var SSL_READY  = keymaker.trySSL(keycert)
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
@@ -183,19 +184,5 @@ function chooseFigJam(){
         }
     } else {
         return require('./figjam') // figjam is passed requests, also serves retrograde if it doesn't recognize the user agent
-    }
-}
-
-function trySSL(keycert){
-    /* force HTTP server and skip reading files */
-    if(process.env.DISABLE_SSL) return false
-    try {
-        /* blocking, but only once at start up */
-        keycert.key = fs.readFileSync(keycert.key || 'key')
-        keycert.cert = fs.readFileSync(keycert.cert || 'cert')
-        return true // only sets SSL_READY if reading both files succeeded
-    } catch(SSL_ERROR){
-        bookkeeper.log({SSL_ERROR: SSL_ERROR})
-        return false
     }
 }

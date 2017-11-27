@@ -2,15 +2,15 @@
 /* only the first call is necessary for every request, seshcache keeps a local copy of the identity profile to avoid making unneccessary API calls */
 const seshcache = {} 
 // read file sync, blocking, happens once at start up
-const authConfig = JSON.parse(require('fs').readFileSync("keyconfig.json").toString())[process.env.sso || 'localhost']
+const keyconfig = JSON.parse(require('fs').readFileSync("keyconfig.json").toString())[process.env.sso || 'localhost']
 
 const agent = require('https')
 
 // extract all the necessary values from the imported config
-// haven't decided what happens if you don't specify an authconfig, redirected to the readme? logged in as nobody? yea... logged in as nobody
-const { callbackURL, SSOURL, SSOquery, checkAuthDomain, cookieDomain, identityKey} = authConfig
+// if you don't have a keyconfig you can start switchboard or operator with a truthy environment variable "nokeyok" (no key ok)
+const { callbackURL, SSOURL, SSOquery, checkAuthDomain, cookieDomain, identityKey} = keyconfig
 
-var formatCookie = key => 'magicurl=' + key + ';Path=/;Domain=' + cookieDomain
+const formatCookie = key => 'magicurl=' + key + ';Path=/;Domain=' + cookieDomain
 
 async function identify(request, response){
     /* first check if there is a key in the cookie or in the url. If not, exit.  */
@@ -72,4 +72,22 @@ function getProfile(sessionID){
     })
 }
 
-module.exports = { identify, authRedirect: SSOURL + SSOquery + callbackURL }
+
+function trySSL(keycert){
+    // mutates keycert object to contain key and cert. if object has key/cert properties already, those values are used as filenames and overwritten with file contents
+    if(process.env.DISABLE_SSL){
+        /* force HTTP server and skip reading files */
+        return false
+    }
+    try {
+        /* blocking, but only once at start up */
+        keycert.key = fs.readFileSync(keycert.key || 'key')
+        keycert.cert = fs.readFileSync(keycert.cert || 'cert')
+        return true // only sets SSL_READY if reading both files succeeded
+    } catch(SSL_ERROR){
+        bookkeeper.log({SSL_ERROR: SSL_ERROR})
+        return false
+    }
+}
+
+module.exports = { trySSL, identify, authRedirect: SSOURL + SSOquery + callbackURL }

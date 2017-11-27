@@ -248,6 +248,8 @@ class ProtoBlock extends HTMLElement {
         } else {
             this.parentNode.appendChild(node)
         }
+        // 'next tick', focus after node is attached to DOM
+        setTimeout(()=>node.focus())
     }
 
     whatChildIsThis(node){

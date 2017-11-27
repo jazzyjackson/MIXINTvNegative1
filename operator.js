@@ -1,8 +1,19 @@
 let keymaker      = require('./keymaker')
 let child_process = require('child_process')
 let http          = require('http')
-// switchboardRegistry is just a key:value store with a method for spinning up a child process as a user with their own group permissions
+
+if(process.env.DISABLE_SSL){
+    console.log("DISABLE_SSL is declared in this environment, ignoring key and cert files and starting server as HTTP.")
+} 
+var keycert = {
+    key: '', // file path to key file
+    cert: '', // file path to cert file
+}
+// if key and cert don't exist, trySSL returns false, server starts as HTTP
+var SSL_READY = keymaker.trySSL(keycert)
+
 class switchboardRegistry {
+    // switchboardRegistry is just a key:value store with a method for spinning up a child process as a user with their own group permissions
     constructor(){
         this.registerSwitchboard('default')
     }
@@ -38,10 +49,12 @@ class switchboardRegistry {
 }
 
 let switchboards = new switchboardRegistry
-
 /* assigns switchboards.default a promise to listen. get port with (await switchboards.default).port, pid by (await switchboards.default).process.pid */
 
-http.createServer(async (request, response) => {
+/* check if private key and certificate were read properly and start server  */ 
+require(SSL_READY ? 'https' : 'http')
+.createServer(SSL_READY && keycert)
+.on('request', async (request, response) => {
     await keymaker.identify(request, response)
 	if( request.id == undefined ){
         /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get a magicurl */

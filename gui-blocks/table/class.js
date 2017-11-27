@@ -40,16 +40,38 @@ class TableBlock extends TextareaBlock {
         this.hint = "Select a cell and hit return to edit."
     }
 
+    get targetRow(){
+        return parseInt(this.props['target-row'])
+    }
+    get targetColumn(){
+        return parseInt(this.props['target-column'])
+    }
+
     activateTableData(td){
         // setting an invisible property on the HTML object to retrieve if editing gets cancelled. td gets passed around
         td.originalContent = td.textContent
         td.setAttribute('tabIndex', 0) // allow td to be navigable by tabbing around
         td.addEventListener("focus", event => { 
+            this.setAttribute('target-column', event.target.cellIndex)
+            this.setAttribute('target-row', event.target.parentElement.rowIndex)
             this.hint = "Hit Return to edit this cell."
         })
-        td.addEventListener("keydown", event => { 
-            // this switches a TD into edit mode
-            if(event.shift || event.key != "Enter" || event.target != td) return null // exit if keydown wasn't enter, or if Shift+Enter was used
+        td.addEventListener("keydown", event => {
+            if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter'].includes(event.key)){
+                event.preventDefault()
+            }
+            if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){
+                ({
+                    ArrowLeft:  () => this.child['table'].children[this.targetRow].children[this.targetColumn - 1].focus(),
+                    ArrowRight: () => this.child['table'].children[this.targetRow].children[this.targetColumn + 1].focus(),
+                    ArrowUp:    () => this.child['table'].children[this.targetRow - 1].children[this.targetColumn].focus(),
+                    ArrowDown:  () => this.child['table'].children[this.targetRow + 1].children[this.targetColumn].focus(),
+                })[event.key]()
+                return null
+            } else if(event.shift || event.key != "Enter" || event.target != td){
+                return null // exit if keydown wasn't enter, or if Shift+Enter was used
+            }
+            // this switches a TD into edit mode            
             this.hint = "Hit Return to update the table, Escape to cancel the edit."
             let staticCell = event.target
             staticCell.removeAttribute("tabIndex") // so that if you tab out of the textarea the focus flow is to the next cell

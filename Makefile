@@ -13,7 +13,7 @@
 
 #create user and group switchboard, add switchboard to admin group, add switchboard to sudoers so it can also adduser and chmod things
 # sh adduser switchboard
-
+export DISABLE_SSL := true
 
 nokey: 
 	chmod +x ./switchboard.js
