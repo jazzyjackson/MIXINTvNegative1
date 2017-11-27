@@ -36,11 +36,7 @@ require(SSL_READY ? 'https' : 'http')
 function forkProcess(request){
     var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
     var command = decodeURIComponent(request.url.split('?')[1])
-    // this could read an environment variable that forces you to talk to bot
-    // bot could be programmed to post to server as its own user and get a pid back
-    // user could then subscribe to pid for updates... hmmmm
-    // switchboard would have to provide a way to address processes
-    console.log(command)
+
     var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
     subprocess_registry[String(subprocess.pid)] = subprocess
 

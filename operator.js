@@ -15,6 +15,10 @@ class switchboardRegistry {
             // check if user exists on system, useradd otherwise - what about passwords? not sure.
             // https://askubuntu.com/questions/294736/run-a-shell-script-as-another-user-that-has-no-password
             // only files that this identity has permission to read will be served and execute
+            // let makeYourselfAtHome = child_process.spawn('./make-yourself-at-home.sh')
+            // makeYourselfAtHome.on('close', () => {
+
+            // })
             let server = child_process.spawn('./switchboard.js', [0]) // call for an switchboard on port 0, system will assign available port
             server.stdout.on('data', port => {
                 resolve({
