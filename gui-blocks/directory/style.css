@@ -55,14 +55,39 @@ file-icon::before {
     text-align: center;
     font-size: x-large;
 }
-
+file-detail {
+    display: block;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    width: 100%;
+    padding: 5px;
+}
+file-detail > * {
+    display: block;
+}
+file-detail > *:not(data-name){
+    font-size: x-small;
+}
 data-mode::before {
-    content: 'mode:';
+    content: 'mode: ';
 }
 data-size::before {
-    content: 'size:';
+    content: 'size: ';
+}
+file-detail a {
+    color: cornflowerblue;
+}
+file-detail[filetype="directory"] footer {
+    /* hide the download link to directories, nothing to download */
+    display: none;
 }
 
+data-atime::before {
+    content: "Last accessed: "
+}
+data-mtime::before {
+    content: "Last modified: "
+}
 /* file has 🗎 icon converted to URI optimized svg */
 [filetype] file-icon::before {
     content: '';

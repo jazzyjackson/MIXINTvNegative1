@@ -16,6 +16,13 @@ class DirectoryBlock extends ProtoBlock {
             this.fetchDirectory(this.props.src)
             .then(listText => this.generateIcons(listText))
         })
+
+        this.addEventListener('resize', () => {
+            this.lastActive && this.insertFileDetail(this.lastActive)
+        })
+        window.addEventListener('resize', () => {
+            this.lastActive && this.insertFileDetail(this.lastActive)            
+        })
     }
 
     static get actions(){
@@ -157,6 +164,9 @@ class DirectoryBlock extends ProtoBlock {
             /* that attribute on click (so, with a delay in anticipation of a double click), using a timeout mechanism */
             node.addEventListener('focus', () => {
                 this.fetchFileDetail(node)
+                    .then(()=>{
+                        this.insertFileDetail(node)
+                    })
             })
             node.addEventListener('dblclick', () => {
                 this.openFileFrom(node)
@@ -169,14 +179,59 @@ class DirectoryBlock extends ProtoBlock {
         })
     }
 
+    insertFileDetail(node){
+        // if there's already a file-detail element, destroy it.
+        let oldFileDetail = this.child['file-list'].querySelector('file-detail')
+        oldFileDetail && oldFileDetail.remove()
+        let newFileDetail = document.createElement('file-detail')
+        newFileDetail.setAttribute('filetype', node.getAttribute('filetype'))
+        let href = this.props.src + node.getAttribute('title')
+        newFileDetail.innerHTML = `   
+            <data-name>${node.getAttribute('title')}</data-name>            
+            <data-mode>${this.octal2symbol(node.getAttribute('mode'))}</data-mode>
+            <data-atime>${this.makeDateString(node.getAttribute('atime'))}</data-atime>
+            <data-mtime>${this.makeDateString(node.getAttribute('mtime'))}</data-mtime>
+            <data-size>${node.getAttribute('size')} bytes</data-size>
+            <footer>source:
+                <a tabindex="-1" title="Click to download" download="${node.getAttribute('title')}" href="${href}">${href}</a>
+            </footer>`.trim()
+
+        // get list of children of file-list
+        let fileblocks = Array.from(this.child['file-list'].children)
+        let nth = fileblocks.indexOf(node)
+        // slice off all the blocks preceding the focused node
+        let nodeLeft = node.getClientRects()[0].left
+        // iterate through the file-block nodes after the nth node
+        for(var block of fileblocks.slice(nth + 1)){
+            if(block.getClientRects()[0].left <= nodeLeft){
+                // if we hit a block that is farther to the left than focused node, insert this before it
+                this.child['file-list'].insertBefore(newFileDetail, block)
+                break;
+            }
+        }
+        // if, after looping through all the blocks, I did not find a new home for newFileDetail, tack it on to the end
+        if(!newFileDetail.parentElement){
+            this.child['file-list'].appendChild(newFileDetail)                            
+        }
+
+        this.lastActive = node
+    }
+
     fetchFileDetail(node){
-        if(node.getAttribute('ino')) return null // already been done
-        this.fetchStat(this.props.src, node.getAttribute('title'))
-        .then(stat => {
-            for(var item in stat){
-                node.setAttribute(item, stat[item])
+        return new Promise(resolve => {
+            if(node.getAttribute('ino')){
+                resolve()
+             } else {
+                this.fetchStat(this.props.src, node.getAttribute('title'))
+                .then(stat => {
+                    for(var item in stat){
+                        node.setAttribute(item, stat[item])
+                    }
+                })
+                .then(resolve)
             }
         })
+
     }
 
     get blockFromFileType(){

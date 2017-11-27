@@ -67,7 +67,9 @@ class TextareaBlock extends ProtoBlock {
         })
         .then(()=>{
             this.remove()
-            docu
+            // textareas opened from a directory should retain a reference to directory
+            // so when its removed, originating directory can be refreshed
+            // if directory was since destroyed (id returns undefined) no big deal
         }) // calling this.become with no argument re-creates / re-loads the current block from src
         .catch(console.error)
     }
@@ -108,7 +110,10 @@ class TextareaBlock extends ProtoBlock {
             credentials: 'same-origin', 
             redirect: 'error',
             body: this.data
-        }).then(console.log).catch(console.error) 
+        }).then(() => {
+            this.setAttribute('src', source)
+            this.header = this.props.src
+        }).catch(console.error) 
         // .then fetch post git add $source && git commit -m "prompt(what should the message be" ? maybe something like this
 
         // lol it would be kinda cool to pinwheel the X while things are happening, but it might be kinda annoying
