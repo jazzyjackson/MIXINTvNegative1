@@ -14,7 +14,31 @@
 #create user and group switchboard, add switchboard to admin group, add switchboard to sudoers so it can also adduser and chmod things
 # sh adduser switchboard
 export DISABLE_SSL := true
+export CHATSCRIPT  := /Users/colton.jackson/utilitybot/chatscript
+export cwd         := $(shell pwd)
+
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+export ChatScriptExecutable := LinuxChatScript64
+endif
+ifeq ($(UNAME), Darwin)
+export ChatScriptExecutable := ChatScript
+endif
+
+default:
+	make bootchatscript
+	make nokey
 
 nokey: 
 	chmod +x ./switchboard.js
 	env nokeyok=1 node operator
+
+bootchatscript:
+	# make a symlink between personalities folder and the ChatScript rawdata topics and all
+	stat personalities/RAWDATA || ln -s $(CHATSCRIPT)/RAWDATA $(cwd)/personalities/RAWDATA
+	# make ChatScript executable
+	chmod +x $(CHATSCRIPT)/BINARIES/$(ChatScriptExecutable)
+	# ChatScript should be started from within the chatscript directory, cd into it and then (;) start chatscript in the background (&)
+	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 buildfiles=$(cwd)/personalities &
+	# send build command to chatscript
+	echo '":build shelly"' | node spiders/basic/interpret.js

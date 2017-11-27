@@ -126,7 +126,7 @@ function subscribe2events(request, response){
     var subprocess = forkProcess(request)
     // construct a function with a closure around the response object to write all future events until process exit
     var pushEvent = function(data){     
-        // data might be a buffer, JSON parse it until you can't
+        // data might be a buffer, 
         if(Buffer.isBuffer(data)){
             data = data.toString()
         }
@@ -136,9 +136,10 @@ function subscribe2events(request, response){
         }
         
         try {
+            // check if data is already an object by trying to parse it, if it works, just put it right back to JSON
             return response.write('data: ' + JSON.stringify(JSON.parse(data.toString())) + '\n\n')
         } catch(e) {
-            // if I was just passed a string, wrap it up, announce it as stderr or stdout
+            // if I was just passed a string and JSON.parse throws error, wrap it up, announce it as stderr or stdout (pushEvent is called by an event listener, so this context will be the stream the listener was attached to)
             let responseObject = {}
             this === subprocess.stdout ? responseObject.stdout = data :
             this === subprocess.stderr ? responseObject.stderr = data :
