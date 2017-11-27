@@ -22,6 +22,13 @@ When connected to a Poly-Int, you're served a graph of web-components that can b
 Alongside acting as a file server, Poly-Int can execute programs in response to web requests in the vein of cgi scripts or amazon lambda functions. The complete functionality is provided by 4 programs: the operator, the switchboard, the keymaker, and figjam. Connectors to interface with chatbots are provided as spiders.
 
 # Starting Poly-Int
+To start operator before setting up a user authentication strategy, set the environment variable "nokeyok" (no key ok):
+env nokeyok=1 node opeartor.js
+optionally with the desired port (default is 3000)
+env nokeyok=1 node operator 80
+(note .js is optional when starting programs with node)
+
+
 git clone ...
 make mini: to run without downloading anything else, total size < 1MB
 make medium: to download useful external projects: showdown for rendering markdown files, codemirror for editing code, papa parse for working with csv and tabular data. Less than 10MB.
