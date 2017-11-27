@@ -39,10 +39,6 @@ file-block {
     align-self: flex-start;
 }
 
-file-block:focus {
-    width: initial;
-    padding: 0 5px;
-}
 
 file-name {
     display: block;
@@ -53,14 +49,11 @@ file-name {
     text-align: center;
 }
 
-file-details::before {
+file-icon::before {
     display: block;
     height: 30px;
     text-align: center;
     font-size: x-large;
-}
-file-details > * {
-    display: none;
 }
 
 data-mode::before {
@@ -69,48 +62,20 @@ data-mode::before {
 data-size::before {
     content: 'size:';
 }
-:focus file-details > * {
-    display: block;
-    white-space: nowrap;
-    font-size: xx-small;
-    margin-left: 8px;
-}
-
-
-data-atime, data-mtime {
-    display: none !important;
-}
 
 /* file has 🗎 icon converted to URI optimized svg */
-[filetype]:not(:focus) file-details::before {
-    content: '';    
+[filetype] file-icon::before {
+    content: '';
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22.625' height='30.833' viewBox='0 0 21.210937 28.906248'%3E%3Cg style='line-height:125%25' font-weight='400' font-size='40' font-family='sans-serif' letter-spacing='0' word-spacing='0'%3E%3Cpath d='M3.848 24.082v-.957h13.496v.957H3.848zm0-3.848v-.957h13.496v.957H3.848zm9.648-18.886v6.347h6.348l-6.348-6.347zm7.715 6.347v21.211H0V0h13.496l7.715 7.695zm-8.691.977V.957H.957v26.992h19.277V8.672H12.52zm-8.672 7.715v-.977h13.496v.977H3.848zm0-3.867v-.957h13.496v.957H3.848zm0-3.848v-.977h5.78v.977h-5.78zm0-3.867v-.957h5.78v.957h-5.78z'/%3E%3C/g%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-size: 30%;
     background-position: center;
 }
-/* when file-block is focused, I don't want the icon to be a psuedo element, but to stack behind the details */
-/* [filetype="file"]:focus { */
-[filetype]:focus {
-    /* 85% opaque white stacked on top of icon */
-    background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22.625' height='30.833' viewBox='0 0 21.210937 28.906248'%3E%3Cg style='line-height:125%25' font-weight='400' font-size='40' font-family='sans-serif' letter-spacing='0' word-spacing='0'%3E%3Cpath d='M3.848 24.082v-.957h13.496v.957H3.848zm0-3.848v-.957h13.496v.957H3.848zm9.648-18.886v6.347h6.348l-6.348-6.347zm7.715 6.347v21.211H0V0h13.496l7.715 7.695zm-8.691.977V.957H.957v26.992h19.277V8.672H12.52zm-8.672 7.715v-.977h13.496v.977H3.848zm0-3.867v-.957h13.496v.957H3.848zm0-3.848v-.977h5.78v.977h-5.78zm0-3.867v-.957h5.78v.957h-5.78z'/%3E%3C/g%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-size: 100% 55%;
-    background-position: center;
-}
 
-[filetype="directory"]:not(:focus) file-details::before {
+[filetype="directory"] file-icon::before {
     content: '';    
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50.167' height='30.833' viewBox='0 0 47.031777 28.906248'%3E%3Cg style='line-height:125%25'%3E%3Cpath d='M0 28.906V6.27q0-2.422 2.402-2.422h1.114q.84 0 1.191-.254.352-.274.547-1.035l.195-.782Q5.762.547 6.25.273 6.719 0 8.516 0h7.46q1.622 0 2.07.254.45.254.782 1.367l.215.723q.332 1.113.605 1.308.293.196 1.582.196h13.497q1.386 0 1.875.527.507.508.507 1.934v1.875h7.754q2.11 0 2.168.742.02.156-.683 1.582l-9.239 18.398H0zm.957-1.992l8.398-16.367q.918-1.777 1.426-2.07.508-.293 2.637-.293h22.734V6.309q0-1.504-1.465-1.504H21.113q-1.836 0-2.265-.215-.43-.215-.703-1.328l-.235-.899q-.254-.957-.586-1.172-.312-.234-1.426-.234H8.672q-1.25 0-1.68.234-.43.254-.664 1.094l-.234.899Q5.78 4.297 5.39 4.55q-.371.254-1.68.254H2.5q-.938 0-1.25.293-.293.273-.293 1.191v20.625zm.586 1.035h34.941l8.653-17.344q.43-.937.43-1.054-.06-.41-1.212-.41H12.832q-1.133 0-1.562.254-.43.253-.88 1.152L1.544 27.949z' font-weight='400' font-size='40' font-family='sans-serif' letter-spacing='0' word-spacing='0'/%3E%3C/g%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-size: 70%;
-    background-position: center;
-}
-/* when file-block is focused, I don't want the icon to be a psuedo element, but to stack behind the details */
-[filetype="directory"]:focus {
-    /* 90% opaque white stacked on top of icon */
-    background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50.167' height='30.833' viewBox='0 0 47.031777 28.906248'%3E%3Cg style='line-height:125%25'%3E%3Cpath d='M0 28.906V6.27q0-2.422 2.402-2.422h1.114q.84 0 1.191-.254.352-.274.547-1.035l.195-.782Q5.762.547 6.25.273 6.719 0 8.516 0h7.46q1.622 0 2.07.254.45.254.782 1.367l.215.723q.332 1.113.605 1.308.293.196 1.582.196h13.497q1.386 0 1.875.527.507.508.507 1.934v1.875h7.754q2.11 0 2.168.742.02.156-.683 1.582l-9.239 18.398H0zm.957-1.992l8.398-16.367q.918-1.777 1.426-2.07.508-.293 2.637-.293h22.734V6.309q0-1.504-1.465-1.504H21.113q-1.836 0-2.265-.215-.43-.215-.703-1.328l-.235-.899q-.254-.957-.586-1.172-.312-.234-1.426-.234H8.672q-1.25 0-1.68.234-.43.254-.664 1.094l-.234.899Q5.78 4.297 5.39 4.55q-.371.254-1.68.254H2.5q-.938 0-1.25.293-.293.273-.293 1.191v20.625zm.586 1.035h34.941l8.653-17.344q.43-.937.43-1.054-.06-.41-1.212-.41H12.832q-1.133 0-1.562.254-.43.253-.88 1.152L1.544 27.949z' font-weight='400' font-size='40' font-family='sans-serif' letter-spacing='0' word-spacing='0'/%3E%3C/g%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-size: 100% 55%;
     background-position: center;
 }

@@ -3,7 +3,6 @@ class DirectoryBlock extends ProtoBlock {
         super(props)
 
         this.listFunc = (pathname) => `${pathname}?ls -ap1L` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line, L: present symlinks to directories as directories */
-        this.statFunc = (pathname,filename) => `${pathname}?node -e "console.log(JSON.stringify(require('fs').statSync('${filename}')))"` // its really dumb to launch a node process to grab the file size and permissions but filesystem API is not consistent across systems so this is the best I got so far. I'm considering lstat with a switch for Darwin vs Linux, but don't know if that's a 90% measure or a 99% measure. Node is 100% cuz there's a bunch of code smoothing out platform differences but I still feel like there's a pretty easy to parse C API somewhere deep down
 
         this.addEventListener('ready', () => {
             this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
@@ -119,8 +118,8 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     fetchStat(pathname, filename){
-        return fetch(this.statFunc(pathname, filename), {
-            method: 'post',
+        return fetch(encodeURIComponent(pathname + filename), {
+            method: 'options',
             credentials: 'same-origin',
             redirect: 'error'
         })
@@ -129,7 +128,7 @@ class DirectoryBlock extends ProtoBlock {
 
     makeMarkup(props){
         return `<file-block tabindex="0" filetype="${props.type}" title="${props.name}">
-                    <file-details></file-details>
+                    <file-icon></file-icon>
                     <file-name>${props.name}</file-name>
                 </file-block>`
     }
@@ -157,7 +156,7 @@ class DirectoryBlock extends ProtoBlock {
             /* so I think I'll have to move the 'focus' css to a cusotm attribute, and determine whether to apply  */
             /* that attribute on click (so, with a delay in anticipation of a double click), using a timeout mechanism */
             node.addEventListener('focus', () => {
-                this.fillFileDetail(node)
+                this.fetchFileDetail(node)
             })
             node.addEventListener('dblclick', () => {
                 this.openFileFrom(node)
@@ -170,19 +169,13 @@ class DirectoryBlock extends ProtoBlock {
         })
     }
 
-    fillFileDetail(node){
-        if(node.details.textContent) return null // already been done
+    fetchFileDetail(node){
+        if(node.getAttribute('ino')) return null // already been done
         this.fetchStat(this.props.src, node.getAttribute('title'))
         .then(stat => {
-            console.log(stat)
-            let href=this.props.src + node.getAttribute('title')
-            node.details.innerHTML += `
-                <data-mode>${this.octal2symbol(stat.mode)}</data-mode>
-                <data-atime>${this.makeDateString(stat.atime)}</data-atime>
-                <data-mtime>${this.makeDateString(stat.mtime)}</data-mtime>
-                <data-size>${stat.size} bytes</data-size>
-                <data-src>source: <a href=${href}>${href}</a></data-src>
-            `
+            for(var item in stat){
+                node.setAttribute(item, stat[item])
+            }
         })
     }
 
