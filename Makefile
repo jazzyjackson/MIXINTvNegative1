@@ -18,12 +18,15 @@ export CHATSCRIPT  := /Users/colton.jackson/utilitybot/chatscript
 export cwd         := $(shell pwd)
 export BOT         := shelly
 
-UNAME := $(shell uname)
-ifeq ($(UNAME), Linux)
-export ChatScriptExecutable := LinuxChatScript64
-endif
-ifeq ($(UNAME), Darwin)
-export ChatScriptExecutable := ChatScript
+ifeq ($(shell uname), Darwin)
+	export ChatScriptExecutable := ChatScript
+	export adduser = $(shell pwd)/spiders/basic/adduser-osx.sh
+	export groupadd = $(shell pwd)/spiders/basic/groupadd-osx.sh
+else
+	# else we can use build in adduser and groupadd utilities
+	export ChatScriptExecutable := LinuxChatScript64
+	export adduser = adduser
+	export groupadd = groupadd
 endif
 
 default:
@@ -33,7 +36,12 @@ chownership:
 	# create operator user and operator group
 	# create basic group, add operator, all new users will be added to this group and whatever roles they come with
 	# iterate through spiders folder and change ownership to group of same name as folder 
+	sudo $(adduser) 
 
+yourself-at-home:
+	# create user
+	# add user to groups
+	
 nokey: 	
 	chmod +x ./switchboard.js
 	env nokeyok=1 node operator
