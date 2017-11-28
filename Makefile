@@ -3,14 +3,6 @@
 # ./chatscript/BINARIES/ChatScript buildfiles=./personalities/
 # node operator >> ./logs/operator.log &
 
-#all users need to be able to 
-#basic files will be chgroup'd to basic group and chmod'd rwxr-x--- 750,
-#basic directories will be basic group but chmod'd to rwx--x--- 710, files inside can be read, but directory can not be listed
-# basicFiles=figtrees/,gui-blocks/,guidebook/,spiders/basic/,figjam.js,operator.js,readme.markdown,
-#admin files will be chgroup'd to admin group and chmod'd rwxrwx--- 770
-# adminFiles=logs/,personalities/,spiders/*,*
-# $(adduser) = which adduser || spiders/basic/adduser-osx.sh
-
 #create user and group switchboard, add switchboard to admin group, add switchboard to sudoers so it can also adduser and chmod things
 # sh adduser switchboard
 export DISABLE_SSL := true
@@ -29,6 +21,8 @@ else
 	export groupadd = groupadd
 endif
 
+
+
 default:
 	make bootchatscript buildbot nokey
 
@@ -41,7 +35,14 @@ chownership:
 yourself-at-home:
 	# create user
 	# add user to groups
-	
+	#all users need to be able to 
+	#basic files will be chgroup'd to basic group and chmod'd rwxr-x--- 750,
+	#basic directories will be basic group but chmod'd to rwx--x--- 710, files inside can be read, but directory can not be listed
+	# basicFiles=figtrees/,gui-blocks/,guidebook/,spiders/basic/,figjam.js,operator.js,readme.markdown,
+	#admin files will be chgroup'd to admin group and chmod'd rwxrwx--- 770
+	# adminFiles=logs/,personalities/,spiders/*,*
+	# $(adduser) = which adduser || spiders/basic/adduser-osx.sh
+
 nokey: 	
 	chmod +x ./switchboard.js
 	env nokeyok=1 node operator
@@ -55,4 +56,7 @@ bootchatscript:
 	# make ChatScript executable
 	chmod +x $(CHATSCRIPT)/BINARIES/$(ChatScriptExecutable)
 	# ChatScript should be started from within the chatscript directory, cd into it and then (;) start chatscript in the background (&)
-	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 &
+	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 logs=$(cwd)/logs users=$(cwd)/logs &
+
+clean:
+	rm logs/*.txt

@@ -170,6 +170,8 @@ class ProtoBlock extends HTMLElement {
                                                 : new block
         newBlock.props = this.props
         this.replaceWith(newBlock)
+        // oof. cant set data until shadowroot is attached. I guess that makes sense?
+        newBlock.data = this.data
         // I'm expecting the element that has been replaced to be garbage collected
         return newBlock
     }

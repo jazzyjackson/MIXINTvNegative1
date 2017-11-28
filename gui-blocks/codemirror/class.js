@@ -16,7 +16,7 @@ class CodemirrorBlock extends TextareaBlock {
                      // if whitespace value is "wrap" set lineWrapping to true, else lineWrapping is false (default)
                     lineWrapping: this.getAttribute('whitespace') == 'wrap',
                 })
-                this.theme = this.getAttribute('theme') || CodeMirror.preferredTheme || "default"
+                this.theme = this.getAttribute('theme') || CodeMirror.preferredTheme || "monokai"
                 this.keymap = this.getAttribute('keymap') || CodeMirror.preferredKeyMap || "default"
                 // retrigger attributechangedcallback after loading codemirror
                 // cm.save commits the editor contents into this.data (this.child['textarea']) which is referenced for file overwrite and so on.

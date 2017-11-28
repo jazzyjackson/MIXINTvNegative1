@@ -14,7 +14,10 @@ class DirectoryBlock extends ProtoBlock {
                 // /docs/utilities.csv becomes /docs/
             }
             this.fetchDirectory(this.props.src)
-            .then(listText => this.generateIcons(listText))
+            .then(listText => {
+                this.data = listText
+                this.generateIcons()
+            })
         })
 
         this.addEventListener('resize', () => {
@@ -145,12 +148,12 @@ class DirectoryBlock extends ProtoBlock {
         return dateObj.toLocaleTimeString() + ' ' + dateObj.toDateString() 
     }
 
-    generateIcons(listText){
-        let folders = listText.split('\n')
+    generateIcons(){
+        let folders = this.data.split('\n')
             .filter(name => name.slice(-1) == '/') // filter out anything thats not a directory
             .map(name => this.makeMarkup({type: "directory", name: name.slice(0,-1)}))
 
-        let files = listText.split('\n')
+        let files = this.data.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
             .map(name => this.makeMarkup({type: this.determineFileType(name), name: name}))
         
@@ -265,18 +268,18 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     octal2symbol(filestat){
-        let zeropad = binaryString => binaryString.length < 3 ? zeropad("0" + binaryString) : binaryString
-        // filestat looks like 33279, returned by node's fs.stat
-        let octalArray = filestat.toString(8).split('').slice(-3)
-        // octalArray is in the form chmod likes, ['7','7','7']
-        let binaryArray = octalArray.map((octal, index) => zeropad(parseInt(octal).toString(2)))
-                                    .join('').split('')
-        // goes from ['7','5','1'] 
-        //        to ['111', '101', '1'] with parseInt().toString(2)
-        //        to ['111','101','001'] via zeropad
-        //        to '111101001' via join('')
-        //        to ['1','1','1','1','0','1','0','0','1'] via split('')
-        let symbolMask = 'rwxrwxrwx'.split('')
-        return binaryArray.map((flag, index) => parseInt(flag) ? symbolMask[index] : '-').join('')
+        // bit shifting magic to extract read write execute permission for owner, group, and world
+        // adapted from https://github.com/mmalecki/mode-to-permissions/blob/master/lib/mode-to-permissions.js
+        return [
+            filestat >> 6 & 4      ? 'r' : '-',
+            filestat >> 6 & 2      ? 'w' : '-',
+            filestat >> 6 & 1      ? 'x' : '-',
+            filestat << 3 >> 6 & 4 ? 'r' : '-',
+            filestat << 3 >> 6 & 2 ? 'w' : '-',
+            filestat << 3 >> 6 & 1 ? 'x' : '-',
+            filestat << 6 >> 6 & 4 ? 'r' : '-',
+            filestat << 6 >> 6 & 2 ? 'w' : '-',
+            filestat << 6 >> 6 & 1 ? 'x' : '-',
+        ].join('')
     }
 }

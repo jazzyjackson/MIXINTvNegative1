@@ -104,3 +104,7 @@ data-mtime::before {
     background-size: 70%;
     background-position: center;
 }
+
+textarea {
+    display: none;
+}
