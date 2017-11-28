@@ -18,11 +18,11 @@ require(SSL_READY ? 'https' : 'http')
     /* recursive ternary tests conditions until success */
     /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) : /* from new EventSource (SSE) */
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           : /* url path w/ trailing slash */
+    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
     req.method == 'GET'                               ? streamFile(req,res)       :
     req.method == 'PUT'                               ? saveBody(req,res)         :
     req.method == 'POST'                              ? streamSubProcess(req,res) :
     req.method == 'DELETE'                            ? deleteFile(req,res)       :
-    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
     res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
 })
 .listen(process.argv[2] || 3000)       

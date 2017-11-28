@@ -1,3 +1,6 @@
+Spaces for Cases
+A Pro-Bubble Manifesto
+
 headcases
 aware of people living in different realities
 like between marketing and propaganda and news-as-brand and brands-as-self

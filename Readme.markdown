@@ -17,38 +17,46 @@ Your network may include:
 
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on your local network whether or not you have a connection to the world-wide-web.
 
-When connected to a Poly-Int, you're served a graph of web-components that can be modified with code and content you write yourself. Whenever you arrange an environment with content and capabilities that are useful to you, the whole arrangement can be cloned to run on any other computer, using git remotes to synchronize content if desired. This allows for shared documents and chatrooms that are available offline and synchronize when connected.
+Any file you upload, any document or program you write, is immediately available on the network (available to whoever has access to the machine).
 
-Alongside acting as a file server, Poly-Int can execute programs in response to web requests in the vein of cgi scripts or amazon lambda functions. The complete functionality is provided by 4 programs: the operator, the switchboard, the keymaker, and figjam. Connectors to interface with chatbots are provided as spiders.
+When connected to a Poly-Int, you're served a graph of web-components that can be modified with code and content you write yourself. 
+
+Alongside acting as a file server, Poly-Int can execute programs in response to web requests in the vein of cgi scripts or amazon lambda functions. The complete functionality is provided by 4 programs: the operator, the switchboard, the keymaker, and figjam. Connectors to interface with chatbots and 3rd party services are provided as spiders. Spiders and Chatbot personalities can be collaboratively edited and shared. 
+
+TODO: Given convoshells, directories, and codemirrors, you can browse and modify files while having a conversation (with humans or bots). You can say what you want, build it / get help building it, execute it, say how it works, talk about the code with it highlighted, and the natural language engine will be recording all that activity, able to inspect the code as it changed over the course of a conversation, it will have a record of what stack overflow threads you read while working on a git commit and be able to pull out snippets that were helpful to you
+
 
 # Starting Poly-Int
-To start operator before setting up a user authentication strategy, just navigate to the root of the repo in a terminal and type the "make" command - the nokey recipe will run by default and start an operator on port 3000 by default.
+```
+git clone https://github.com/jazzyjackson/poly-int.git
+cd poly-int
+make nokey
+```
+To start operator before setting up a user authentication strategy, just navigate to the root of the repo in a terminal and type the "make nokey", which will start an operator on port 3000 by default.
 
 Once you add localhost, qa, and prod authentication schemes to keyconfig.json you can run "make localhost" or "make prod" etc to run make and start the server for those auth schemes.
 
 git clone ...
 make mini: to run without downloading anything else, total size < 1MB
-make medium: to download useful external projects: showdown for rendering markdown files, codemirror for editing code, papa parse for working with csv and tabular data. Less than 10MB.
-make max: clone the ChatScript project, including an entire local instance of Wordnet, an English dictionary and meaning-map. Uncompressed ~ 1GB
+make useful: to download useful external projects: showdown for rendering markdown files, codemirror for editing code, papa parse for working with csv and tabular data. Less than 10MB.
+make whole: clone the ChatScript project, including an entire local instance of Wordnet, an English dictionary and meaning-map. Uncompressed ~ 1GB
 
 If you're running behind a load balancer or reverse proxy already and want all the internal requests to be HTTP, you can set an environment variable to "DISABLE_SSL" and neither switchboard nor operator will check for certificate files.
 
-# Working with Owners, Groups, and the World with Switchboard.js
+# Working with Owners, Groups, and the World with operator.js
 
 Many collaboration and file sharing tools require all participants to register an account with the service where they can choose what other accounts have access to their files - these accounts are managed by a web server that provides an authentication and access scheme of its own. I wanted to avoid re-implementing access control in my own application when *nix operating systems have sophisticated permissions capabilities built-in. 
 
-Switchboard.js is my implementation of a reverse-proxy service that authenticates web requests and fulfills the requests by passing them to a nodejs microserver. An instance of operator.js is launched as a child process of switchboard.js, and it's called with `sudo -u` to run the microserver process as the identity associated with an incoming web request.
+Operator.js is my implementation of a reverse-proxy service that authenticates web requests and fulfills the requests by passing them to a nodejs microserver. An instance of switchboard.js is launched as a child process of operator.js, and it's called with `sudo -u` to run the microserver process as the identity associated with an incoming web request.
 
-In this way, whatever permissions granted to a *nix id determine what files and programs can be accessed via web request. 
+In this way, whatever permissions granted to a *nix id determine what files and programs can be accessed via web request associated with that identity (via cookie) 
 
 On *nix systems, every file/program/directory has true/false values for whether it can be read, overwritten, and run as an executable program. In human-readable (or 'symbolic') form this is expressed as 'rwx' for read-write-execute. 
 These rwx permissions can be different for the creator of the file (called the __owner__), a __group__ (lists of particular identities that should be allowed to access the file), and __world__, sometimes called __other__, meaning, everybody else (including the special identity *nobody*).
 
-So `rwx r-x ---` means the owner/creator can read, overwrite, and execute their own file, members of a group can read the file and run it as a program, but everybody else is prevented from any access. (If the directory the file is in is readable by the world, the world can see the file is there but can't read it. If a directory has its world permissions set to --- than no one else can see that the directory is there at all).
-
 # Magic URLs and cookies with Keyconfig and Keymaker.js
 
-Switchboard.js handles creating accounts and proxying requests to the right child process, but before it can do that it needs to know who the incoming request belongs to. Keymaker.js includes some regex to check for a session ID in the cookie and the 
+Operator.js handles creating accounts and proxying requests to the right child process, but before it can do that it needs to know who the incoming request belongs to. Keymaker.js includes some regex to check for a session ID in the cookie and the url. If it has a record of who the key belongs to, it attached that idetity to the request object and returns it to operator to be proxy'd to its personal switchboard.
 
 
 # Switchboard.js
@@ -56,11 +64,11 @@ Switchboard.js routes your network requests in one of seven ways:
 
 - a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
 - A GET request to a directory (ending in '/') is returned by generating the workspace/web application described by a 'figtree'
+- an OPTIONS request performs a `stat` call and returns an object containing inode, ctime, atime, permission and ownership information
 - A GET request to a file path will stream the file from disk to the caller
 - a PUT request to a file path will stream data from a caller to the operator's disk
 - a POST request creates a child process in a shell of its own and pipes the stdio between the operator and caller (aka server and client)
 - a DELETE request does what you expect
-- an OPTIONS request performs a `stat` call and returns an object containing inode, ctime, atime, permission and ownership
 
 
  ```js
@@ -71,38 +79,31 @@ require(SSL_READY ? 'https' : 'http')
     /* recursive ternary tests conditions until success */
     /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) :
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           :
+    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
     req.method == 'GET'                               ? streamFile(req,res)       :
     req.method == 'PUT'                               ? saveBody(req,res)         :
     req.method == 'POST'                              ? streamSubProcess(req,res) :
     req.method == 'DELETE'                            ? deleteFile(req,res)       :
-    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
     res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
 })
 ```
  _See annotated code in guide/operator.js_
 
 
-
-# Figtree.js
-
-
-### GUI-Blocks
-The web interface is comprised of HTML custom elements defined in the **gui-blocks** directory - each block provides different functionality: one is a terminal emulator, one is a code editor. An interface can consist of a single block - such as presenting a markdown document, a custom video player, or a slideshow - or it can be an arrangment of many blocks that make up a workspace of editors, file trees, and media players. 
-
-
 ### FigJam.js
-A configuration graph (figtree for short) describes the layout of a workspace, which arranges HTML custom elements in the window and describes the attributes for each element. One attribute might be a source to pull content from (img, link, audio, and video tags make use of this already to load media, custom elements may be programmed to accept any filetype) - so the content of a workspace is kept separate from the presentation layer (layout, style, and interactivity via HTML, CSS, and JS). 
+A configuration graph (figtree for short) describes the layout of a workspace, which arranges HTML custom elements in the window and describes the attributes for each element. One attribute might be a source to pull content from (img, link, audio, and video tags make use of this already to load media; custom elements may be programmed to accept any filetype) - so the content of a workspace is kept separate from the presentation layer.
 
 This figtree can exist as a file kept for different participants and projects, or it can be passed into the URL as a query string, producing your requested layout and content without having to keep the file on the server.
 
 Try out some example workspaces:
-coltenj.com/?fig=markdownEditor.json
-coltenj.com/?fig=chatInStyle.json
-coltenj.com/?figurl=head%shell%init=welcome.txts;lkasjdf;lkjsadf
+- [coltenj.com/?fig=markdownEditor.json](coltenj.com/?fig=markdownEditor.json)
+- [coltenj.com/?fig=chatInStyle.json](coltenj.com/?fig=chatInStyle.json)
+- [coltenj.com/?figurl=head%shell%init=welcome.txts;lkasjdf;lkjsadf](coltenj.com/?figurl=head%shell%init=welcome.txts;lkasjdf;lkjsadf)
 
 Take a look at the configuration file by simply requesting it:
-coltenj.com/figtrees/markdownEditor.json
-coltenj.com/figtrees/chatInStyle.json
+- [coltenj.com/figtrees/markdownEditor.json](coltenj.com/figtrees/markdownEditor.json)
+- [coltenj.com/figtrees/chatInStyle.json](coltenj.com/figtrees/chatInStyle.json)
+
 ### Compatibility
 The intention is for the backend server to work the same on any system with NodeJS > 0.10.0, when the streams interface was upgraded to do more than just pipe. This is to facilitate switchboard.js being able to inspect the streams its proxying. If you you'll be accessing operator.js directly, I think it will work even on older installations, but all the repo's I've seen so far have at least 0.10.0.
 

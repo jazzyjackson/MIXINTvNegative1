@@ -5,5 +5,4 @@ Javascript is a fairly unique language, taking cues from an ancestor, a computer
 
 Emacs was bourne out of this tradition, as a program that existed nominally as an editor, allowing for code to be written to extend and customize Emacs itself. Soon people were writing mail clients and filesystem browsers so they could use the whole computer without ever leaving emacs. 
 
-Multi-Interpreter also aims to continue the tradition, providing a web application that can change how it works while it's running. New capabilities can be added on the fly.
-
+Poly-Int also aims to continue the tradition, providing a web application that can change how it works while it's running. New capabilities can be added on the fly.

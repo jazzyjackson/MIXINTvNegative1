@@ -33,7 +33,7 @@ The first step is to build a platform that can do all the work of your typical w
 
 But before trying to explain what a self-aware web server looks like, I want to provide a minimal configuration that is immediately useful.
 
-Multi-intrepreter aims to make it easy to do all the things computers are good at, including:
+Poly-Int aims to make it easy to do all the things computers are good at, including:
 - Sharing files on a local network, or uploading files to a server to share online
 - Message passing between friends and co-workers
 - Modify the user interface to access and edit messages, files, and programs

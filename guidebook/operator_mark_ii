@@ -1,17 +1,20 @@
- This program provides instructions to a node serer on how to respond to network requests
- The request method, url, and headers may be inspected to determine what data to send back
- if a GET request was made to a directory, find a figtree in that directory (or its parents) for instructions on how to build a new workspace
- if a GET request is made to a static file, stream that file from disk to client (pipe fs.createReadStream to response)
- if a POST request is made, (attempt to) execute the query and pipe the child process to the response. Permissions errors are returned to client.
- if a DELETE request is made, (attempt to) delete the file specified. Permissions errors are returned to client.
- if a PUT request is made, (attempt to) write request body to disk. Permissions error yada yada.
- doesnt care what version of node is running
- its just detecting request headers and 
- oh maybe pipe transforms don't work in 0.6.0 or something. like the transform interface is different
- but shouldn't matter as long as it aint called\
- and bones.html 
- operator might check an environment variable
- and return bones.html for all get requests if figtree can't run
- oh try to run figtree but if it throws an error then return 
- actually maybe figtree can do that process.versions.node
- give up and stream bones.html if 'await' isn't a thing
+This program provides instructions to a node server on how to respond to network requests
+The request method, url, and headers may be inspected to determine what data to send back
+if a GET request was made to a directory, find a figtree in that directory (or its parents) for instructions on how to build a new workspace
+if a GET request is made to a static file, stream that file from disk to client (pipe fs.createReadStream to response)
+if a POST request is made, (attempt to) execute the query and pipe the child process to the response. Permissions errors are returned to client.
+if a DELETE request is made, (attempt to) delete the file specified. Permissions errors are returned to client.
+if a PUT request is made, (attempt to) write request body to disk. Permissions error yada yada.
+doesnt care what version of node is running
+its just detecting request headers and 
+oh maybe pipe transforms don't work in 0.6.0 or something. like the transform interface is different
+but shouldn't matter as long as it aint called\
+and retrograde.html 
+operator might check an environment variable
+and return retrograde.html for all get requests if figtree can't run
+oh try to run figtree but if it throws an error then return 
+actually maybe figtree can do that process.versions.node
+give up and stream retrograde.html if 'await' isn't a thing
+
+or maybe serve up retrograde and do a feature detect, fetch polyfills, fetch babeled bundle, and if you're on a slow connection fine, allow text messages to fly and offer to upgrade once everything is loaded (and hopefully cached)
+
