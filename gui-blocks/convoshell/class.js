@@ -10,6 +10,7 @@ class ConvoshellBlock extends ProtoBlock {
         this.addEventListener('init', () => {
             // identity represents username of node process that ran figjam.js to create this HTML
             this.identity = document.querySelector('meta[user-identity]').getAttribute('user-identity')
+            this.bot = document.querySelector('meta[default-bot]').getAttribute('default-bot')
             this.child['form'].addEventListener('submit', this.handleSubmit.bind(this))
             this.child['form'].addEventListener('keydown', event => {
                 if(event.type == 'keydown' && event.key == 'Enter'){
@@ -24,7 +25,7 @@ class ConvoshellBlock extends ProtoBlock {
             // so this one will fire afterward, and refocus on the input
             
             this.addEventListener('ready', () => {
-                this.header = `${this.identity}@${location.hostname} talking to self`
+                this.header = `${this.identity} talking to ${this.bot}`
                 this.child['input'].focus()
             })
 

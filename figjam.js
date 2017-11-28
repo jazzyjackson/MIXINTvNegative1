@@ -30,7 +30,7 @@ let defaultFig = {
         }},
         {"meta":{
             // let the web interface know who this is, just for filling in attributes for 'who'
-            "default-bot": process.env.defaultBot
+            "default-bot": process.env.BOT
         }},
         {"meta":{
             // let the web interface know the process identity so when tab/browser is closed, it can send a kill signal
@@ -71,7 +71,7 @@ let defaultFig = {
     "frames": ["hsplit","vsplit","thread"],
     "body": [
         {"vsplit-block": {
-            "childNodes": [{"become-block":{}}]
+            "childNodes": [{"personalityshell-block":{}}]
         }}
     ]
 }

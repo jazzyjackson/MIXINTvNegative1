@@ -4,6 +4,8 @@ class PersonalityshellBlock extends ConvoshellBlock {
         super(props)
         this.addEventListener('ready', () => {
             this.convoRestart()
+            /* 'nextTick' set focus after DOM gets painted */
+            setTimeout(()=>this.child['input'].focus())
         })
     }
 
