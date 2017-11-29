@@ -1,7 +1,6 @@
 class ShowdownBlock extends TextareaBlock {
     constructor(props){
         super(props)
-    
         // this load will fire when the fetch for the file (in src attribute) completes
         this.addEventListener('load', () => {
             // this promise will resolve immediately if the script is already available
@@ -11,10 +10,5 @@ class ShowdownBlock extends TextareaBlock {
                 this.child['textarea'].style.display = 'none'
             })
         })
-    }
-
-    connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))
-                         && this.dispatchEvent(new Event('ready'))
     }
 }

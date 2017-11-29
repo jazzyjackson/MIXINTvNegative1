@@ -79,6 +79,14 @@ class ShelloutBlock extends ProtoBlock {
             case 'bash':
                 this.shadowParent.appendMessage(this.shadowParent.bashShellout(newValue))
                 break;
+            case 'timeout':
+                let timeout = parseInt(newValue)
+                let timeoutCommand = newValue.slice(timeout.toString().length)
+                setTimeout(()=>{
+                    let newMessage = this.shadowParent.botShellout(timeoutCommand)
+                    newMessage.classList.add('hideHeader')
+                    this.shadowParent.appendMessage(newMessage)
+                }, timeout * 1000)
             case 'eval':
                 eval(newValue);
                 break;
