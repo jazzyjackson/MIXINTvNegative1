@@ -224,7 +224,8 @@ class ProtoBlock extends HTMLElement {
         if(!data) return data // exit in the case of this.props = this.options, but options was undefined
         if(typeof data != 'object') throw new Error("Set props requires an object to update from")
         Object.keys(data).forEach(key => {
-            this.setAttribute(key, data[key])
+            // handle depth-1 nested objects, if a prop is an object, stringify it, I can parse it when I see it change like all the rest in attributeChangedCallback
+            this.setAttribute(key, typeof data[key] == 'object' ? JSON.stringify(data[key]) : data[key])
         })
         return this.props
     }

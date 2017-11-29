@@ -1,4 +1,10 @@
 class ShelloutBlock extends ProtoBlock {
+    /* If you create a Shellout with an action, that action will be executed directly */
+    /* If you create a Shellout with an "interpret", that string will be base64 encoded 
+       and submitted to the interpret spider to get a response from chatbot */
+    /* The messages received from the server could be stdout from a shell command, or 
+       JSON returned by a spider program. Any properties of that JSON will be set as
+       attribute of this, and observedAttributes lists some special values associated with actions  */
 
     static get actions(){
         return [
@@ -14,21 +20,26 @@ class ShelloutBlock extends ProtoBlock {
     constructor(props){
         super(props)
         this.addEventListener('ready', () => {
-            if(!this.data){
-                if(!this.props.action){
-                    this.props = {action: prompt('I need a bash command to execute:')}
-                    this.header = this.props.action
+            if(this.props.interpret){
+                // if interpret attribute is set, we're going to hit the interpret spider to connect to chatbot
+                // encode message as base64 so that special characters aren't interpreted by the shell, decode and pipe result to stdin of interpret
+                // this also takes care of unicode and emojis and other things that might confuse bash 
+                var encodedInput = btoa(JSON.stringify(this.props.interpret))                
+                this.props = {
+                    header: this.props.interpret,
+                    action: `printf ${encodedInput} | base64 --decode | node interpret`, 
+                    cwd: '/spiders/basic/'
                 }
-                this.subscribeToShell(this.props.action)
+            } else if(this.props.action){
+                // this.header was set in proto constructor, don't need do anything
+            } else {
+                throw new Error("Don't instantiate ShellOut without an action or interpret attribute")
             }
 
+            this.subscribeToShell(this.props.action)
         })
     }
-    
-    connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))
-                         && this.dispatchEvent(new Event('ready'))
-    }
+
 
     disconnectedCallback(){
         // this only fires if a shellout node was explicitely removed from the DOM tree
@@ -69,40 +80,33 @@ class ShelloutBlock extends ProtoBlock {
             case 'error': 
                 this.child['data-' + attr].textContent += newValue;
                 this.data += newValue;   
-                break;
-            case 'next':
-                // this will need to parse chatbot response and set a timeout that's cancelled on submit...
-                // var time = parseInt(newValue)
-                // for now let's just immediately submit chat response so chatscript can trigger programs for us
-                this.shadowParent.appendMessage(this.shadowParent.botShellout(newValue))
-                break;
-            case 'bash':
-                this.shadowParent.appendMessage(this.shadowParent.bashShellout(newValue))
-                break;
-            case 'timeout':
-                let timeout = parseInt(newValue)
-                let timeoutCommand = newValue.slice(timeout.toString().length)
-                setTimeout(()=>{
-                    let newMessage = this.shadowParent.botShellout(timeoutCommand)
-                    newMessage.classList.add('hideHeader')
-                    this.shadowParent.appendMessage(newMessage)
-                }, timeout * 1000)
-            case 'eval':
-                eval(newValue);
-                break;
-            case 'newsibling':
-                // this should be an object that includes, src, action, become, etc
-                this.shadowParent.insertSibling(new ProtoBlock(JSON.parse(newValue))); 
-                break;
-            case 'become':
-                // hmmm make sure that I have the attributes I need before becoming the new thing 
-                if(this.shell.readyState == 0) this.become(newValue) //readyState set on load in protoblock
-                else this.addEventListener('load', () => this.become(newValue))
-                break;
+                break
             case 'exit-signal':
             case 'exit-code':
                 this.shell.close()
                 this.dispatchEvent(new Event('load')) // done loading
+                break
+            case 'bash':
+                this.insertSibling(new ShelloutBlock({action: newValue}))
+                break
+            case 'newsibling':
+                // this should be an object that includes, src, action, become, etc
+                // this inserts a sibling to the whole convo block, not a sibling of the message
+                this.shadowParent.insertSibling(new ProtoBlock(JSON.parse(newValue)));
+                break
+            case 'eval':
+                // before evalling, check for a timeout
+                this.checkForTimeOutAndThen(()=> eval(newValue))
+            case 'become':
+                // become is going to need all the attributes to be done loading, because its going to destroy and replace this DOM node
+                // so check if its done, and if not, set a listener to run once it is done. checkForTimeout does this, tho I don't expect 'become' messages to include a timeout, why would you want to wait before converting? but you can.
+                this.checkForTimeOutAndThen(()=> this.become(newValue))
+                break;
+            case 'next':
+                // next attribute will submit a new message either instantly or after timeout expires
+                // in the future there should be some attribute on the convoblock about when the last submission was and cancel this submission if bot is interrupted
+                this.checkForTimeOutAndThen(() => this.insertSibling(new ShelloutBlock({interpret: newValue})))
+                break
             default:
                 console.log("You didn't give me anything to do with " + attr)
         }
@@ -121,6 +125,16 @@ class ShelloutBlock extends ProtoBlock {
         // instead of scrolling I could also keep track of whether there has been an update since the div was last in view, have a little tooltip, scroll up to see new data 
     }
 
+    checkForTimeOutAndThen(func){
+        if(this.shell.readyState == 0){
+            setTimeout(()=> func, parseInt(this.props.timeout) || 0)
+        } else {
+            this.addEventListener('load', () => {
+                setTimeout(()=> func, parseInt(this.props.timeout) || 0)
+            })
+        }
+    }
+
     sendSig(signal){
         if(this.props['exit-code'] || this.props['exit-signal']) throw new Error("You shouldn't try to kill a process that's already over.")
         /* I have to figure out why the pid represents the shell on linux, but the process itself on darwin */
@@ -134,7 +148,7 @@ class ShelloutBlock extends ProtoBlock {
     sendStdin(command){
         if(this.props['exit-code'] || this.props['exit-signal']) throw new Error("There's no process to send follow up commands to.")        
         
-        // echo the input to the stdout
+        // "echo" the input to the stdout, appending it to the current textarea
         this.data += command + '\n'
         
         fetch('/?' + encodeURIComponent(command), {
@@ -157,8 +171,7 @@ class ShelloutBlock extends ProtoBlock {
             // {stdout: some output from a program}
             // {exit-code: 0}
             this.props = JSON.parse(event.data)
-            // every JSON property received updates the HTML attribute of the same name
-            // setting off any attached attribute observers
+            // assigning each message to props will set the attribute with they same key:value pair
         })
     }
 }  
