@@ -84,11 +84,11 @@ class TextareaBlock extends ProtoBlock {
 
     copy2clipboard(filename){
         // this doesn't work yet but I havent really looked into it, maybe I'm using firefox function?
-        document.execCommand('copy');
-        this.addEventListener('copy', event => {
-            event.preventDefault()
-            event.clipboardData.setData('text/plain', filename);
-        })
+        // document.execCommand('copy');
+        // this.addEventListener('copy', event => {
+        //     event.preventDefault()
+        //     event.clipboardData.setData('text/plain', filename);
+        // })
     }
 
     interpret(command){

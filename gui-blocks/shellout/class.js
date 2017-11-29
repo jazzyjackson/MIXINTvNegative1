@@ -87,7 +87,9 @@ class ShelloutBlock extends ProtoBlock {
                 this.dispatchEvent(new Event('load')) // done loading
                 break
             case 'bash':
-                this.insertSibling(new ShelloutBlock({action: newValue}))
+                this.insertSibling(new ShelloutBlock({
+                    action: newValue
+                }))
                 break
             case 'newsibling':
                 // this should be an object that includes, src, action, become, etc
@@ -105,7 +107,10 @@ class ShelloutBlock extends ProtoBlock {
             case 'next':
                 // next attribute will submit a new message either instantly or after timeout expires
                 // in the future there should be some attribute on the convoblock about when the last submission was and cancel this submission if bot is interrupted
-                this.checkForTimeOutAndThen(() => this.insertSibling(new ShelloutBlock({interpret: newValue})))
+                this.checkForTimeOutAndThen(() => this.insertSibling(new ShelloutBlock({
+                    interpret: newValue,
+                    class: "hideHeader"
+                })))
                 break
             default:
                 console.log("You didn't give me anything to do with " + attr)
@@ -127,10 +132,10 @@ class ShelloutBlock extends ProtoBlock {
 
     checkForTimeOutAndThen(func){
         if(this.shell.readyState == 0){
-            setTimeout(()=> func, parseInt(this.props.timeout) || 0)
+            setTimeout(func, parseInt(this.props.timeout) || 0)
         } else {
             this.addEventListener('load', () => {
-                setTimeout(()=> func, parseInt(this.props.timeout) || 0)
+                setTimeout(func, parseInt(this.props.timeout) || 0)
             })
         }
     }
