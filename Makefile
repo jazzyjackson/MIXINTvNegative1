@@ -59,4 +59,5 @@ bootchatscript:
 	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 logs=$(cwd)/logs users=$(cwd)/logs &
 
 clean:
+	rm -rf spiders/basic/node_modules
 	rm logs/*.txt
