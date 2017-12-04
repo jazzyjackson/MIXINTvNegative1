@@ -1,3 +1,4 @@
+#!/usr/local/bin/node
 var net = require('net')
 var util = require('util')
 var os = require('os')
@@ -28,18 +29,16 @@ function tryJSON(string){
 process.stdin.on('data', input => {
     // input is freshley decoded base64 string from client, which must have been JSON encoded before being converted to base64
     // base64 is necessary to pass special characters along to chatscript since I'm invoking chatscript as a child process, shell and all
-    try {
-        chat(JSON.parse(input.toString()))
-        .then(response => {
-            var responseObj = tryJSON(response)
-            var string = typeof responseObj == 'object' ? JSON.stringify(responseObj)
-                                                        : JSON.stringify({stdout: responseObj})
-            process.stdout.write(string)   
-        })
-        .catch(error => {
-            process.stderr.write(util.inspect(error))
-        })
-    } catch(e){
-        process.stderr.write("I'm expecting JSON input on stdin, for example:\necho '\"Hello World\"' | node interpret\n")
-    }
+    chat(input.toString())
+    .then(response => {
+        var responseObj = tryJSON(response)
+        var string = typeof responseObj == 'object' ? JSON.stringify(responseObj)
+                                                    : JSON.stringify({stdout: responseObj})
+        process.stdout.write(string)   
+        process.exit()
+    })
+    .catch(error => {
+        process.stderr.write(util.inspect(error))
+        process.exit()
+    })
 })
