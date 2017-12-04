@@ -15,6 +15,27 @@ Your network may include:
 - chatbot personalities that control computers
 - your local wifi router
 
+Poly-Int is composed of 3 core programs: Switchboard, Operator, and Figjam. Additional functionality is implemented as executables in the _spiders_ directory. 
+
+### Switchboard: 
+Switchboard.js is a lightweight node server that provides wide open system access. Make GET requests to download any file on disk, make POST requests to execute shell commands, make PUT requests to upload files, make DELETE requests to delete files. Additionally, you can subscribe to shell commands via server-sent events. Your clientside inteface can attach a callback to events fired every time the invoked program writes to stdio.
+
+### Operator:
+Operator.js is a supervisor node server that provides authentication and system monitoring. The opeartor acts as a reverse-proxy and is able to inspect all requests that are passed on to switchboards for fulfillment. Access control is passed on as much as possible to the underlying *nix operating system. Useradd and groupadd commands are run by the operator to create accounts that can only get/post/put/delete in directories they're meant to access; the switchboard that fulfills each request runs with the `uid` of that user. If a request attempts to, for example, delete system files, *nix will throw an error and the error will be passed back to the client. 
+
+__Keymaker.js__ and __Bookkeeper.js__ are libraries for use by the operator. Keymaker contains the functions for checking and setting cookies, bookkeeper exports stream transform functions that allow for logging details about every request made to the operator.
+
+### Figjam and gui-blocks
+Figjam, short for Configuration Jam, reads a nested JSON graph and streams HTML to a client. The configuration graph (or 'figtree') includes a heirarchy of web components - javascript classes that inherit capabilities. A simple textarea class provides methods for overwriting a file and toggling word-wrap, and a table class extends it by loading a csv parsing library and transforming the plain text into an editable html table.
+
+Switchboard and Operator can be used as a REST API to run programs in the spiders directory, and could provide a back-end to any number of interfaces - just drop an index.html in the root of this repository and make a GET request to serve it. 
+
+
+TODO: Currently the javascript is streamed back embedded in the HTML, which doesn't provide any opportunity for the client to cache the javascript. Additionally, I'm assuming clients are using an 'evergreen' browser that is up to date on the latest web standards. However, many browsers will require polyfill for shadow DOM, custom elements, and babelification of es6. So on the next rewrite, I would like to write the javascript to a separate file, name it with a hash of its contents, and stream back HTML that loads the javascript separately. This initial HTML could also include a bit of javascript to run feature detection and load polyfill files before loading the application javascript. 
+
+
+## Spiders
+
 When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on your local network whether or not you have a connection to the world-wide-web.
 
 Any file you upload, any document or program you write, is immediately available on the network (available to whoever has access to the machine).
@@ -155,3 +176,9 @@ tying in back end api's from the front-end is as easy as POSTing a command
 Adding functionality:
 Functionality may come in the form of a program in any language kept in the spiders directory, to be executed on command for any user, or as new definitions for custom components, or a combination thereof: custom elements that rely on some back end functionality.
 
+# defining stuff via concepts
+~concept something [word word word]
+requires rebuilding, but becomes part of pre-volley vocabuluary (language parsing)
+
+transient (temporary) facts loaded per volley, get loaded after the language parsing
+you can define concepts with fact triples (word member concept), but they have to be permenant facts to be involved in language parsing
