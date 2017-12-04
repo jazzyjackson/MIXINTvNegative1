@@ -85,7 +85,7 @@ function trySSL(keycert){
         keycert.cert = fs.readFileSync(keycert.cert || 'cert')
         return true // only sets SSL_READY if reading both files succeeded
     } catch(SSL_ERROR){
-        bookkeeper.log({SSL_ERROR: SSL_ERROR})
+        // bookkeeper.log({SSL_ERROR: SSL_ERROR})
         return false
     }
 }

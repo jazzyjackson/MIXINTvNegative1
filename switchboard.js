@@ -2,13 +2,13 @@
 process.platform.includes('win32') && process.exit(console.log("Please start me on something unixy."))
 var os          = require('os')
 var fs          = require('fs')
-var bookkeeper  = require('./bookkeeper')
-var keymaker    = require('./keymaker')
 var inspect     = require('util').inspect
 var spawn       = require('child_process').spawn
-var figjam      = chooseFigJam()
-var keycert     = {}
-var subprocess_registry = {}
+var bookkeeper  = require('./bookkeeper')
+var keymaker    = require('./keymaker')
+var offspring   = require('./offspring')
+var figjam      = require('./figjam')
+var keycert     = new Object
 /* try to read key and certificate from disk and enable HTTPS if true */
 var SSL_READY  = keymaker.trySSL(keycert)
 /* check if private key and certificate were read properly and start server  */ 
@@ -16,12 +16,12 @@ require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
 .on('request', function(req,res){  
     /* recursive ternary tests conditions until success */
-    /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) : /* from new EventSource (SSE) */
+    /event-stream/.test(req.headers.accept)           ? makeChild(req,res) : /* from new EventSource (SSE) */
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           : /* url path w/ trailing slash */
+    req.method == 'POST'                              ? makeChild(req,res) :
     req.method == 'OPTIONS'							  ? sendStat(req,res)         :
     req.method == 'GET'                               ? streamFile(req,res)       :
     req.method == 'PUT'                               ? saveBody(req,res)         :
-    req.method == 'POST'                              ? streamSubProcess(req,res) :
     req.method == 'DELETE'                            ? deleteFile(req,res)       :
     res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
 })
@@ -34,27 +34,29 @@ require(SSL_READY ? 'https' : 'http')
 
 /************************************* Function definitions to fulfill requests **************************************/
 
-function forkProcess(request){
-    var workingDirectory = process.cwd() + request.url.split('/').slice(0,-1).join('/')
-    var command = decodeURIComponent(request.url.split('?')[1])
-
-    var subprocess = spawn('sh', ['-c', command], { cwd: workingDirectory })
-    subprocess_registry[String(subprocess.pid)] = subprocess
-
-    subprocess.on('close', () => {
-        delete subprocess_registry[subprocess.pid] //forgeddaboutit
-    })
-    
-    return subprocess
-}
-
-function messageProcess(pid, command){
-    // I'm assuming that piping to stdin of a nonexistant process will fail right away, messageProcess should be called in a try/catch block
-    subprocess_registry[pid].stdin.write(command + os.EOL) // there is an option to have a callback if the write throws errors, but I'm only anticipating errors when the subprocess doesn't exist.
+function makeChild(request, response){
+    var args = offspring.parseArgsFrom(request)
+    var targetProcess = args.pid && args.startTime ? `${args.pid}+${args.startTime}`
+                                                   :  request.headers['x-target-process']
+    // if targetProcess is undefined, fine, don't reconnect
+    if(offspring.ongoing.includes(targetProcess)){
+        console.log("found target:", targetProcess)
+        offspring[targetProcess].reconnect(request, response)
+    } else if(targetProcess){
+        console.log("found target:", targetProcess)        
+        // if a targetProcess was described but doesn't exist return error
+        response.writeHead(500)
+        response.end(`${targetProcess} not found`)
+    } else {
+        console.log("forking:", request.url)
+        
+        // if targetProcess was not described, fork a new child process and pipe results to response
+        // fork will inspect request and decide to return an event stream or a raw buffer pipe.
+        offspring.connect(request, response)   
+    }
 }
 
 function streamFile(request, response){
-
     request.url.split('?')[0].includes('.svg') && response.setHeader('Content-Type','image/svg+xml')
     request.url.split('?')[0].includes('.css') && response.setHeader('Content-Type','text/css')
 
@@ -85,105 +87,7 @@ function sendStat(request,response){
     })
 }
 
-function streamSubProcess(request, response){
-    // if the request is for an ongoing process, it will carry a x-for-pid header
-    // processes started previously 
-    // processes are registered per switchboard, so in a multi-user enviornment, users can't try to send messages (control chars etc) to other users' processes
-    if(request.headers && request.headers["x-for-pid"]){
-        try {
-            messageProcess(request.headers["x-for-pid"], decodeURIComponent(request.url.split('?')[1]))
-            response.writeHead(204)
-            return response.end()
-        } catch(err){
-            response.writeHead(500)
-            return response.end(inpsect(err))
-        }
-    }
-    
-    var subprocess = forkProcess(request)
-    /* check for pid in parameters, pipe body to existing process if available, else throw 'no process with that pid' */
-    response.setHeader('Content-Type', 'application/octet-stream')
-    response.setHeader('Trailer', 'Exit-Code') // not really supported by anyone yet, but it will be useful once browsers can read trailers.
-
-    subprocess.on('error', function(err){ 
-        response.writeHead(500); 
-        response.end(JSON.stringify(err)) 
-        // does close fire before or after or at all in the case of an error?
-    })
-
-    subprocess.stdout.pipe(response, {end: false}) // end: false - don't close pipe on receiving null bytes
-    subprocess.stderr.pipe(response, {end: false})
-
-    subprocess.on('close', (code,signal) => {
-        response.addTrailers({'Exit-Code': code || signal})
-        response.end()
-    })    
-}
-
-function subscribe2events(request, response){
-    response.setHeader('Content-Type', 'text/event-stream')
-    // create a child_process object
-    var subprocess = forkProcess(request)
-    // construct a function with a closure around the response object to write all future events until process exit
-    var pushEvent = function(data){     
-        // data might be a buffer, 
-        if(Buffer.isBuffer(data)){
-            data = data.toString()
-        }
-
-        if(typeof data == 'object'){
-            return response.write('data: ' + JSON.stringify(data) + '\n\n')
-        }
-        
-        try {
-            // check if data is already an object by trying to parse it, if it works, just put it right back to JSON
-            return response.write('data: ' + JSON.stringify(JSON.parse(data.toString())) + '\n\n')
-        } catch(e) {
-            // if I was just passed a string and JSON.parse throws error, wrap it up, announce it as stderr or stdout (pushEvent is called by an event listener, so this context will be the stream the listener was attached to)
-            let responseObject = {}
-            this === subprocess.stdout ? responseObject.stdout = data :
-            this === subprocess.stderr ? responseObject.stderr = data :
-                                         responseObject.default= data ;
-
-            return response.write('data: ' + JSON.stringify(responseObject) + '\n\n')
-        }
-    }
-    // once the function is constructed I can send the pid of the process to allow signals to be sent */    
-    pushEvent({pid: subprocess.pid})
-    /* start sending an empty heartbeat event every 15 seconds until process closes, to keep connection open */
-    var heartbeat = setInterval(function(){
-        pushEvent(':heartbeat')
-    },15000)
-    /* push error, data, and close events from the subprocess */
-    subprocess.stdout.on('data', pushEvent)
-    subprocess.stderr.on('data', pushEvent)
-
-    subprocess.on('error', function(error){ 
-        pushEvent({error: error.toString()}) 
-    })
-    subprocess.on('close', function(code,signal){
-        // signal might be KILL or TERM or otherwise null
-        // if it was falsey, send exit code instead, which may be falsey
-        // best case scenario of course is exit-code 0
-        pushEvent(signal ? {"exit-signal": signal } 
-                         : {"exit-code": code })
-        clearInterval(heartbeat) // stop trying to send heartbeats
-        response.end() // and close the connection. client should close the eventSource when receiving 'close' event
-    })
-}
-
-
-function chooseFigJam(){
-    /* figjam does a kind of webpack-y thing and streams all the files in order over a single request */
-    /* but its an async/await situation compatible with node 8+, so check if we want to use it here */
-    /* otherwise just return retrograde.html instead of building pages at time of request */
-    if(parseInt(process.env.RETROGRADE) || parseInt(process.versions.node) < 8){
-        return function(request, response){
-            fs.createReadStream('retrograde.html')
-            .on('error', function(err){ response.writeHead(500); response.end( JSON.stringify(err)) })
-            .pipe(response)
-        }
-    } else {
-        return require('./figjam') // figjam is passed requests, also serves retrograde if it doesn't recognize the user agent
-    }
-}
+process.on('uncaughtException', exception => {
+    console.log('exception from switchboard.js!')
+    console.log(exception)
+})

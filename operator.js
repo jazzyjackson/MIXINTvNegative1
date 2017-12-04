@@ -32,6 +32,7 @@ class switchboardRegistry {
             // })
             let server = child_process.spawn('./switchboard.js', [0]) // call for an switchboard on port 0, system will assign available port
             server.stdout.on('data', port => {
+                console.log(port.toString())
                 resolve({
                     // keep a reference to the child_process so it can be killed or inspected
                     process: server,
@@ -56,6 +57,7 @@ require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
 .on('request', async (request, response) => {
     await keymaker.identify(request, response)
+    console.log("request from", request.id)
 	if( request.id == undefined ){
         /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get a magicurl */
         response.writeHead(302, { 'Location': keymaker.authRedirect })
@@ -68,7 +70,7 @@ require(SSL_READY ? 'https' : 'http')
     } else {
         console.log(Object.keys(switchboards))
         /* if an switchboard was never created for this identity, fine, use the default switchboard */
-        let proxyDestination = await (switchboards[request.id] || switchboards.registerSwitchboard(request.id) || switchboards['default'])
+        let proxyDestination = await (switchboards[request.id] || switchboards.registerSwitchboard(request.id))
         request.pipe(http.request({
             hostname: proxyDestination.hostname,
             port: proxyDestination.port,
@@ -84,3 +86,8 @@ require(SSL_READY ? 'https' : 'http')
 }).listen(process.env.PORT || 3000).on('listening', function(){ console.log("Started an operator on port", this.address().port) })
 /* it would be fun to open a port for making new sessions. spin up an internal http server, listen for requests from chatscript ... if switchboard is started in the same shell as chatscript, they can communicate with environment variables create an switchboard as a username, make a magic url, send JSON back to chatscript, eval location.pathname += ?magicurl=$magicurl */
 /* then suddenly you can write chatscript sphinxes that let you log on once you answer some questions */
+
+process.on('uncaughtException', exception => {
+    console.log('exception from operator.js!')
+    console.log(exception)
+})
