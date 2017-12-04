@@ -1,0 +1,12 @@
+The menu gives you two drop downs
+
+style      become
+class      codemirror
+tempalte   textarea
+           etc
+
+and the default is style of current block
+
+so codemirror block, given an update reference, will set innerHTML of the style, template (tricky, since it includes lots of styles...), or script node of this class
+
+ 
