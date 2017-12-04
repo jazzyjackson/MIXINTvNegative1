@@ -57,16 +57,24 @@ class TableBlock extends TextareaBlock {
             this.hint = "Hit Return to edit this cell."
         })
         td.addEventListener("keydown", event => {
-            if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter'].includes(event.key)){
+            if(event.key == 'Enter'){
+                // I'm attaching "replace innerHTML with textarea" to Enter
+                // and the event gets targeted to the new textarea somehow
+                // doing the default thing of adding a newline to the textarae
+                // so capture Enter events so you don't accidentally make newlines.
                 event.preventDefault()
             }
-            if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){
+            // left right up and down arrows to navigate cells, but only when event target is TD, 
+            // I still want to use arrow keys in child textarea
+            if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key) && event.target.tagName == 'TD'){           
                 ({
                     ArrowLeft:  () => this.child['table'].children[this.targetRow].children[this.targetColumn - 1].focus(),
                     ArrowRight: () => this.child['table'].children[this.targetRow].children[this.targetColumn + 1].focus(),
                     ArrowUp:    () => this.child['table'].children[this.targetRow - 1].children[this.targetColumn].focus(),
                     ArrowDown:  () => this.child['table'].children[this.targetRow + 1].children[this.targetColumn].focus(),
                 })[event.key]()
+                event.preventDefault()
+                // if there's nothing there it will throw an error, no big deal
                 return null
             } else if(event.shift || event.key != "Enter" || event.target != td){
                 return null // exit if keydown wasn't enter, or if Shift+Enter was used
@@ -81,7 +89,6 @@ class TableBlock extends TextareaBlock {
             staticCell.firstChild.setSelectionRange(contentLength, contentLength)
             staticCell.firstChild.focus()
             staticCell.parentElement.style.minHeight = contentHeight + 'px'
-
             staticCell.firstChild.addEventListener("blur", event => {
                 this.cancelEdit(staticCell)
             })

@@ -1,3 +1,9 @@
+
+* {
+  font-family: monospace;
+  margin: 0;
+}
+
 :host {
   position: relative !important; /* pierce shadowroot what? */
   display: flex;
@@ -10,11 +16,13 @@
   display: flex;
 }
 
+
+
 :host(:focus){
   outline: none;
 }
 
-:host-context(.hideHeader) header {
+:host-context([hideHeader]) header {
   display: none;
 }
 
@@ -26,11 +34,7 @@ textarea {
   display: none;
 }
 
-* {
-  font-family: monospace;
-}
 data-shell {
-  flex: 1;
   overflow: auto; 
   display: flex; 
   flex-direction: column;
@@ -46,8 +50,50 @@ ongoing-bar {
   height: 4px;
   position: relative;
 }
+
+required-params::before {
+  content: 'Required Parameters'
+}
+optional-params::before {
+  content: 'Optional Parameters'
+}
+
+param-form {
+  display: flex;
+  flex-flow: column;
+  border: 1px solid black;
+  margin: 5px;
+  padding: 5px;
+}
+
+param-form::after {
+  /* Follow forms with a description of what they're for */
+  content: attr(desc);
+}
+
+input {
+  display: block;
+}
+
+form {
+  margin: 0 0px 2px 5px;  
+  padding: 5px;
+  display: none;
+  flex: 10;
+}
+/* If host shellblock has a required attribute, reveal the form */
+:host-context([required]) form {
+  display: block;
+}
+
+strong {
+  cursor: pointer;
+}
+
+
+
 /* show 'ongoing' animation as long as there is no exit code, exit signal, or error number indicating that the process is over */
-:host(:not([exit-code]):not([exit-signal]):not([errno])) ongoing-bar {
+:host(:not([exit-code]):not([exit-signal]):not([error])) ongoing-bar {
   animation: progress 1.5s infinite cubic-bezier(0.4, 0, 1, 1);
   background: linear-gradient(to right, white 0%, transparent 20%, transparent 80%, white 100%),
               linear-gradient(to top, white, cornflowerblue, white); 

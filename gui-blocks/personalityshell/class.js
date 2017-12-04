@@ -9,68 +9,71 @@ class PersonalityshellBlock extends ConvoshellBlock {
         })
     }
 
-    bashShellout(action){
-        return new ShelloutBlock({
-            header: action,
-            action: action,
-            autofocus: false, 
-        })
-    }
-        
-    botShellout(action){
-        // JSON.stringify isn't just for objects. Handles escaping special characeters
-        // and wraps it in quotes so that it's valid format for btoa base64 encoding
-        var encodedInput = btoa(JSON.stringify(action))
-        return new ShelloutBlock({
-            header: action,
-            action: `printf ${encodedInput} | base64 --decode | node interpret`, 
-            autofocus: false, 
-            cwd: '/spiders/basic/'
-        })
-    }
-
     appendMessage(node){
-        this.child['convo-body'].insertBefore(node, this.child['convo-form'])        
+        this.child['convo-form'].insertAdjacentElement('beforebegin', node)        
     }
 
     // overwriting the handleSubmit function in ConvoShell
     handleSubmit(event){
+        // don't actually submit the form, stay here
         event.preventDefault()
-        if(!this.child['input'].value.trim()){
-            // if input was empty, replace it with ellipses cuz empty input is interpretted as start of new converstaion
-            this.child['input'].value = '...'
-        }
-        var action = this.child['input'].value
+        // if input was empty, replace it with ellipses cuz empty input is interpretted as start of new converstaion
+        var input = this.child['input'].value.trim() || '...'
+        // and then zero out the input value
+        this.child['input'].value = ''
+        // there's an option (an attribute on personalityshell) to submit input first as a bash command,
+        // and if the bash command throws an error, resu
         if(this.props.interpret == 'bashFirst'){
-            let bashOut = this.bashShellout(action)
+            var bashOut = new ShelloutBlock({
+                args: input
+            })
+            // nothing happens until shelloutblock is appended to DOM
             this.appendMessage(bashOut)
+            // once that process errors or exits, a load event is fired
             bashOut.addEventListener('load', () => {
-                // if exit code is truthy (non-zero) ask the bot what to do (but by the way the props are strings so parseInt)
+                // if exit code is truthy (non-zero) ask the bot what to do 
+                // (but by the way the props are strings so parseInt)
                 if(Boolean(parseInt(bashOut.props['exit-code']))){
-                    var errmsg = bashOut.props.stderr // somehow I'd like to pass this err back to chatscript, OOB, so chatscript can tell me what went wrong
-                    bashOut.replaceWith(this.botShellout(action))
+                    // TODO: somehow I'd like to pass this err back to chatscript, 
+                    // OOB, so chatscript can tell me what went wrong
+                    var errmsg = bashOut.props.stderr 
+                    bashOut.replaceWith(new ShelloutBlock({
+                        exec: 'spiders/basic/interpret.js', 
+                        stdin: input,
+                    }))
                 }
             })
         } else {
-            let personalityOut = this.botShellout(action)
+        // but the default is not bashFirst (botFirst or undefined will end up here)
+        // and we just send out input directly to the interpret process
+            var personalityOut = new ShelloutBlock({
+                exec: 'spiders/basic/interpret.js',
+                stdin: input
+            })
             this.appendMessage(personalityOut)
         }
-        this.child['input'].value = ''
+        // after submit
     }
 
     chatscriptStart(){
-        this.appendMessage(this.bashShellout('make bootchatscript'))
+        this.appendMessage(new ShelloutBlock({
+            args: 'make bootchatscript'
+        }))
     }
 
-    convoRestart(){
-        Array.from(this.child['convo-body'].querySelectorAll('shellout-block'), child => child.remove())
-        let firstMessage = this.botShellout(this.props.init || '')
-        firstMessage.classList.add("hideHeader")
-        this.appendMessage(firstMessage)
+    convoRestart(initMessage = "introductions intro"){
+        Array.from(this.child['convo-body'].children).filter(child => child.tagName != 'CONVO-FORM').map(child => child.remove())
+        this.appendMessage(new ShelloutBlock({
+            exec: 'spiders/basic/interpret.js',
+            stdin: initMessage,
+            hideHeader: true
+        }))
     }
 
     rebuild(){
-        this.appendMessage(this.bashShellout('make buildbot'))        
+        this.appendMessage(new ShelloutBlock({
+            args: 'make buildbot'
+        }))        
     }
 
     static get actions(){

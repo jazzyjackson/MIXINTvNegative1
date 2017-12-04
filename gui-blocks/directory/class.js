@@ -2,8 +2,6 @@ class DirectoryBlock extends ProtoBlock {
     constructor(props){
         super(props)
 
-        this.listFunc = (pathname) => `${pathname}?ls -ap1L` /* a: list all (. and ..), p: append '/' to directory, 1: 1 file per line, L: present symlinks to directories as directories */
-
         this.addEventListener('ready', () => {
             this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
             if(/\/$/.test(this.props.src) == false){
@@ -52,7 +50,7 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     mkdir(dirname){
-        return fetch(this.props.src + '?' + encodeURIComponent(`mkdir ${dirname}`), {
+        return fetch(this.props.src + '?exec=mkdir&args=' + encodeURIComponent(dirname), {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
@@ -62,7 +60,7 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     touch(filename){
-        return fetch(this.props.src + '?' + encodeURIComponent(`touch ${filename}`), {
+        return fetch(this.props.src + '?exec=touch&args' + encodeURIComponent(filename), {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
@@ -116,7 +114,12 @@ class DirectoryBlock extends ProtoBlock {
 
     fetchDirectory(pathname){ 
         this.setAttribute('lastUpdate', Date.now())
-        return fetch(this.listFunc(pathname), {
+        /* ls -apl1
+        -a list all in directory(. and ..)
+        -p if file is directory add trailing slash
+        -l treat links to directories as directories
+        -1 one file per line */
+        return fetch(this.props.src + '?exec=ls&args=-apl1', {
             method: 'post',
             credentials: 'same-origin',
             redirect: 'error'
@@ -128,6 +131,7 @@ class DirectoryBlock extends ProtoBlock {
     }
 
     fetchStat(pathname, filename){
+        // send options request for this file, get ownership/permission/size/a/c/mtime/etc back as JSON
         return fetch(encodeURIComponent(pathname + filename), {
             method: 'options',
             credentials: 'same-origin',
@@ -262,7 +266,7 @@ class DirectoryBlock extends ProtoBlock {
         
         var fileBlock = this.blockFromFileType[node.getAttribute('filetype')]
         fileBlock == DirectoryBlock ? this.replaceWith(new fileBlock({src: newSource}))
-                                    : this.insertSibling(new fileBlock({ src: newSource }))
+                                    : this.insertAdjacentElement('afterend', new fileBlock({ src: newSource }))
         // this is kind of a dumb hack to prevent any animations from starting from position left: 0
         // don't be visible until 'nextTick' of event loop, assuming any style applied via mutation observer get applied before starting an animation
     }

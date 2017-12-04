@@ -37,7 +37,7 @@ class ProtoBlock extends HTMLElement {
             }
             console.log(`${this.tagName} is ready with props`, this.props)
             if(this.child['header-title'] || this.child['header'] && !this.header){
-                this.header = this.props.header || this.props.src || this.props.action || 'untitled'
+                this.header = this.props.header || this.props.src || this.props.action || null
             }
             if(!this.props.src && !this.props.action){
                 // consider yourself complete if no actions or sources were assigned                
@@ -90,8 +90,14 @@ class ProtoBlock extends HTMLElement {
             }},
             {"inspect or modify": {
                 func: this.prototype.inspectOrModify,
-                args: [{"select": ["style.css","class.js","template.html"]}]
+                args: [{select: ["style.css","class.js","template.html"]}, {select: defaultFig.blocks.concat(defaultFig.prereq, defaultFig.frames)}],
+                default: [() => "style.css", ctx => ctx.tagName.split('-')[0].toLowerCase()]
             }},
+            {"add sibling": {
+                func: this.prototype.insertSibling,
+                args: [{select: defaultFig.blocks.concat(defaultFig.frames)} ],
+                default: [() => "become"]
+            }}
             // {"view":[
             //     {"fullscreen frame": {
     
@@ -246,12 +252,11 @@ class ProtoBlock extends HTMLElement {
     }
 
     insertSibling(node){
-        if(this.nextElementSibling){
-            this.parentNode.insertBefore(node, this.nextElementSibling)
-        } else {
-            this.parentNode.appendChild(node)
+        if(typeof node == 'string'){
+            // I don't want a string I want a node, make a node from the string
+            node = document.createElement(node.includes('-') ? node : node + '-block') 
         }
-        // 'next tick', focus after node is attached to DOM
+        this.insertAdjacentElement('afterend', node)
         setTimeout(()=>node.focus())
     }
 
