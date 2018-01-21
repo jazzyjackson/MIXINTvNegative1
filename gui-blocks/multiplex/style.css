@@ -5,19 +5,24 @@
   height: 100%;
 }
 
-
 :host > * {
-  height: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
+  width: 0%; /* 0% initial style on append, will very quickly be recalculated, and the transition will take place */
   position: absolute;
-  border-bottom: 2px solid black;
   box-sizing: border-box;
+}
+:host > *:not([onlychild]) {
+  border-right: 2px solid #202020;  
 }
 
 :host > [deflate] {
-  opacity: 0;
+  opacity: 0.75;
 }
 
 :host > :not([deflate]) {
   opacity: 1;
   transition: opacity 0.15s;
+}
+
+title-block {
+  display: none;
 }

@@ -1,0 +1,5 @@
+*
+!.gitignore
+# genetics and default are required
+!genetics.json
+!default.son

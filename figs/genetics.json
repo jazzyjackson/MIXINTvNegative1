@@ -1,0 +1,35 @@
+[
+    {"proto": {
+        "active": true,
+        "descendents": [
+            {"actionio": {
+                "active": true,
+                "descendents": [
+                    {"speechio": false},
+                    {"formio": false}
+                ]
+            }},
+            {"become": true},
+            {"textarea": {
+                "active": false,
+                "descendents": [
+                    {"codemirror": false},
+                    {"library": false},
+                    {"media": false},
+                    {"table": false},
+                    {"showdown": false}
+                ]
+            }},
+            {"menu": {
+                "standalone": false
+            }},
+            {"status": false},
+            {"multiplex":{
+                "active": true,
+                "descendents": [
+                    {"fibonacciplex": false}
+                ]
+            }}
+        ]
+    }}
+]
