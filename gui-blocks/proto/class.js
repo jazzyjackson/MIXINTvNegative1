@@ -63,9 +63,6 @@ class ProtoBlock extends HTMLElement {
         }).reduce((a,b) => Object.assign(a,b),{})
         // set a reference to this elements parent, if there's a shadowRoot between here and there
         this.shadowParent = this.getRootNode().host
-
-        this.loadLocalStyle('/gui-blocks/proto/assets/museoStyle.css')
-
     }
 
     /* get actions that should be exposed to menu block from this class */
@@ -137,32 +134,15 @@ class ProtoBlock extends HTMLElement {
      *
      * 
      * */
-    static get observedAttributes(){
-        // return list of attribute names to watch for changes
-        let arrayOfArraysOfObservables = this.inheritedReactions.map(reaction => reaction.observe)
-        let arrayOfObservables = Array.prototype.concat(...arrayOfArraysOfObservables)
-        // convert to and from a Set as a quick and dirty way to remove duplicate values
-        // maybe not the most efficiet, not sure how converting array to set shakes out
-        let setOfObservables = new Set(arrayOfObservables)
-        return Array.from(setOfObservables)
-    }
-    
-    static get inheritedReactions(){
-        // iterate over properties of superclass chain, merge them into one object
-        // each class may have a reactions getter that returns a 
-        return Array.prototype.concat(...this.superClassChain.map(superclass => superclass.reactions))
-    
-    }
-    
+
     attributeChangedCallback(attributeName, oldValue, newValue){
         // could be an array of reactions, of named tuples, so they could be concatenated
         // and on attribute change you just have to filter the array based on whether the key includes attribute name
-        let reactionArray = this.constructor.inheritedReactions
-        reactionArray.filter(reaction => {
-            // test whether a reaction title includes the attribute name
-            return reaction.observe.includes(attributeName)
-        }).forEach(reaction => {
-            // call each function in order, using present element as context, pass newValue
+        this.constructor.inheritedReactions
+        // test whether a reaction title includes the attribute name
+        .filter(reaction => reaction.observe.includes(attributeName))
+        // call each function in order, using present element as context, pass newValue
+        .forEach(reaction => {
             reaction.respond.call(this, newValue)
         })
     }
@@ -175,6 +155,23 @@ class ProtoBlock extends HTMLElement {
     get inheritedActions(){
         var arrayOfArraysOfActions = this.superClassChain.map(superclass => superclass.actions)
         return Array.prototype.concat(...arrayOfArraysOfActions)
+    }
+
+    static get observedAttributes(){
+        // return list of attribute names to watch for changes
+        let arrayOfArraysOfObservables = this.inheritedReactions.map(reaction => reaction.observe)
+        let arrayOfObservables = Array.prototype.concat(...arrayOfArraysOfObservables)
+        // convert to and from a Set as a quick and dirty way to remove duplicate values
+        // maybe not the most efficiet, not sure how converting array to set shakes out
+        // it might even be fine to just return the array duplicates included, I'll see if that breaks things later...
+        let setOfObservables = new Set(arrayOfObservables)
+        return Array.from(setOfObservables)
+    }
+    
+    static get inheritedReactions(){
+        // iterate over properties of superclass chain, merge them into one object
+        // each class may have a reactions getter that returns a 
+        return Array.prototype.concat(...this.superClassChain.map(superclass => superclass.reactions))
     }
 
     // whether you ask for the superClassChain on a class or class instance, you should get the same array back
@@ -199,14 +196,7 @@ class ProtoBlock extends HTMLElement {
         // depending on whether become was called with a reference to a class or just the string of a tagName
         var newBlock = typeof block == 'string' ? document.createElement(block.includes('-') ? block : block + '-block') // shell-block or shell both return shell-block
                                                 : new block
-<<<<<<< 65f8ad09e4ba0c012e3b6aace2326c063b888e07
-        newBlock.props = this.props
-        this.replaceWith(newBlock)
-        // oof. cant set data until shadowroot is attached. I guess that makes sense?
-        newBlock.data = this.data
-=======
         
->>>>>>> moving to new actionio and figjam infrastructure
         // I'm expecting the element that has been replaced to be garbage collected
         this.replaceWith(newBlock)
         newBlock.addEventListener('ready', () => {
@@ -399,6 +389,13 @@ class ProtoBlock extends HTMLElement {
     get workingDirectory(){
         return this.getAttribute('cwd') || location.pathname
     }
+    // current working directory
+    set cwd(newValue){
+        this.setAttribute('cwd', newValue)
+    }
+    get cwd(){
+        this.getAttribute('cwd') || location.pathname
+    }
 
     static get becomeable(){
         let possibleBlocks = []
@@ -417,11 +414,7 @@ class ProtoBlock extends HTMLElement {
         return possibleBlocks
     }
     // 
-    JSONorNOT(string){
-        try {
-            return JSON.parse(string)
-        } catch(e) {
-            return string
-        }
+    tryJSON(string){
+        try {return JSON.parse(string)} catch(e) {}
     }
 }

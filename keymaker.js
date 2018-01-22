@@ -10,11 +10,7 @@ const agent = require(keyconfig.protocol) /* will be http OR https for SSO agent
 // if you don't have a keyconfig you can start switchboard or operator with a truthy environment variable "nokeyok" (no key ok)
 const { callbackURL, SSOURL, SSOquery, checkAuthDomain, cookieDomain, identityKey} = keyconfig
 
-<<<<<<< 65f8ad09e4ba0c012e3b6aace2326c063b888e07
 const formatCookie = key => 'magicurl=' + key + ';Path=/;Domain=' + cookieDomain
-=======
-const formatCookie = key => 'ANsid=' + key + ';Path=/;Domain=' + cookieDomain
->>>>>>> moving to new actionio and figjam infrastructure
 
 async function identify(request, response){
     /* if no-key-OK option is set, provide a default profile id if authentication fails, allowing basic interaction without requiring cookies */

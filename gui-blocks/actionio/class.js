@@ -7,7 +7,7 @@ class ActionioBlock extends ProtoBlock {
     }
 
     static ready(){
-        this.child['form'].addEventListener('submit', handleSubmit)
+        this.child['form'].addEventListener('submit', this.handleSubmit.bind(this))
     }
 
     // allowed to be overwritten by descendants of actionio
@@ -16,9 +16,16 @@ class ActionioBlock extends ProtoBlock {
         let query = this.child['input'].value
 
         switch(this.props.interaction){
-            case 'introvert': this.setAttribute('query', query); break;
-            case 'extravert': this.insertSibling(new ActionioBlock({action: this.props.action, query: query})); break;
-            default: throw new Error("The interaction attribute must be introvert or extravert")
+            case 'introvert':
+                this.setAttribute('query', query); break;
+            case 'extravert': // extravert is default behavior
+            default:
+                var position = this.props.target || 'afterend'
+                var element = new ActionioBlock({
+                    action: this.props.action, 
+                    query: query
+                })
+                this.insertAdjacentElement(position, element)
         }
 
         // assign value of input to query, which will trigger the query reaction
@@ -69,25 +76,27 @@ class ActionioBlock extends ProtoBlock {
             {
                 observe: ["stdout"],
                 respond: function(newValue){
-                    this.child["data-stdout"].textContent += this.JSONorNOT(newValue)
+                    this.child["data-stdout"].textContent += this.tryJSON(newValue) || newValue
                 }
             },
             {
                 observe: ["stderr"],
                 respond: function(newValue){
-                    this.child["data-stderr"].textContent += this.JSONorNOT(newValue)
+                    this.child["data-stderr"].textContent += this.tryJSON(newValue) || newValue
                 }
             },
             {
                 observe: ["query"],
                 respond: function(newValue){
                     switch(this.props.mode){
+                        // if mode is continuous 
                         case 'continuous':
                             this.props.pid && this.sendStdin(newValue)
                             break
-                        case 'discrete': 
+                        case 'discrete': // 'discrete' is default behavior, don't allow multiple queiries on element
+                        default:
                             this.props.pid && this.sendSig('KILL')
-                        default: throw new Error("mode attribute must be continuous or discrete")
+                            this.subscribeToShell(newValue)
                     }
                 }
             }
@@ -95,10 +104,9 @@ class ActionioBlock extends ProtoBlock {
     }
 
     subscribeToShell(bashObject){
+        console.log('new shell:',bashObject)
         // in continuous mode, existing PID will trigger a POST to send text to 'stdin' of ongoing process, or throw error if process is finished
         // in discrete mode, existing PID will be trigger a kill message, existing shell will be closed, and replaced with a new one.
-
-
         this.child['input'].setAttribute('disabled', '') // set disabled boolean attribute
         this.addEventListener('readyStateChange', () => {
             this.child['input'].value = ''
@@ -111,9 +119,7 @@ class ActionioBlock extends ProtoBlock {
          *  or {"src":"someScript.sh", "args":"string data"} -> (sh, ['someScript.sh','string data'])
          * 
          * * * * * */
-        this.shell = new EventSource(location.pathname + this.object2query(bashObject), {
-            withCredentials: true
-        })
+        this.shell = new EventSource(this.props.action + '?' + this.props.query, { withCredentials: true })
         
         // this will only react to stdout, stderr, and error messages from the source.
         let expectedMessages = ['stdout','stderr','exit-code','exit-signal','pid']
@@ -129,14 +135,5 @@ class ActionioBlock extends ProtoBlock {
             console.error(err)
             this.setAttribute('error', err)
         })
-    }
-
-    reinterpret(){
-        // maybe let become copy current stats but overwrite via props argument
-        this.replaceWith(new ShellioBlock({
-            exec: this.props.exec,
-            header: this.props.header,
-            args: this.props.args
-        }))
     }
 }

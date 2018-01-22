@@ -2,15 +2,14 @@ const spawn = require('child_process').spawn
 const stream = require('stream')
 const util = require('util')
 
-
 module.exports = class Lineworker {
+
     constructor(request, response){
-    
         try {
             var subprocess = this.fork(request)
         } catch(err){
-            response.writeHead(500)
-            return response.end(util.inspect(err))
+            // exit constructor, inform client of why request couldn't be forked
+            return response.writeHead(500), response.end(util.inspect(err))
         }
         // this only continues if launching subprocess didn't throw an error
         response.setHeader('pid+epoch', `${subprocess.pid}+${subprocess.startTime}`)
@@ -44,6 +43,7 @@ module.exports = class Lineworker {
                 eventStream.write('lub-dub')
             }, 1000)
             subprocess.stdout.on('data', data => {
+                // if subprocess is writing JSON to stdout, allow subprocess to dictate event names, otherwise name it stdout
                 eventStream.write(tryJSON(data.toString()) || {stdout: data.toString()})
             })
             subprocess.stderr.on('data', data => {
@@ -67,8 +67,7 @@ module.exports = class Lineworker {
             })
             eventStream.pipe(response)
         } else {
-            // possibly can pipe body of incoming POST requests to stdin, not sure if this could be streaming pipes
-            // request.pipe(subprocess.stdin) 
+            // not acting as an event source? fine, stream back raw output
             response.setHeader('Content-Type', 'application/octet-stream')
             subprocess.stdout.on('data', data => {
                 response.headersSent || response.writeHead(200)
@@ -79,13 +78,16 @@ module.exports = class Lineworker {
                 response.write(data)
             })
             subprocess.on('error', error => {
-                !response.headersSent && response.writeHead(500)
+                response.headersSent || response.writeHead(500)
                 response.writable && response.end(util.inspect(error))
             })
             subprocess.on('close', (code, signal) => {
+                // oh yeah, I wanted to send information about the exit code, but I can only send headers once, and I don't see a way to use trailers, so I guess I just have to eat this info it for now.
                 // if process closes with nonzero code, and no data has been sent, writeHead as error
-                code !== 0 && !response.headersSent && response.writeHead(500)
-                // response.writable && response.end()
+                if(code !== 0){
+                    response.headersSent || response.writeHead(500)
+                    response.writable && response.end(String(signal || code))
+                }
             })
         }
 
@@ -112,63 +114,46 @@ module.exports = class Lineworker {
     }
 
     fork(request){
-        /* possible invocations via URL             => parameters passed to child_process.spawn
-        (cwd), (optional executable), (querystring) => (executable), (array of arguments), (options object)
-
-        /working/directory/?exec=ls&args=-apl1      => ls, ['-apl1'], {cwd: working/directory/}
-        /working/directory/?args=ls -apl1           => sh, ['-c','ls -apl1'], {cwd: working/directory/}
-        /some/bashscript.sh                         => sh, ['bashscript.sh'], {cwd: some/}
-        /some/pythonscript.py/?args=python          => python, ['pythonscript.py'], {cwd: some/}
-        /some/script.js?exec=node&args={one: 1}     => node, ['script.js','{one: 1}'], {cwd: some/ }
-        /a/validatedscript.py?args={one: 1,two: 2}  => sh, ['validatedscript.py','{one: 1,two: 2}', {cwd: a/}]
-
-        So, convert the queryString into an object called urlArgs with key value pairs extracted: */
-        var urlArgs = this.parseArgsFrom(request)
-        console.log("urlArgs:", urlArgs)
-        /* And create a default object whose values we'll overwrite if provided, extracting cwd and src from the URL */
-        var defaultArgs = {
-            exec: 'sh',
-            cwd: decodeURI(request.url.split('?')[0].split('/').slice(0,-1).join('/') || '/'),
-            src: decodeURI(request.url.split('?')[0].split('/').slice(-1)[0]), // may be '' falsey string
-        }
-        /* overwrite defaultArgs with urlArgs, add an empty array property (dont use params as a parameter yourself) */
-        var spawnArgs = Object.assign(defaultArgs, urlArgs, {params: []})
-        /* delete the keys from defaultArgs in urlArgs, so urlArgs is empty unless additional keys were provided    */
-        /* if exec is sh and there are args, push -c (interpret string) unless there's a src */
-        if(spawnArgs.exec == 'sh' && spawnArgs.args && !spawnArgs.src){
-            spawnArgs.params.push('-c')
-        }
-        /*  if there's a src, push src to array       */
-        if(spawnArgs.src){
-            spawnArgs.params.push(spawnArgs.src)
-        }
+        var queryObject = this.querystring2object(request)        
+        var cwd = decodeURI(request.url.split('?')[0].split('/').slice(0,-1).join('/') || '/')
+        var src = decodeURI(request.url.split('?')[0].split('/').slice(-1)[0]) // may be '' falsey string
+        var params = []
         /*  if there's args, push args to array      */
-        if(spawnArgs.args){
-            spawnArgs.params.push(spawnArgs.args)
+        if(queryObject.args){
+            // depending on type of JSON encoded args property, we have to push it differently
+            switch(queryObject.args.constructor){
+                case String:
+                    params.push(queryObject.args); break;
+                case Array:
+                    params.push(...queryObject.args); break;
+                case Object:
+                    params.push(JSON.stringify(queryObject.args)); break;            
+            }
         }
-        console.log("spawning")
-        console.log(spawnArgs.exec, spawnArgs.params, { cwd: spawnArgs.cwd })
-        console.log("stdin: ", spawnArgs.stdin)
+
+        if(src == undefined && params.length == 1){
+            src = 'sh'
+            params.push('-c')
+        }
+
         /* finally, instantiate a child process */
-        let child = spawn(spawnArgs.exec, spawnArgs.params, { cwd: spawnArgs.cwd })
-        /* and store it using its pid and starttime as a key   */
+        var child = spawn(src, params, { cwd })
+        // is request.body a string or something I can pipe? The dream is to have a URL I can POST to and pipe the requests together
+        // child.stdin.write(request.body)
+        /* and store it using its pid and starttime as a key, a universal identifier for this machine  */
         child.startTime = Date.now()
-        let pidepoch = `${child.pid}+${child.startTime}`
-        /* pipe stdin argument to stdin stream of child process */
-        if(child.stdin && urlArgs.stdin){
-            child.stdin.write(urlArgs.stdin + '\n')
-        }
+        var pidepoch = `${child.pid}+${child.startTime}`
         /* give the child back */
         return child
     }
 
-    parseArgsFrom(request){
+    querystring2object(request){
         var queryString = request.url.split('?')[1]        
         var argArray = queryString.split('&')
         return argArray.reduce((prev,cur) => {
             var key = decodeURIComponent(cur.split('=')[0])
             var val = decodeURIComponent(cur.split('=')[1])
-            prev[key] = val
+            prev[key] = tryJSON(val) || val
             return prev
         },{})
     }
