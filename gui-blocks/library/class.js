@@ -1,51 +1,29 @@
-class DirectoryBlock extends ProtoBlock {
-    constructor(props){
-        super(props)
-
-        this.addEventListener('ready', () => {
-            this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
-            if(/\/$/.test(this.props.src) == false){
-                // if directory block was initialized with a src that didn't end in a slash,
-                // find the index of the last slash and slice everything else off
-                var lastSlashIndex = this.props.src.split('').reverse().join('').indexOf('/')
-                this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
-                // /docs/utilities.csv becomes /docs/
-            }
-            this.fetchDirectory(this.props.src)
-            .then(listText => {
-                this.data = listText
-                this.generateIcons()
-            })
-        })
-
-        this.addEventListener('resize', () => {
-            this.lastActive && this.insertFileDetail(this.lastActive)
-        })
-        window.addEventListener('resize', () => {
-            this.lastActive && this.insertFileDetail(this.lastActive)            
-        })
-    }
+class LibraryBlock extends ProtoBlock {
+    constructor(props){super(props)}
 
     static get actions(){
         return [
-            {"download archive": {
+            {
+                name: "download archive",
                 func: this.prototype.archive,
                 args: [{input: "pathname"}],
                 default: [ctx => ctx.getAttribute('src')],
                 info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
-            }},
-            {"new directory": {
+            },
+            {
+                name: "new directory",
                 func: this.prototype.mkdir,
                 args: [{input: "directory name"}],
                 default: [ctx => Date.now()],
                 info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
-            }},
-            {"new file": {
+            },
+            {
+                name: "new file",
                 func: this.prototype.touch,
                 args: [{input: "filename"}],
                 default: [ctx => Date.now() + '.txt'],
                 info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
-            }}
+            }
         ]
     }
 
@@ -68,35 +46,41 @@ class DirectoryBlock extends ProtoBlock {
         .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
         .catch(console.error)        
     }
+
+    get pathname(){
+        
+    }
     
     static get observedAttributes(){
         return ['src']
     }
 
-    attributeChangedCallback(attr, oldVal, newVal){
-        switch(attr){
-            case 'src': this.header = newVal; break;
-            // and also fetch, replace data, etc
+    static create(){
+        this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
+        if(/\/$/.test(this.props.src) == false){
+            // if directory block was initialized with a src that didn't end in a slash,
+            // find the index of the last slash and slice everything else off
+            var lastSlashIndex = this.props.src.split('').reverse().join('').indexOf('/')
+            this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
+            // /docs/utilities.csv becomes /docs/
         }
+        this.fetchDirectory(this.props.src)
+        .then(listText => {
+            this.data = listText
+            this.generateIcons()
+        })
+
+        this.addEventListener('resize', () => {
+            this.lastActive && this.insertFileDetail(this.lastActive)
+        })
+        window.addEventListener('resize', () => {
+            this.lastActive && this.insertFileDetail(this.lastActive)            
+        })
     }
+
 
     archive(source){
         // fetch('/xz etc')
-    }
-
-    get knownFormats(){
-        return {
-            table: ['csv','tsv'],
-            image: ['jpeg','jpg','png','gif','bmp','svg'],
-            audio: ['ogg','flac','acc','mp3','wave','wav'],
-            video: ['webm','mp4','avi'],
-            markdown: ['markdown','mdown','mkdn','md','mkd','mdwn'],
-            geometry: ['stl','fbx','obj'],
-            pdf: ['pdf'],
-            msoffice: ['doc','docx','xlst','pptx'],
-            openoffice: ['odf'],
-            code: ['dyalog','apl','pgp','asn','asn1','b','bf','c','h','cpp','c++','cc','cxx','hpp','h++','hh','hxx','cob','cpy','cs','clj','cljc','cljx','cljs','gss','cmake','cmake.in','coffee','cl','lisp','el','cyp','cypher','pyx','pxd','pxi','cr','css','cql','d','dart','diff','patch','dtd','dylan','dyl','intr','ecl','edn','e','elm','ejs','erb','erl','factor','forth','fth','4th','f','for','f77','f90','fs','s','feature','go','groovy','gradle','haml','hs','lhs','hx','hxml','aspx','html','htm','pro','jade','pug','java','jsp','js','json','map','jsonld','jsx','jl','kt','less','ls','lua','markdown','md','mkd','m','nb','mo','mps','mbox','nsh','nsi','nt','m','mm','ml','mli','mll','mly','m','oz','p','pas','jsonld','pl','pm','php','php3','php4','php5','phtml','pig','txt','text','conf','def','list','log','pls','ps1','psd1','psm1','properties','ini','in','proto','BUILD','bzl','py','pyw','pp','q','r','rst','spec','rb','rs','sas','sass','scala','scm','ss','scss','sh','ksh','bash','siv','sieve','slim','st','tpl','soy','rq','sparql','sql','nut','swift','text','ltx','v','tcl','textile','toml','1','2','3','4','5','6','7','8','9','ttcn','ttcn3','ttcnpp','cfg','ttl','ts','webidl','vb','vbs','vtl','v','vhd','vhdl','xml','xsl','xsd','xy','xquery','ys','yaml','yml','z80','mscgen','mscin','msc','xu','msgenny'],
-        }
     }
 
     determineFileType(filename){
@@ -119,6 +103,7 @@ class DirectoryBlock extends ProtoBlock {
         -p if file is directory add trailing slash
         -l treat links to directories as directories
         -1 one file per line */
+        let pathname = this.props.src.split('/')
         return fetch(this.props.src + '?exec=ls&args=-apl1', {
             method: 'post',
             credentials: 'same-origin',

@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const util = require('util')
-const rootDirectory = process.env.AUBIHOME || '.' 
+const appRoot = process.env.AUBIHOME || '.' 
 
 // resolve after serially resolving promises, unlike Promise.all which executes in parallel
 // used for Depth First recursion on reading graphs of dependencies, async opening files
@@ -33,7 +33,7 @@ let getReadStreamOrNull = filename => new Promise(resolve => {
 })
 /* try to read and parse files in /figs/ directory, or return failure object */
 let parseFig = filename => new Promise(resolve => {
-    fs.readFile(path.join(rootDirectory, 'figs', filename), (readErr, data) => {
+    fs.readFile(path.join(appRoot, 'figs', filename), (readErr, data) => {
         if(readErr){
             resolve({failure: readErr})
         } else try { 
@@ -44,11 +44,11 @@ let parseFig = filename => new Promise(resolve => {
     })
 })
 
-async function buildTemplateArray(genetics){
+async function buildTemplateArray(guigraph){
     var templates = []
     var names = []
 
-    /* top level of genetics.json is a json array like 
+    /* top level of guigraph.json is a json array like 
      * [
      *   { proto: {descendents: [...]},
      *   { menu: true}
@@ -66,10 +66,10 @@ async function buildTemplateArray(genetics){
      * Because they're going to be serially streamed as HTML tags to the client 
      * This could easily be 50+ files, so we might change the upper bound on a warning message meant to alert you to file descriptor leaks */
 
-    await genetics.asyncForEach(async function pushTemplates(guiblock){
+    await guigraph.asyncForEach(async function pushTemplates(guiblock){
         var tagName = Object.keys(guiblock)[0]
         var attrObj = guiblock[tagName]
-        var prefix = path.join(rootDirectory, 'gui-blocks', tagName)
+        var prefix = path.join(appRoot, 'gui-blocks', tagName)
         /* - don't read this block unless its truthy. non-empty blocks can be deactivated with {active: false} property */
         if(attrObj == false || attrObj.active == false) return null 
         /* - Not every gui-block has js, css, and html associated with it. It may simply be a class.js other blocks inherit from
@@ -132,7 +132,7 @@ async function streamNodes(nodeDescription){
     /* write opening tag */
     this.write(`<${tagName}${attributes}>`)
     /* - if tag name was on the list of void elements, this gets skipped and the next node is streamed
-     * - if you used one of these reserved words for a custom element in genetics.json, the file won't be read but will be kept open, so don't.
+     * - if you used one of these reserved words for a custom element in guigraph.json, the file won't be read but will be kept open, so don't.
      * - textContent for templates will be readStreams via fs.createReadStream
      * - 
      * */
@@ -190,15 +190,20 @@ module.exports = async function(request, response){
     // guiBlocks.names
     // guiBlocks.nodeDescriptions
 
-    var genetics = await parseFig('genetics.json')
+    var guigraph = await new Promise(resolve => {
+        fs.readFile(path.join(appRoot, 'guigraph.json'), data => {
+            resolve(JSON.parse(date))
+        })
+    })
+        
     // could perform consistency check here if I wanted to have useful error messages
     // make sure top level is an array, make sure I can descend the tree and not run into anything unexpected...
     // right now errors will get swallowed into promise purgatory
-    var guiBlocks = await buildTemplateArray(genetics)
+    var guiBlocks = await buildTemplateArray(guigraph)
     
     var figTreeGenetics = {"script":{
-        "id":"genetics",
-        "textContent": `window.genetics = JSON.parse(\`${JSON.stringify(genetics).toLiteral()}\`)`
+        "id":"guigraph",
+        "textContent": `window.guigraph = JSON.parse(\`${JSON.stringify(guigraph).toLiteral()}\`)`
     }}
     
     var customElementRegistration = {"script":{

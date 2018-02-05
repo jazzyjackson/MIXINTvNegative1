@@ -25,11 +25,12 @@ Operator.js is a supervisor node server that provides authentication and system 
 
 __Keymaker.js__ and __Bookkeeper.js__ are libraries for use by the operator. Keymaker contains the functions for checking and setting cookies, bookkeeper exports stream transform functions that allow for logging details about every request made to the operator.
 
-### Figjam and gui-blocks
+### Figjam, GUI-Blocks, and GUIGraph
 Figjam, short for Configuration Jam, reads a nested JSON graph and streams HTML to a client. The configuration graph (or 'figtree') includes a heirarchy of web components - javascript classes that inherit capabilities. A simple textarea class provides methods for overwriting a file and toggling word-wrap, and a table class extends it by loading a csv parsing library and transforming the plain text into an editable html table.
 
 Switchboard and Operator can be used as a REST API to run programs in the spiders directory, and could provide a back-end to any number of interfaces - just drop an index.html in the root of this repository and make a GET request to serve it. 
 
+ɡo͞oē ɡraf
 
 TODO: Currently the javascript is streamed back embedded in the HTML, which doesn't provide any opportunity for the client to cache the javascript. Additionally, I'm assuming clients are using an 'evergreen' browser that is up to date on the latest web standards. However, many browsers will require polyfill for shadow DOM, custom elements, and babelification of es6. So on the next rewrite, I would like to write the javascript to a separate file, name it with a hash of its contents, and stream back HTML that loads the javascript separately. This initial HTML could also include a bit of javascript to run feature detection and load polyfill files before loading the application javascript. 
 

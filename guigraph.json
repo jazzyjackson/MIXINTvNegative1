@@ -1,0 +1,68 @@
+[
+    {"proto": {
+        "active": true,
+        "descendents": [
+            {"eventio": {
+                "active": true,
+                "descendents": [
+                    {"speechio": false},
+                    {"formsio": false},
+                    {"duplexio": false}
+                ]
+            }},
+            {"become": true},
+            {"library":{
+                "active": true,
+                "descendents": [
+                    {"textarea": {
+                        "active": true,
+                        "descendents": [
+                            {"codemirror": {
+                                "active": false,
+                                "mime": "text/*"
+                            }},
+                            {"table": {
+                                "active": false,
+                                "mime": "text/csv"
+                            }},
+                            {"showdown": {
+                                "active": false,
+                                "mime": "text/markdown"
+                            }}
+                        ]
+                    }},
+                    {"image": {
+                        "active": false,
+                        "mime": ["image/*"]
+                    }},
+                    {"video": {
+                        "active": false,
+                        "mime": ["video/*"]
+                    }},
+                    {"audio": {
+                        "active": false,
+                        "mime": ["audio/*"],
+                        "descendants":[
+                            {"mixedmedia": {
+                                "active": false,
+                                "mime": ["audio/x-mpequrl"]
+                            }}
+                        ]
+                    }}
+                ]
+            }},
+            {"menu": {
+                "becomable": false
+            }},
+            {"status": false},
+            {"multiplex":{
+                "active": true,
+                "descendents": [
+                    {"fibonacciplex": false},
+                    {"tackleplex": false},
+                    {"tableplex": false}
+                ]
+            }}
+        ]
+    }}
+]

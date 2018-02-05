@@ -1,36 +1,34 @@
 class CodemirrorBlock extends TextareaBlock {
-  constructor(props){
-      super(props)
-      // this load will fire when the fetch for the file (in src attribute) completes
-      this.addEventListener('load', () => {
-        console.log("PROPS", this.props)
-        
-          // this promise will resolve immediately if the script is already available
-            this.loadLocalStyle('/gui-blocks/codemirror/assets/lib/codemirror.css')
-            .then(()=> this.attachGlobalScript('/gui-blocks/codemirror/assets/lib/codemirror.js'))
-            // then determine file type and attach appropriate script
-            // if there's a colorscheme attribute load that too 
-            .then(()=>{
-                this.cm = CodeMirror.fromTextArea(this.child['textarea'], {
-                    lineNumbers: true,
-                     // if whitespace value is "wrap" set lineWrapping to true, else lineWrapping is false (default)
-                    lineWrapping: this.getAttribute('whitespace') == 'wrap',
-                })
-                this.theme = this.getAttribute('theme') || CodeMirror.preferredTheme || "monokai"
-                this.keymap = this.getAttribute('keymap') || CodeMirror.preferredKeyMap || "default"
-                // retrigger attributechangedcallback after loading codemirror
-                // cm.save commits the editor contents into this.data (this.child['textarea']) which is referenced for file overwrite and so on.
-                this.cm.on('blur', () => {
-                    this.cm.save()
-                })
-                return this.attachGlobalScript('/gui-blocks/codemirror/assets/mode/meta.js')
-            })
-            .then(()=>{
-                this.mode = this.getAttribute('mode') || CodeMirror.findModeByFileName(this.props.src).mode        
-            })
-        })
+    constructor(props){
+        super(props)
+        this.CodeMirrorOptions = {
+            lineNumbers: true,
+            // if whitespace value is "wrap" set lineWrapping to true, else lineWrapping is false (default)
+            lineWrapping: this.getAttribute('whitespace') == 'wrap',
+        }
     }
 
+    static build(){    
+        // this promise will resolve immediately if the script is already available
+        this.loadLocalStyle('/gui-blocks/codemirror/assets/lib/codemirror.css')
+        .then(()=> this.attachGlobalScript('/gui-blocks/codemirror/assets/lib/codemirror.js'))
+        // then determine file type and attach appropriate script
+        // if there's a colorscheme attribute load that too 
+        .then(()=>{
+            this.cm = CodeMirror.fromTextArea(this.child['textarea'], this.CodeMirrorOptions)
+            this.theme = this.getAttribute('theme') || CodeMirror.preferredTheme || "monokai"
+            this.keymap = this.getAttribute('keymap') || CodeMirror.preferredKeyMap || "default"
+            // retrigger attributechangedcallback after loading codemirror
+            // cm.save commits the editor contents into this.data (this.child['textarea']) which is referenced for file overwrite and so on.
+            this.cm.on('blur', () => {
+                this.cm.save()
+            })
+            return this.attachGlobalScript('/gui-blocks/codemirror/assets/mode/meta.js')
+        })
+        .then(()=>{
+            this.mode = this.getAttribute('mode') || CodeMirror.findModeByFileName(this.props.src).mode        
+        })
+    }
     static get actions(){
         return [
             {"set language": {

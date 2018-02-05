@@ -1,41 +1,34 @@
 class MenuBlock extends ProtoBlock {
-    constructor(props){
-        super(props)
-        this.addEventListener('init', () => {
-            this.addEventListener('click', event => {
-                this.props.active ? this.destroyMenu()
-                                  : this.createMenu()
-            })
-            this.shadowParent.addEventListener('keydown', event => { 
-                if(event.key == 'Escape'){
-                    this.destroyMenu()
-                    this.shadowParent.focus()
-                }
-                // chrome only, event targets get retargeted to top level node, only way to check actualy key down target is with event.path, chrome only
-                if(event.path[0] == this.shadowParent && event.key == 'Enter'){
-                    this.createMenu()                 
-                }
-            })
-
-            this.shadowParent.addEventListener('blur', event => {
-                if(event.relatedTarget){
-                    // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
-                    this.destroyMenu()
-                }
-            })
-            
-            this.shadowParent.addEventListener('ready', () => {
-                // if parentNode was passed an autofocus prop, the attribute will be truthy, don't focus on parent
-                this.shadowParent.getAttribute('autofocus') || this.shadowParent.focus()
-            })
-        })
-    }   
+    constructor(props){super(props)}   
     
-    connectedCallback(){
-        this.initialized || this.dispatchEvent(new Event('init'))
-                         && this.dispatchEvent(new Event('ready'))
-    }
+    static build(){
+        this.addEventListener('click', event => {
+            this.props.active ? this.destroyMenu()
+                              : this.createMenu()
+        })
+        this.shadowParent.addEventListener('keydown', event => { 
+            if(event.key == 'Escape'){
+                this.destroyMenu()
+                this.shadowParent.focus()
+            }
+            // chrome only, event targets get retargeted to top level node, only way to check actualy key down target is with event.path, chrome only
+            if(event.path[0] == this.shadowParent && event.key == 'Enter'){
+                this.createMenu()                 
+            }
+        })
 
+        this.shadowParent.addEventListener('blur', event => {
+            if(event.relatedTarget){
+                // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
+                this.destroyMenu()
+            }
+        })
+        
+        this.shadowParent.addEventListener('ready', () => {
+            // if parentNode was passed an autofocus prop, the attribute will be truthy, don't focus on parent
+            this.shadowParent.getAttribute('autofocus') || this.shadowParent.focus()
+        })
+    }
     createMenu(){
         if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active. Hit 'esc' to destroy menu.")
         this.setAttribute('active','true')
@@ -72,7 +65,7 @@ class MenuBlock extends ProtoBlock {
             actionItem.textContent = actionName
             actionItem.setAttribute('tabIndex', 0)
             if(Array.isArray(actionObject)){
-                actionItem.textContent += '...'
+                actionItem.textContent += '...' // this should be css. anyway, indicate that submenu is available.
                 // event listener will be like this.appendActionList.call(actionItem, action)
             } else {
                 // createActionFor returns a function that mutates the LI and invokes function references by actionObject.func 

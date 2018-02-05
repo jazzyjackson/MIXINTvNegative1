@@ -1,6 +1,20 @@
 /* ProtoBlock has no style or template, 
 it's only meant to hold the utility methods that all blocks are expected to inherit. 
 There is no custom element. no document.createElement('proto-block'), just, class extends ProtoBlock */
+/*
+connectedCallback
+disconnectedCallback
+create
+destroy
+get actions
+get reactions
+
+eventio attaches a listener('submit') -> this.handleSubmit()
+media attaches a watch['src'] -> this.loadSource()
+
+multiplex just calls recalculate children when its childlist changes
+
+*/
 
 class ProtoBlock extends HTMLElement {
     constructor(props){
@@ -10,24 +24,23 @@ class ProtoBlock extends HTMLElement {
     /* ProtoBlock calls every class's init method, do not overwrite the 'connectedCallback' method on descendent classes, put it all in an 'init' function */
     connectedCallback(){        
         if(this.readyState != undefined){
-            // if the readState property has been set already, then exit: connectedCallback was called repeatedly
+            // if the readyState property has been set already, then exit: connectedCallback was called repeatedly
             return this.dispatchEvent(new Event('reconnect'))
         }
         this.readyState = 'loading'
         this.superClassChain.forEach(superclass => {
-            if(superclass.hasOwnProperty('ready')){
-                superclass.ready.call(this)
+            if(superclass.hasOwnProperty('build')){
+                superclass.build.call(this)
             }
         })
-        // if there is a src, be 'interactive' and wait until whatever function is responsible for loading it fires 'load'
-        // if, for instance, src is set on an img tag in shadowRoot, the load event will have to be retargeted to the host element
-        // if there's no source
+        // if there is a src, be 'interactive'. It will be the descendant class's responsibility to set readyState 'complete' after loading
+        // setting readyState to 'complete' will fire 'load' event
         this.readyState = this.props.src ? 'interactive' : 'complete'
-        // this deviates from the document standard, where readyStateChange->complete fires BEFORE load, here load will fire and trigger readyStateChange. sorry.
-        this.addEventListener('load', () => { this.readyState = 'complete' })      
     }
     
     disconnectedCallback(){
+        // you probably won't need destroy. I need to check if disconnected gets fired while initializing, hope not
+        // maybe I'll try to call all the destroy functions on windowleave
         this.superClassChain.forEach(superclass => {
             superclass.destroy && superclass.destroy.call(this)
         })
@@ -45,51 +58,55 @@ class ProtoBlock extends HTMLElement {
          * - locate CSS templates for all classes in superClassChain
          * - create a shadowRoot with the HTML template as innerHTML
          * - inject all the style tags (each with a reference to their filename by the way) into shadowroot */
-        this.attachShadow({mode: 'open'})
         // append the clone of every style template for each block in superclasschain
+        // clone contents of html template for this block
+        // allow instant reference to any uniquely named child (descriptive custom tags are encouraged) as this.child[tagname]
+        // basically as a shortcut as this.shadowRoot.querySelector('tagname') for brevity and reducing lookups
+        // set a reference to this elements parent, if there's a shadowRoot between here and there
+        this.attachShadow({mode: 'open'})
         this.superClassChain.forEach(superclass => {
             let style = document.querySelector(`template[styles="${superclass.name}"]`)
             style && this.shadowRoot.appendChild(style.content.cloneNode(true)) 
         })
-        // clone contents of html template for this block
         var template = document.querySelector(`template[marksup="${this.constructor.name}"]`)
         this.shadowRoot.appendChild(template.content.cloneNode(true))
-        // allow instant reference to any uniquely named child (descriptive custom tags are encouraged) as this.child[tagname]
-        // basically as a shortcut as this.shadowRoot.querySelector('tagname') for brevity and reducing lookups
         this.child = Array.from(this.shadowRoot.querySelectorAll('*'), child => {
             /* enhanced object literal dynamically names object keys */
-            return {[child.tagName.toLowerCase()]: child}
             /* from an array of objects, reduce to one object of all keys */
+            return {[child.tagName.toLowerCase()]: child}
         }).reduce((a,b) => Object.assign(a,b),{})
-        // set a reference to this elements parent, if there's a shadowRoot between here and there
         this.shadowParent = this.getRootNode().host
     }
 
     /* get actions that should be exposed to menu block from this class */
     static get actions(){
         return [
-            {"remove from window": {
+            {
+                name: "remove from window",
                 func: HTMLElement.prototype.remove,
                 info: "Calls this.remove()"
-            }},
-            {"become": {
+            },
+            {
+                name: "become",
                 func: this.prototype.become,
-                args: [{select: this.becomeable}],
+                args: [{select: this.blockAvailability}],
                 default: [ctx => ctx.tagName.split('-')[0].toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
-            }},
-            {"inspect or modify": {
+            },
+            {
+                name: "inspect or modify",
                 func: this.prototype.inspectOrModify,
-                args: [{select: ["style.css","class.js","template.html"]}, {select: this.becomeable}],
+                args: [{select: ["style.css","class.js","template.html"]}, {select: this.blockAvailability}],
                 default: [() => "style.css", ctx => ctx.tagName.split('-')[0].toLowerCase()]
-            }},
-            {"add sibling": {
+            },
+            {
+                name: "add sibling",
                 func: this.prototype.insertSibling,
-                args: [{select: this.becomeable} ],
+                args: [{select: this.blockAvailability} ],
                 default: [() => "become"]
-            }}
+            }
             // nested options should be possible,
-            // {"view":[fullscreen frame, fullscreen block, add frame, swap frame}
+            // {"actions":[fullscreen frame, fullscreen block, add frame, swap frame}
   
         ]
     }
@@ -100,8 +117,8 @@ class ProtoBlock extends HTMLElement {
         // by the way these will be called via `.call(this, newValue)` so you can use `this`
         return [
             {
-                observe: ["error"],
-                respond: function(errMsg){
+                watch: ["error"],
+                react: function(errMsg){
                     if(this.child['footer'] == undefined) return console.error(message)
                     let newMsg = document.createElement('error-message')
                     newMsg.textContent = errMsg
@@ -111,8 +128,8 @@ class ProtoBlock extends HTMLElement {
                 }
             },
             {
-                observe: ["alert"],
-                respond: function(alertMsg){
+                watch: ["alert"],
+                react: function(alertMsg){
                     if(this.child['footer'] == undefined) return alert(alertMsg) // maybe alert if no footer?
                     let newMsg = document.createElement('success-message')
                     newMsg.textContent = alertMsg
@@ -122,8 +139,8 @@ class ProtoBlock extends HTMLElement {
                 }
             },
             {
-                observe: ["src"],
-                respond: function(){
+                watch: ["src"],
+                react: function(){
                     this.readyState = 'interactive'
                 }
             }
@@ -143,7 +160,14 @@ class ProtoBlock extends HTMLElement {
         .filter(reaction => reaction.observe.includes(attributeName))
         // call each function in order, using present element as context, pass newValue
         .forEach(reaction => {
-            reaction.respond.call(this, newValue)
+
+            // readyState can be loading, interactive, or ready
+            // interactive happens after getting connected to the DOM
+            // ready happens after load. (if there's no src, skip to ready, other static builds might impose their own interactive/ready events to load dependencies)
+            this.waitsForDOM.then(()=>{
+                reaction.respond.call(this, newValue)
+            })
+
         })
     }
 
@@ -307,6 +331,11 @@ class ProtoBlock extends HTMLElement {
         return Array.from(this.shadowRoot.children).indexOf(node)
     }
 
+    resolveDirectory(pathname){
+        // for purposes of figuring out what directory a given file exists within
+        return this.resolvePath(pathname).split('/').slice(-1).join('/') + '/'
+    }
+
     resolvePath(pathname){
         pathname = pathname.trim() // go ahead and get rid of excess whitespace
         /* just does transforms like 
@@ -380,6 +409,7 @@ class ProtoBlock extends HTMLElement {
         this._readyState = newValue
         this.props.readyState = newValue // make css easy for blocks that are loading resources 
         this.dispatchEvent(new Event('readyStateChange'))
+        newValue == 'complete' && this.dispatchEvent(new Event('load'))
     }
     
     get readyState(){
@@ -395,23 +425,6 @@ class ProtoBlock extends HTMLElement {
     }
     get cwd(){
         this.getAttribute('cwd') || location.pathname
-    }
-
-    static get becomeable(){
-        let possibleBlocks = []
-        let protoGenome = window.genetics.filter(node => Object.keys(node)[0] == 'proto')[0].proto
-        // recurse over genes and flatten them into list
-        protoGenome.descendents.forEach(function buildBlockList(gene){
-            let tagName = Object.keys(gene)[0]
-            let attrObj = gene[tagName]
-            if(attrObj === false || attrObj.active === false || attrObj.standalone === false) return null
-            
-            possibleBlocks.push(tagName)
-            if(Array.isArray(attrObj.descendents)){
-                attrObj.descendents.forEach(buildBlockList)
-            }
-        })
-        return possibleBlocks
     }
     // 
     tryJSON(string){

@@ -13,15 +13,10 @@ var child      = require('child_process')
 var keycert    = new Object /* optionally: {key: filename, cert: filename}  */
 var SSL_READY  = keymaker.trySSL(keycert)
 var appRoot    = process.env.APPROOT || process.cwd()
-var serverPort = process.argv[2] || 0 /* 0 will request a random, available port from the host OS */
-var MIMEtypes = {
-    svg: 'image/svg+xml',
-    css: 'text/css',
-    otf: 'application/x-font-otf',
-    ttf: 'application/x-font-ttf',
-    woff: 'application/font-woff',
-    woff2: 'application/font-woff2'
-}
+/* 0 will request a random, available port from the host OS */
+var serverPort = process.argv[2] || 0 
+/* load all possible content types into object so I can retrieve file extensions as a hash and set header */
+var MIMEtypes = JSON.parse(fs.readFileSync(path.join(appRoot, 'mimemap.json')))
 /* check if private key and certificate were valid, start server either way */
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
@@ -52,15 +47,11 @@ function makeChild(request, response){
 
 function streamFile(request, response){
     // check if the URL includes any file extensions that require a MIME type to be specified in Content-Type header
-    assignMIMEtype:
-    for(var ext in MIMEtypes){
-        if(new RegExp(`\\.${ext}$`).test(request.url.split('?')[0])){
-            response.setHeader('Content-Type', MIMEtypes[ext])
-            break assignMIMEtype
-        }
-    }
-    // open and pipe the file, or throw back error (maybe file doesn't exist, let client know with a 500!)
     var filepath = path.join(appRoot, decodeURI(request.url.split('?')[0]))
+    var ContentType = getContentType(filepath)    
+
+    response.setHeader('Content-Type', ContentType)
+    // open and pipe the file, or throw back error (maybe file doesn't exist, var client know with a 500!)
     fs.createReadStream(filepath)
     .on('error', function(err){
         response.writeHead(500)
@@ -91,8 +82,18 @@ function deleteFile(request, response){
 
 function sendStat(request,response){
     var filepath = path.join(appRoot, decodeURI(request.url))
-    fs.stat(filepath, function(err, stat){ 
+    var ContentType = getContentType(filepath)
+    response.setHeader('Content-Type', ContentType)
+    
+    fs.stat(filepath, function(err, stat){
+        stat && Object.assign(stat, {ContentType})
         response.writeHead( err ? 500 : 200); 
         response.end(JSON.stringify(err || stat))
     })
+}
+
+function getContentType(filepath){
+    var extension = /\.([a-z0-9]+)$/i.exec(filepath)
+    var extensionMatch = extension ? extension[1].toLowerCase() : 'default'
+    return MIMEtypes[extensionMatch]
 }
