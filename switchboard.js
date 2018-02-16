@@ -1,5 +1,5 @@
 #!/usr/local/bin/node
-process.platform.includes('win32') && process.exit(console.log("*nix please"))
+process.platform.includes('win32') && process.exit(console.log("unix please"))
 var figjam     = require('./figjam')
 var keymaker   = require('./keymaker') // returns a new instance, keymaker is a class instance
 var lineworker = require('./lineworker') // returns a class definition, must be called with new
@@ -10,29 +10,27 @@ var child      = require('child_process')
 
 /* some configuration options */
 /* try to read key and certificate from disk and enable HTTPS if true     */
-var keycert    = new Object /* optionally: {key: filename, cert: filename}  */
-var SSL_READY  = keymaker.trySSL(keycert)
-var appRoot    = process.env.APPROOT || process.cwd()
-/* 0 will request a random, available port from the host OS */
-var serverPort = process.argv[2] || 0 
-/* load all possible content types into object so I can retrieve file extensions as a hash and set header */
+var keycert   = new Object /* optionally: {key: filename, cert: filename}  */
+var SSL_READY = keymaker.trySSL(keycert)
+var appRoot  = process.env.appRoot || process.cwd()
 var MIMEtypes = JSON.parse(fs.readFileSync(path.join(appRoot, 'mimemap.json')))
+
 /* check if private key and certificate were valid, start server either way */
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
-.on('request', function(req,res){ /* ternary tests conditions until success */
-    /* GET requests made from new EventSource (Server Sent Events)          */
+.on('request', function(req,res){ /* ternary tests conditions until success */ 
+    /* get requests made from new EventSource (Server Sent Events)          */
     /event-stream/.test(req.headers.accept)           ? makeChild(req,res)   :
-    /* GET requests with trailing slash before optional query string        */
+    /* get requests with trailing slash before optional query string        */
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)      :
     req.method == 'POST'                              ? makeChild(req,res)   :
-    req.method == 'OPTIONS'                           ? sendStat(req,res)    :
+    req.method == 'OPTIONS'							  ? sendStat(req,res)    :
     req.method == 'GET'                               ? streamFile(req,res)  :
     req.method == 'PUT'                               ? saveBody(req,res)    :
     req.method == 'DELETE'                            ? deleteFile(req,res)  :
     res.end(req.method + ' ' + req.url + " Doesn't look like anything to me");
 })
-.listen(serverPort)
+.listen(process.argv[2] || 0)
 .on('listening', function(){ 
     console.log(this.address().port) 
     console.log("Started switchboard on port", this.address().port) 
@@ -49,8 +47,7 @@ function streamFile(request, response){
     // check if the URL includes any file extensions that require a MIME type to be specified in Content-Type header
     var filepath = path.join(appRoot, decodeURI(request.url.split('?')[0]))
     var ContentType = getContentType(filepath)    
-    console.log("ContentType")
-    console.log(ContentType)
+
     response.setHeader('Content-Type', ContentType)
     // open and pipe the file, or throw back error (maybe file doesn't exist, var client know with a 500!)
     fs.createReadStream(filepath)
