@@ -191,10 +191,13 @@ module.exports = async function(request, response){
     // guiBlocks.nodeDescriptions
 
     var guigraph = await new Promise(resolve => {
-        fs.readFile(path.join(appRoot, 'guigraph.json'), data => {
-            resolve(JSON.parse(date))
+        fs.readFile(path.join(appRoot, 'guigraph.json'), (err, data) => {
+            resolve(JSON.parse(data.toString()))
         })
     })
+
+    console.log("GUIGRAPH")
+    console.log(guigraph)
         
     // could perform consistency check here if I wanted to have useful error messages
     // make sure top level is an array, make sure I can descend the tree and not run into anything unexpected...

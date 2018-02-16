@@ -13,8 +13,9 @@ const { callbackURL, SSOURL, SSOquery, checkAuthDomain, cookieDomain, identityKe
 const formatCookie = key => 'magicurl=' + key + ';Path=/;Domain=' + cookieDomain
 
 async function identify(request, response){
+    console.log("NOKEYOK", process.env.nokeyok)
     /* if no-key-OK option is set, provide a default profile id if authentication fails, allowing basic interaction without requiring cookies */
-    request.profile = { id: process.env.nokeyok ? 'nobody' : null } 
+    request.profile = { id: process.env.nokeyok ? 'nobody' : null }
     /* first check if there is a key in the cookie or in the url. If not, exit.  */
     var key = findKey(request.url) || findKey(request.headers.cookie)
     if(!key) return request.profile

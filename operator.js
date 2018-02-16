@@ -57,8 +57,8 @@ require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
 .on('request', async (request, response) => {
     await keymaker.identify(request, response)
-    console.log("request from", request.id)
-	if( request.id == undefined ){
+    console.log("request from", request.profile.id)
+	if( request.profile.id == undefined ){
         /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get a magicurl */
         response.writeHead(302, { 'Location': keymaker.authRedirect })
         response.end()
@@ -70,7 +70,7 @@ require(SSL_READY ? 'https' : 'http')
     } else {
         console.log(Object.keys(switchboards))
         /* if an switchboard was never created for this identity, fine, use the default switchboard */
-        let proxyDestination = await (switchboards[request.id] || switchboards.registerSwitchboard(request.id))
+        let proxyDestination = await (switchboards[request.profile.id] || switchboards.registerSwitchboard(request.profile.id))
         request.pipe(http.request({
             hostname: proxyDestination.hostname,
             port: proxyDestination.port,

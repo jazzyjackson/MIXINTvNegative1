@@ -6,7 +6,7 @@ class MultiplexBlock extends ProtoBlock {
         this.positionProp  = screen.orientation.type.includes('landscape') ? 'left'  : 'top'
     }
 
-    static ready(){
+    static create(){
         /* hoist child nodes of custom element INTO the shadowRoot of this */
         // my version of slotting. Should I be using slots for this? 
         // if the only childElement is the style, append a couple of become-blocks

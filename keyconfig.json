@@ -10,7 +10,7 @@
     "protocol":"http",
     "callbackURL":"localhost:5000",
     "SSOURL":"localhost:5000",
-    "SSOquery":"redirurl=",
+    "SSOquery":"?redirurl=",
     "checkAuthDomain":"localhost",
     "cookieDomain":"localhost",
     "identityKey":"id"

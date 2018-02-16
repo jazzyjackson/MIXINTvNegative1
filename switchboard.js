@@ -49,7 +49,8 @@ function streamFile(request, response){
     // check if the URL includes any file extensions that require a MIME type to be specified in Content-Type header
     var filepath = path.join(appRoot, decodeURI(request.url.split('?')[0]))
     var ContentType = getContentType(filepath)    
-
+    console.log("ContentType")
+    console.log(ContentType)
     response.setHeader('Content-Type', ContentType)
     // open and pipe the file, or throw back error (maybe file doesn't exist, var client know with a 500!)
     fs.createReadStream(filepath)
@@ -94,6 +95,6 @@ function sendStat(request,response){
 
 function getContentType(filepath){
     var extension = /\.([a-z0-9]+)$/i.exec(filepath)
-    var extensionMatch = extension ? extension[1].toLowerCase() : 'default'
-    return MIMEtypes[extensionMatch]
+    var extensionMatch = extension && extension[1].toLowerCase()
+    return MIMEtypes[extensionMatch] || MIMEtypes['default']
 }

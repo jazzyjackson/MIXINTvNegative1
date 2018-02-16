@@ -113,7 +113,7 @@ module.exports = class Lineworker {
  
     }
 
-    fork(request){
+    fork(request){ 
         var queryObject = this.querystring2object(request)        
         var cwd = decodeURI(request.url.split('?')[0].split('/').slice(0,-1).join('/') || '/')
         var src = decodeURI(request.url.split('?')[0].split('/').slice(-1)[0]) // may be '' falsey string

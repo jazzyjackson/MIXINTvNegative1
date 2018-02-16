@@ -29,15 +29,16 @@ class ProtoBlock extends HTMLElement {
         }
         this.readyState = 'loading'
         this.superClassChain.forEach(superclass => {
-            if(superclass.hasOwnProperty('build')){
-                superclass.build.call(this)
+            if(superclass.hasOwnProperty('create')){
+                superclass.create.call(this)
             }
         })
         // if there is a src, be 'interactive'. It will be the descendant class's responsibility to set readyState 'complete' after loading
         // setting readyState to 'complete' will fire 'load' event
         this.readyState = this.props.src ? 'interactive' : 'complete'
     }
-    
+
+
     disconnectedCallback(){
         // you probably won't need destroy. I need to check if disconnected gets fired while initializing, hope not
         // maybe I'll try to call all the destroy functions on windowleave
@@ -50,7 +51,7 @@ class ProtoBlock extends HTMLElement {
     // called in order from proto -> descendant. When connected to the DOM, all the init functions are called, then all the ready functions are called
     // keep in mind that ready will be called before the ready statement of each descendent
     // so it would be good not to lean on the minimalist side of things - externalize functionality into instance methods so you can overwrite them in descendents. code in ready block can't be disabled/overwritten by descendants.
-    static ready(){
+    static create(){
         /* not really static, always called with the context of actualy DOM node 
         /* but made static so it can be retrieved from class definition (returned in superclasschain) 
         /* ready sequence for all descendants of proto block 
@@ -157,16 +158,20 @@ class ProtoBlock extends HTMLElement {
         // and on attribute change you just have to filter the array based on whether the key includes attribute name
         this.constructor.inheritedReactions
         // test whether a reaction title includes the attribute name
-        .filter(reaction => reaction.observe.includes(attributeName))
+        .filter(reaction => reaction.watch.includes(attributeName))
         // call each function in order, using present element as context, pass newValue
         .forEach(reaction => {
-
             // readyState can be loading, interactive, or ready
             // interactive happens after getting connected to the DOM
             // ready happens after load. (if there's no src, skip to ready, other static builds might impose their own interactive/ready events to load dependencies)
-            this.waitsForDOM.then(()=>{
-                reaction.respond.call(this, newValue)
-            })
+            if(!this.readyState || this.readyState == 'loading'){
+                this.addEventListener('readystatechange', () => {
+                    reaction.react.call(this, newValue)
+                })
+            } else {
+                reaction.react.call(this, newValue)
+                
+            }
 
         })
     }
@@ -350,7 +355,6 @@ class ProtoBlock extends HTMLElement {
             otherwise leave it alone
         So "mark" is just "push 'true' to bitmask" which will be used to filter it at the end
         */
-        console.log("resolving", pathname)
         let pathParts = pathname.split('/')
         /* this tilde handling could be upgraded to handle paths relative to tilde
            but for now I just want the tilde to be a shortcut back to home */
