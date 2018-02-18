@@ -267,11 +267,24 @@ class ProtoBlock extends HTMLElement {
         let tagName = Object.keys(object)[0]
         let attrObj = object[tagName]
         let node = document.createElement(tagName)
-        for(var attr in attrObj){
-            if(attr == 'textContent'){
-                node.textContent = attrObj[attr]
-            } else {
-                node.setAttribute(attr, attrObj[attr])
+        for(var attribute in attrObj){
+            let value = attrObj[attribute]
+            switch(attribute){
+                case 'textContent':
+                    node.textContent = value
+                    break            
+                case 'addEventListeners':
+                    for(var eventName in value){
+                        node.addEventListener(eventName, value[eventName])
+                    }
+                    break
+                case 'childNodes':
+                    value.forEach(child => {
+                        node.appendChild(this.createElementFromObject(child))
+                    })
+                    break
+                default: 
+                    node.setAttribute(attribute, value)
             }
         }
         return node
