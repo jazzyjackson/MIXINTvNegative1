@@ -59,6 +59,7 @@
                 "active": true,
                 "descendents": [
                     {"fibonacciplex": false},
+                    {"panelplex": false},
                     {"tackleplex": false},
                     {"tableplex": false}
                 ]
