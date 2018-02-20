@@ -1,20 +1,6 @@
 /* ProtoBlock has no style or template, 
 it's only meant to hold the utility methods that all blocks are expected to inherit. 
 There is no custom element. no document.createElement('proto-block'), just, class extends ProtoBlock */
-/*
-connectedCallback
-disconnectedCallback
-create
-destroy
-get actions
-get reactions
-
-eventio attaches a listener('submit') -> this.handleSubmit()
-media attaches a watch['src'] -> this.loadSource()
-
-multiplex just calls recalculate children when its childlist changes
-
-*/
 
 class ProtoBlock extends HTMLElement {
     constructor(props){
@@ -24,24 +10,24 @@ class ProtoBlock extends HTMLElement {
     /* ProtoBlock calls every class's init method, do not overwrite the 'connectedCallback' method on descendent classes, put it all in an 'init' function */
     connectedCallback(){        
         if(this.readyState != undefined){
-            // if the readyState property has been set already, then exit: connectedCallback was called repeatedly
+            // if the readState property has been set already, then exit: connectedCallback was called repeatedly
             return this.dispatchEvent(new Event('reconnect'))
         }
         this.readyState = 'loading'
         this.superClassChain.forEach(superclass => {
-            if(superclass.hasOwnProperty('create')){
-                superclass.create.call(this)
+            if(superclass.hasOwnProperty('build')){
+                superclass.build.call(this)
             }
         })
-        // if there is a src, be 'interactive'. It will be the descendant class's responsibility to set readyState 'complete' after loading
-        // setting readyState to 'complete' will fire 'load' event
+        // if there is a src, be 'interactive' and wait until whatever function is responsible for loading it fires 'load'
+        // if, for instance, src is set on an img tag in shadowRoot, the load event will have to be retargeted to the host element
+        // if there's no source
         this.readyState = this.props.src ? 'interactive' : 'complete'
+        // this deviates from the document standard, where readyStateChange->complete fires BEFORE load, here load will fire and trigger readyStateChange. sorry.
+        this.addEventListener('load', () => { this.readyState = 'complete' })      
     }
 
-
     disconnectedCallback(){
-        // you probably won't need destroy. I need to check if disconnected gets fired while initializing, hope not
-        // maybe I'll try to call all the destroy functions on windowleave
         this.superClassChain.forEach(superclass => {
             superclass.destroy && superclass.destroy.call(this)
         })
@@ -49,9 +35,7 @@ class ProtoBlock extends HTMLElement {
 
 
     // called in order from proto -> descendant. When connected to the DOM, all the init functions are called, then all the ready functions are called
-    // keep in mind that ready will be called before the ready statement of each descendent
-    // so it would be good not to lean on the minimalist side of things - externalize functionality into instance methods so you can overwrite them in descendents. code in ready block can't be disabled/overwritten by descendants.
-    static create(){
+    static build(){
         /* not really static, always called with the context of actualy DOM node 
         /* but made static so it can be retrieved from class definition (returned in superclasschain) 
         /* ready sequence for all descendants of proto block 
@@ -59,70 +43,88 @@ class ProtoBlock extends HTMLElement {
          * - locate CSS templates for all classes in superClassChain
          * - create a shadowRoot with the HTML template as innerHTML
          * - inject all the style tags (each with a reference to their filename by the way) into shadowroot */
-        // append the clone of every style template for each block in superclasschain
-        // clone contents of html template for this block
-        // allow instant reference to any uniquely named child (descriptive custom tags are encouraged) as this.child[tagname]
-        // basically as a shortcut as this.shadowRoot.querySelector('tagname') for brevity and reducing lookups
-        // set a reference to this elements parent, if there's a shadowRoot between here and there
         this.attachShadow({mode: 'open'})
+        // append the clone of every style template for each block in superclasschain
         this.superClassChain.forEach(superclass => {
             let style = document.querySelector(`template[styles="${superclass.name}"]`)
             style && this.shadowRoot.appendChild(style.content.cloneNode(true)) 
         })
+        // clone contents of html template for this block
         var template = document.querySelector(`template[marksup="${this.constructor.name}"]`)
         this.shadowRoot.appendChild(template.content.cloneNode(true))
+        // allow instant reference to any uniquely named child (descriptive custom tags are encouraged) as this.child[tagname]
+        // basically as a shortcut as this.shadowRoot.querySelector('tagname') for brevity and reducing lookups
         this.child = Array.from(this.shadowRoot.querySelectorAll('*'), child => {
-            /* enhanced object literal dynamically names object keys */
-            /* from an array of objects, reduce to one object of all keys */
+            /* Give each child a proxy setter so attributes can be assigned with this.child.img.props syntax */
+            child.props = new Proxy({}, {
+                get: (target, name) => {
+                    return child.getAttribute(name.toLowerCase())
+                },
+                set: function(obj, prop, value){
+                    // set attribute only if the value is truthy.
+                    // this might give you something unexpected if you try to set it to false,
+                    // but if you want the string false then set child.props.attr to "false", not false, "false" is truthy
+                    value ? child.setAttribute(prop, value) : child.removeAttribute(prop)
+                    return true // success
+                }
+            })
+            /* enhanced object literal dynamically names object keys */            
             return {[child.tagName.toLowerCase()]: child}
+            /* from an array of objects, reduce to one object of all keys */
         }).reduce((a,b) => Object.assign(a,b),{})
+        // set a reference to this elements parent, if there's a shadowRoot between here and there
         this.shadowParent = this.getRootNode().host
+        this.addEventListener('load', () => {
+            // console.log("LOOOAAAAD")
+            // console.log(this)
+            // alert(`${this.tagName} has finished loading`)
+        })
     }
 
     /* get actions that should be exposed to menu block from this class */
     static get actions(){
         return [
-            {
-                name: "remove from window",
+            {"remove from window": {
+                filter: false, // could check how many children there are, if there's only one, don't allow removing
                 func: HTMLElement.prototype.remove,
                 info: "Calls this.remove()"
-            },
-            {
-                name: "become",
+            }},
+            {"become": {
+                filter: false,                
                 func: this.prototype.become,
-                args: [{select: this.blockAvailability}],
+                args: [{select: this.becomeable}],
                 default: [ctx => ctx.tagName.split('-')[0].toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
-            },
-            {
-                name: "inspect or modify",
+            }},
+            {"inspect or modify": {
+                filter: false,                
                 func: this.prototype.inspectOrModify,
-                args: [{select: ["style.css","class.js","template.html"]}, {select: this.blockAvailability}],
+                args: [{select: ["style.css","class.js","template.html"]}, {select: this.becomeable}],
                 default: [() => "style.css", ctx => ctx.tagName.split('-')[0].toLowerCase()]
-            },
-            {
-                name: "add sibling",
+            }},
+            {"add sibling": {
+                filter: false,
                 func: this.prototype.insertSibling,
-                args: [{select: this.blockAvailability} ],
+                args: [{select: this.becomeable} ],
                 default: [() => "become"]
-            }
+            }}
             // nested options should be possible,
-            // {"actions":[fullscreen frame, fullscreen block, add frame, swap frame}
+            // {"view":[fullscreen frame, fullscreen block, add frame, swap frame}
   
         ]
     }
 
     static get reactions(){
-        // return array of objects {observe: Array, respond: Function}
+        // return array of objects {observe: Array, react: Function}
         // when an attribute listed in an observe property is changed, function will be called on the new value
         // by the way these will be called via `.call(this, newValue)` so you can use `this`
         return [
             {
                 watch: ["error"],
-                react: function(errMsg){
-                    if(this.child['footer'] == undefined) return console.error(message)
+                react: function(attributeName, oldValue, newValue){
+                    if(this.child['footer'] == undefined) return console.error(newValue)
                     let newMsg = document.createElement('error-message')
-                    newMsg.textContent = errMsg
+                    newMsg.textContent = newValue
                     this.child['footer'].appendChild(newMsg)
                     /* hide error message after one second, allow css animations to occur */
                     setTimeout(()=>newMsg.classList.add('dismissed'), 5000)
@@ -130,7 +132,7 @@ class ProtoBlock extends HTMLElement {
             },
             {
                 watch: ["alert"],
-                react: function(alertMsg){
+                react: function(attributeName, oldValue, newValue){
                     if(this.child['footer'] == undefined) return alert(alertMsg) // maybe alert if no footer?
                     let newMsg = document.createElement('success-message')
                     newMsg.textContent = alertMsg
@@ -144,7 +146,7 @@ class ProtoBlock extends HTMLElement {
                 react: function(){
                     this.readyState = 'interactive'
                 }
-            }
+            },
         ]
     }
 
@@ -152,27 +154,58 @@ class ProtoBlock extends HTMLElement {
      *
      * 
      * */
-
+    static get observedAttributes(){
+        // return list of attribute names to watch for changes
+        let arrayOfArraysOfObservables = this.inheritedReactions.map(reaction => reaction.watch)
+        let arrayOfObservables = Array.prototype.concat(...arrayOfArraysOfObservables)
+        // convert to and from a Set as a quick and dirty way to remove duplicate values
+        // maybe not the most efficiet, not sure how converting array to set shakes out
+        // should be linear tho... iterate to add each element to set, then iterate once more to return the array
+        let setOfObservables = new Set(arrayOfObservables)
+        return Array.from(setOfObservables)
+    }
+    
+    static get inheritedReactions(){
+        // iterate over properties of superclass chain, merge them into one object
+        // each class may have a reactions getter that returns a 
+        return Array.prototype.concat(...this.superClassChain.map(superclass => superclass.reactions))
+    
+    }
+    
     attributeChangedCallback(attributeName, oldValue, newValue){
+        /* TWO STEP: 1. if there's a data tag, update its textContent. 2. if there's a watch function, call it. */
+        // later. not consistant with how I want bashio's stdout/stderr/error to happen (append, not replace, and call makeHTML)
+        // if(this.child['data-' + attributeName]){
+        //     this.child['data-' + attributeName].textContent = newValue
+        // }
+        
         // could be an array of reactions, of named tuples, so they could be concatenated
         // and on attribute change you just have to filter the array based on whether the key includes attribute name
-        this.constructor.inheritedReactions
-        // test whether a reaction title includes the attribute name
-        .filter(reaction => reaction.watch.includes(attributeName))
-        // call each function in order, using present element as context, pass newValue
-        .forEach(reaction => {
-            // readyState can be loading, interactive, or ready
-            // interactive happens after getting connected to the DOM
-            // ready happens after load. (if there's no src, skip to ready, other static builds might impose their own interactive/ready events to load dependencies)
-            if(!this.readyState || this.readyState == 'loading'){
-                this.addEventListener('readystatechange', () => {
-                    reaction.react.call(this, newValue)
-                })
+        let reactionArray = this.constructor.inheritedReactions
+        let goingToBecome = this.props.become
+        reactionArray.filter(function(reaction){
+            if(attributeName == 'become'){
+                // well, react to become of course
+                return reaction.watch.includes(attributeName)
+            } else if(goingToBecome){
+                // don't react to anything else if become is truthy on this node, we want to wait until after we've become
+                return false
             } else {
-                reaction.react.call(this, newValue)
-                
+                // and then we're just filtering functions to ones that are meant to react to the current attribute
+                return reaction.watch.includes(attributeName)
             }
-
+            // test whether a reaction title includes the attribute name
+            // don't do anything if become is truthy, they should happen after become has happened and everything will be called over again
+        }).forEach(reaction => {
+            // call each function in order, using present element as context, pass newValue
+            if(this.readyState == 'interactive' || this.readyState == 'complete'){
+                // console.log("calling!", reaction.react.toString())
+                reaction.react.call(this, attributeName, oldValue, newValue)
+            } else {
+                this.addEventListener('load', function(){
+                    reaction.react.call(this, attributeName, oldValue, newValue)
+                }, {once: true})
+            }
         })
     }
 
@@ -184,23 +217,6 @@ class ProtoBlock extends HTMLElement {
     get inheritedActions(){
         var arrayOfArraysOfActions = this.superClassChain.map(superclass => superclass.actions)
         return Array.prototype.concat(...arrayOfArraysOfActions)
-    }
-
-    static get observedAttributes(){
-        // return list of attribute names to watch for changes
-        let arrayOfArraysOfObservables = this.inheritedReactions.map(reaction => reaction.observe)
-        let arrayOfObservables = Array.prototype.concat(...arrayOfArraysOfObservables)
-        // convert to and from a Set as a quick and dirty way to remove duplicate values
-        // maybe not the most efficiet, not sure how converting array to set shakes out
-        // it might even be fine to just return the array duplicates included, I'll see if that breaks things later...
-        let setOfObservables = new Set(arrayOfObservables)
-        return Array.from(setOfObservables)
-    }
-    
-    static get inheritedReactions(){
-        // iterate over properties of superclass chain, merge them into one object
-        // each class may have a reactions getter that returns a 
-        return Array.prototype.concat(...this.superClassChain.map(superclass => superclass.reactions))
     }
 
     // whether you ask for the superClassChain on a class or class instance, you should get the same array back
@@ -225,12 +241,24 @@ class ProtoBlock extends HTMLElement {
         // depending on whether become was called with a reference to a class or just the string of a tagName
         var newBlock = typeof block == 'string' ? document.createElement(block.includes('-') ? block : block + '-block') // shell-block or shell both return shell-block
                                                 : new block
-        
+        // throw new Error('ready to become')
         // I'm expecting the element that has been replaced to be garbage collected
-        this.replaceWith(newBlock)
-        newBlock.addEventListener('ready', () => {
-            newBlock.props = this.props
-        })
+        // overwrite become property at assign time, don't modify become property of this
+        let newProps = this.props
+        // copy all 'ownProperty' of DIV. this will include 'this.shell' if this is a bashio thing, any other properties that might want to be set
+        // may cause unexpected behavior if you're expecting a fresh slate after become. I'm deleting become and readyState, but, watch out for internal properties you don't expect to stick around
+        // really cool thing about this is it effectively retargets all my event listeners that were attached to an EventSource
+        // since all the callbacks modify 'this', since I'm copying over... need to dig into the value property of each PropertyDescriptors... maybe this could be a for..in(readuce) situation... but this makes sense to me.
+        // and that shell object is copied by reference, doesn't clone it or anything... And there can be only one context, so I'm 99% sure I don't have to worry about duplicate callbacks once moving shell to a new block.
+        Object.assign(newBlock, ...Object.getOwnPropertyNames(this).map(each => {
+            return {[each]: Object.getOwnPropertyDescriptors(this)[each].value}
+        }))
+        delete newProps.become
+        delete newProps.readystate // remove attribute from HTML
+        delete newBlock._readyState // remove internal property
+
+        newBlock.props = newProps
+        this.replaceWith(newBlock) // hopefully replace with will fire 
         // could have been new block(this.props) if I had a way of invoking class constructor from string... 
         return newBlock
     }
@@ -239,17 +267,32 @@ class ProtoBlock extends HTMLElement {
         let tagName = Object.keys(object)[0]
         let attrObj = object[tagName]
         let node = document.createElement(tagName)
-        for(var attr in attrObj){
-            if(attr == 'textContent'){
-                node.textContent = attrObj[attr]
-            } else {
-                node.setAttribute(attr, attrObj[attr])
+        for(var attribute in attrObj){
+            let value = attrObj[attribute]
+            switch(attribute){
+                case 'textContent':
+                    node.textContent = value
+                    break            
+                case 'addEventListener':
+                    for(var eventName in value){
+                        // could check if value[eventName] is an array of functions to add... 
+                        node.addEventListener(eventName, value[eventName])
+                    }
+                    break
+                case 'childNodes':
+                    value.forEach(child => {
+                        node.appendChild(this.createElementFromObject(child))
+                    })
+                    break
+                default: 
+                    node.setAttribute(attribute, value)
             }
         }
         return node
     }
 
     attachGlobalScript(filename){
+        // this appear to resolve somehat prematurely... but its on load so ????
         return new Promise((resolve, reject) => {
             let existingScripts = Array.from(document.head.getElementsByTagName('script'))
             if(existingScripts.some(script => script.getAttribute('src') == filename)){
@@ -290,8 +333,9 @@ class ProtoBlock extends HTMLElement {
     // shouldn't be overridden in descendents, unless you really want to ignore inherited attribute change callbacks
 
     inspectOrModify(filename){
-        let filepath = `/aubi/gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
-        // check if CodemirrorBlock is available, then check if TextareaBlock is available, else just exit I guess
+        // i think it'll be cool to do a live edit on the style tag internal to the current node, but then save to the template
+        // at that point if you reinitialize anything that uses it, it'll update from new template
+        let filepath = `gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
         // TextBlock.from(filepath)
         // eventually CodeMirrorBlock
         // set 'target' of codemirror as selector of a node
@@ -304,6 +348,7 @@ class ProtoBlock extends HTMLElement {
         return response.ok ? response : response.text().then(msg => {throw new Error(response.status == 302 ? 'Your cookie is no good anymore. Please refresh the page to log in.' : msg)})
     }
 
+  
     set props(data){
         if(!data) return data // exit in the case of this.props = this.options, but options was undefined
         if(typeof data != 'object') throw new Error("Set props requires an object to update from")
@@ -315,11 +360,19 @@ class ProtoBlock extends HTMLElement {
     }
 
     get props(){
-        if(!this.attributes.length) return {}
         /* an ugly way to coerce a NamedNodeMap (attributes) into a normal key: value object. 
         Use ES6 enhanced object literals to eval node.name as a key, so you have an array of objects (instead of attribute) and then you can just roll it up with reduce */
-        return Array.from(this.attributes, attr => ({[attr.name]: attr.value}))
-                    .reduce((a, n) => Object.assign(a, n)) // You would think you could do .reduce(Object.assign), but assign is variadic, and reduce passes the original array as the 4th argument to its callback, so you would get the original numeric keys in your result if you passed all 4 arguments of reduce to Object.assign. So, explicitely pass just 2 arguments, accumulator and next.
+        let props = Array.from(this.attributes, attr => ({[attr.name]: attr.value}))
+                         .reduce((a, n) => Object.assign(a, n)) // You would think you could do .reduce(Object.assign), but assign is variadic, and reduce passes the original array as the 4th argument to its callback, so you would get the original numeric keys in your result if you passed all 4 arguments of reduce to Object.assign. So, explicitely pass just 2 arguments, accumulator and next.
+        return new Proxy(props, {
+            set: (obj, prop, value) => {
+                value ? this.setAttribute(prop, value) : this.removeAttribute(prop)
+                return true
+            },
+            get: (target, name) => {
+                return this.getAttribute(name.toLowerCase())
+            }
+        })
     }
 
     insertSibling(node){
@@ -334,11 +387,6 @@ class ProtoBlock extends HTMLElement {
     whatChildIsThis(node){
         /* if node is child of component, return the array index, else -1 */
         return Array.from(this.shadowRoot.children).indexOf(node)
-    }
-
-    resolveDirectory(pathname){
-        // for purposes of figuring out what directory a given file exists within
-        return this.resolvePath(pathname).split('/').slice(-1).join('/') + '/'
     }
 
     resolvePath(pathname){
@@ -378,6 +426,23 @@ class ProtoBlock extends HTMLElement {
                            .join('&')
     }
 
+    object2node(object){
+        let tagName = Object.keys(object)[0]
+        let attrObj = object[tagName]
+        let node = document.createElement(tagName)
+        for(var attr in attrObj){
+            switch(attr){
+                case 'textContent':
+                    node.textContent = attrObj[attr]; break;
+                case 'childNodes':
+                    attrObj[attr].forEach(childObj => node.appendChild(object2node(childObj))); break;
+                default:
+                    node.setAttribute(attr, attrObj[attr]);
+            }
+        }
+        return node
+    }
+
     // getters and setters for common interface
 
     get header(){
@@ -401,20 +466,23 @@ class ProtoBlock extends HTMLElement {
         return this.child['textarea'] ? this.child['textarea'].value : ''
     }
 
-    set errMsg(errorText){
-        console.error("Error from", this.props.id || this.props.tagName, "\n", errorText)
-        this.setAttribute('error', errorText)
-    }
-
     // don't mind me
     set readyState(newValue){
-        if(['loading','interactive','complete'].includes(newValue) == false) throw new Error("readyState must be load, interactive, or complete. I got " + newValue)
+        if(['loading','interactive','complete', undefined].includes(newValue) == false) throw new Error("readyState must be load, interactive, or complete. I got " + newValue)
         console.log(this.tagName.toLowerCase(), "is now", newValue)
         this._readyState = newValue
-        this.props.readyState = newValue // make css easy for blocks that are loading resources 
+        this.setAttribute('readystate', newValue) // make css easy for blocks that are loading resources 
         this.dispatchEvent(new Event('readyStateChange'))
-        newValue == 'complete' && this.dispatchEvent(new Event('load'))
     }
+
+    /* override these HTMLElement functions with ones that query the shadow children instead of the lit children */ 
+    querySelector(selector){
+        return this.shadowRoot.querySelector(selector)
+    }
+    querySelectorAll(selector){
+        return this.shadowRoot.querySelectorAll(selector)
+    }
+
     
     get readyState(){
         return this._readyState
@@ -423,15 +491,39 @@ class ProtoBlock extends HTMLElement {
     get workingDirectory(){
         return this.getAttribute('cwd') || location.pathname
     }
-    // current working directory
-    set cwd(newValue){
-        this.setAttribute('cwd', newValue)
-    }
-    get cwd(){
-        this.getAttribute('cwd') || location.pathname
-    }
+
     // 
-    tryJSON(string){
-        try {return JSON.parse(string)} catch(e) {}
+    JSONorNOT(string){
+        try {
+            return JSON.parse(string)
+        } catch(e) {
+            return string
+        }
+    }
+
+    postFetch(url, queryObject, bodyObject){
+        url = this.resolvePath(url) // get to the bottom of ../../. before anything else
+        /* form a blah=blah&so=on querystring from key value pairs */
+        var querystring = Object.keys(queryObject).map(key => {
+            var value = queryObject[key]
+            return encodeURIComponent(key) + '=' + encodeURIComponent(value)
+        }).join('&')
+
+        /* start out with some default options. error on redirect cuz that means no session */
+        var options = {
+            method: 'post',
+            credentials: 'same-origin',
+            redirect: 'error'
+        }
+
+        /* if bodyObject isn't undefined, add a JSON body to options */
+        bodyObject && Object.assign(options, {
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(bodyObject)
+        })
+        // could check type of bodyObject, only stringify it if its an object
+        // maybe if its bytes, raw int array or whatever, set content type appropriately
+        // probably reinventing axios or some other API.
+        return fetch(url + '?' + querystring, options)
     }
 }

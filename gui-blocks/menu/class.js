@@ -1,11 +1,12 @@
 class MenuBlock extends ProtoBlock {
-    constructor(props){super(props)}   
-    
+    constructor(props){super(props)}
+
     static build(){
         this.addEventListener('click', event => {
             this.props.active ? this.destroyMenu()
                               : this.createMenu()
         })
+
         this.shadowParent.addEventListener('keydown', event => { 
             if(event.key == 'Escape'){
                 this.destroyMenu()
@@ -29,15 +30,16 @@ class MenuBlock extends ProtoBlock {
             this.shadowParent.getAttribute('autofocus') || this.shadowParent.focus()
         })
     }
+
     createMenu(){
         if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active. Hit 'esc' to destroy menu.")
         this.setAttribute('active','true')
-        let newListElement = this.appendActionList(this.shadowParent.actionMenu)
+        let newListElement = this.appendActionList(this.shadowParent.inheritedActions)
         newListElement.style.top = this.shadowParent.child['header'].getClientRects()[0].height + 'px' 
         // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
     }
 
-    destroyMenu(){   
+    destroyMenu(){
         // not sure why I can't call menuBlock.destroyMenu() :/     
         this.removeAttribute('active') // so this.props.active is undefined, falsey
         var list = this.shadowRoot.querySelector('ul')
@@ -59,13 +61,16 @@ class MenuBlock extends ProtoBlock {
         var list = document.createElement('ul')
         actionArray.forEach(actionTuple => {
             console.log("actionObject", actionObject)
-            var actionItem = document.createElement('li')
             var actionName = Object.keys(actionTuple)[0]
             var actionObject = actionTuple[actionName]
+            if(actionObject.filter === false) return null // skip building list item if filter returns false
+            var actionItem = document.createElement('li')
             actionItem.textContent = actionName
+            actionItem.className = actionObject.class
+            actionItem.style = actionObject.style
             actionItem.setAttribute('tabIndex', 0)
             if(Array.isArray(actionObject)){
-                actionItem.textContent += '...' // this should be css. anyway, indicate that submenu is available.
+                actionItem.textContent += '...'
                 // event listener will be like this.appendActionList.call(actionItem, action)
             } else {
                 // createActionFor returns a function that mutates the LI and invokes function references by actionObject.func 
@@ -111,39 +116,49 @@ class MenuBlock extends ProtoBlock {
             let formNode = document.createElement('form')
             formNode.addEventListener('click', event => event.stopPropagation()) // capture form clicks so they don't fire "destroyMenu() higher up"
             // if you have actionObject.default it better be an array of functions with the same length as actionObject.args
-            Array.isArray(actionObject.args) && actionObject.args.forEach((argObject, argIndex) => {
-                let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
-                let argNode = document.createElement(formType)
-                formNode.appendChild(argNode)
-                switch(formType){
-                    case "input":
-                        argNode.setAttribute('placeholder', argObject[formType])
-                        argNode.setAttribute('tabIndex', 0)
-                        if(actionObject.default && actionObject.default[argIndex]){
-                            argNode.value = actionObject.default[argIndex](this) // pass context
-                        }
-                        break;
-                    case "label":
-                        argNode.textContent = `"${argObject[formType]}"`
-                        argNode.value = argObject[formType]
-                        break;
-                    case "select":
-                        argNode.setAttribute('tabIndex', 0)                    
-                        argObject[formType].forEach(argOption => {
-                            let optionNode = document.createElement('option')
-                            optionNode.setAttribute('value', argOption)
-                            optionNode.textContent = argOption
-                            argNode.appendChild(optionNode)
-                        })
-                        if(actionObject.default && actionObject.default[argIndex]){
-                            argNode.value = actionObject.default[argIndex](this) // pass context
-                        }
-                        break;
-                    default:
-                        console.error("Unrecognized form type", formType)
-                        
-                }                
-            })
+            // args can be an empty array if you want to do a double click to confirm situation
+            // but by default if there are no args then func is immediately called
+            if(Array.isArray(actionObject.args) == false){
+                // if there are no arguments, do the thing, return
+                return actionObject.func.call(this)
+            } else {
+                // otherwise we have to build a form and attach a new listener
+                actionObject.args.forEach((argObject, argIndex) => {
+                    console.log("THIS")
+                    console.log(this)
+                    let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
+                    let argNode = document.createElement(formType)
+                    formNode.appendChild(argNode)
+                    switch(formType){
+                        case "input":
+                            argNode.setAttribute('placeholder', argObject[formType])
+                            argNode.setAttribute('tabIndex', 0)
+                            if(actionObject.default && actionObject.default[argIndex]){
+                                argNode.value = actionObject.default[argIndex](this) // pass context
+                            }
+                            break;
+                        case "label":
+                            argNode.textContent = `"${argObject[formType]}"`
+                            argNode.value = argObject[formType]
+                            break;
+                        case "select":
+                            argNode.setAttribute('tabIndex', 0)                    
+                            argObject[formType].forEach(argOption => {
+                                let optionNode = document.createElement('option')
+                                optionNode.setAttribute('value', argOption)
+                                optionNode.textContent = argOption
+                                argNode.appendChild(optionNode)
+                            })
+                            if(actionObject.default && actionObject.default[argIndex]){
+                                argNode.value = actionObject.default[argIndex](this) // pass context
+                            }
+                            break;
+                        default:
+                            console.error("Unrecognized form type", formType)
+                            
+                    }                
+                })
+            }
             let closeSpan = document.createElement('span')
             closeSpan.textContent = ')'
             newMenuOption.appendChild(nameSpan)

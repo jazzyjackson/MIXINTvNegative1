@@ -3,27 +3,24 @@ class LibraryBlock extends ProtoBlock {
 
     static get actions(){
         return [
-            {
-                name: "download archive",
+            {"download archive": {
                 func: this.prototype.archive,
                 args: [{input: "pathname"}],
                 default: [ctx => ctx.getAttribute('src')],
                 info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
-            },
-            {
-                name: "new directory",
+            }},
+            {"new directory": {
                 func: this.prototype.mkdir,
                 args: [{input: "directory name"}],
                 default: [ctx => Date.now()],
                 info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
-            },
-            {
-                name: "new file",
+            }},
+            {"new file": {  
                 func: this.prototype.touch,
                 args: [{input: "filename"}],
                 default: [ctx => Date.now() + '.txt'],
                 info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
-            }
+            }}
         ]
     }
 
@@ -47,15 +44,7 @@ class LibraryBlock extends ProtoBlock {
         .catch(console.error)        
     }
 
-    get pathname(){
-        
-    }
-    
-    static get observedAttributes(){
-        return ['src']
-    }
-
-    static create(){
+    static build(){
         this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
         if(/\/$/.test(this.props.src) == false){
             // if directory block was initialized with a src that didn't end in a slash,
@@ -64,7 +53,7 @@ class LibraryBlock extends ProtoBlock {
             this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
             // /docs/utilities.csv becomes /docs/
         }
-        this.fetchDirectory(this.props.src)
+        this.fetchDirectory()
         .then(listText => {
             this.data = listText
             this.generateIcons()
@@ -96,23 +85,18 @@ class LibraryBlock extends ProtoBlock {
         return "file"
     }
 
-    fetchDirectory(pathname){ 
-        this.setAttribute('lastUpdate', Date.now())
-        /* ls -apl1
-        -a list all in directory(. and ..)
-        -p if file is directory add trailing slash
-        -l treat links to directories as directories
-        -1 one file per line */
-        let pathname = this.props.src.split('/')
-        return fetch(this.props.src + '?exec=ls&args=-apl1', {
-            method: 'post',
-            credentials: 'same-origin',
-            redirect: 'error'
+    fetchDirectory(){ 
+        this.props.lastUpdate = Date.now()
+        return this.postFetch(this.props.src + 'ls', {
+            /* 
+            -a list all in directory(. and ..)
+            -p if file is directory add trailing slash
+            -l treat links to directories as directories, or is this -d on ubuntu?
+            -1 one file per line 
+            */
+            args: '-ap1' 
         })
-        .then(response => {
-            this.dispatchEvent(new Event('load'))
-            return response.text()
-        })
+        .then(response => response.text())
     }
 
     fetchStat(pathname, filename){
@@ -255,6 +239,11 @@ class LibraryBlock extends ProtoBlock {
         // this is kind of a dumb hack to prevent any animations from starting from position left: 0
         // don't be visible until 'nextTick' of event loop, assuming any style applied via mutation observer get applied before starting an animation
     }
+    /*
+    OH YEAH that's what I was really sad I deleted
+    I'll have to remember this clever code where I think it was a sort of ternary, or a || || break through thing that lit up whether an rwx applied to you based on what group you're in and the ownership of that group. I don't know if it will ever look as good as when I first came up with it.
+
+    */
 
     octal2symbol(filestat){
         // bit shifting magic to extract read write execute permission for owner, group, and world

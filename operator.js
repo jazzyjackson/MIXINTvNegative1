@@ -3,17 +3,11 @@ let keymaker       = require('./keymaker')
 let bookkeeper     = require('./bookkeeper')
 let child_process  = require('child_process')
 
-if(process.env.DISABLE_SSL){
-    console.log("DISABLE_SSL is declared in this environment, ignoring key and cert files and starting server as HTTP.")
-} 
-console.log("using env", process.env)
-console.log("using path", process.env.PATH)
-
 var keycert = {
     key: '', // file path to key file
     cert: '', // file path to cert file
 }
-// if key and cert don't exist, trySSL returns false, server starts as HTTP
+/* if key and cert don't exist, trySSL returns false, server starts as HTTP */
 var SSL_READY = keymaker.trySSL(keycert)
 let switchboards = new Object
 /* check if private key and certificate were read properly and start server  */ 
@@ -22,9 +16,9 @@ require(SSL_READY ? 'https' : 'http')
 .on('request', async (request, response) => {
     await keymaker.identify(request, response)
 	if( request.profile.id == undefined ){
-        /* unauthenticated healthchecks are ok, but close the connection right away */
-        if(request.url == '/healthcheck') return response.end(JSON.stringify({health: "OK"}))
-        /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get an ANsid */
+        /* unauthenticated healthchecks are ok, but close the connection right away; this is mostly for AWS load balancers, which want 200 OK */
+        if(request.url == '/healthcheck') return response.end(JSON.stringify({age: process.uptime(), children: Object.keys(switchboards).length}))
+        /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get an magicurl */
         response.writeHead(302, { 'Location': keymaker.authRedirect })
         response.end()
     } else if(request.url.includes('ANsid=')){
@@ -111,7 +105,7 @@ function registerSwitch(request){
                         and I want to have these id # to be available for reference on the client side, these get baked into meta tags by figjam.js */
                     GIDS: child_process.execSync(`sudo -u ${request.profile.id} id -G`).toString().trim(),
                     UID: child_process.execSync(`sudo -u ${request.profile.id} id -u`).toString().trim(),
-                    // HOME: `/aubi/id/${request.profile.fullName || 'nobody'}`
+                    // HOME: `/id/${request.profile.fullName || 'nobody'}`
                 })
             }) // call for an switchboard on port 0, system will assign available port
             switchboard.stdout.on('data', port => {

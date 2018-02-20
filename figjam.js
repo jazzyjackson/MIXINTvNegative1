@@ -78,31 +78,32 @@ async function buildTemplateArray(guigraph){
          * - so getReadStreamOrNull resolves on 'readable' event when file exists, or 'error' if file doesn't exist. 
          * - If file didn't exist, promise resolves to null, so textContent is assigned to null, so nothing gets written to client response
          * */
-        names.push(tagName)
         // this could be done in parallel, but its a very fast 'file open' operation, not reading any bytes yet, so its not worth the complexity
         var js   = await getReadStreamOrNull(path.join(prefix, 'class.js'))
         var css  = await getReadStreamOrNull(path.join(prefix, 'style.css'))
         var html = await getReadStreamOrNull(path.join(prefix, 'template.html'))
+
+        if( js || css || html) names.push(tagName) /* push tagName to list if any of these files exist */
         
-        templates.push({"script": {
+        js && templates.push({"script": {
             "defines": tagName.camelify(),
             // pull source filename to clientside so I can retrieve and edit if desired, or just help someone find where this code comes from
-            "code": js && path.join(prefix, 'class.js'),
+            "code": path.join(prefix, 'class.js'),
             "textContent": js
         }})
-        templates.push({"template": {
+        css && templates.push({"template": {
             "styles": tagName.camelify(),
             "childNodes": [
                 {"style":{
                     // if css is not null, drop in the filename that is being streamed
-                    "code": css && path.join(prefix, 'style.css'),
+                    "code": path.join(prefix, 'style.css'),
                     "textContent": css
                 }}
             ]
         }})
-        templates.push({"template": {
+        html && templates.push({"template": {
             "marksup": tagName.camelify(),
-            "code": html && path.join(prefix, 'template.html'),
+            "code": path.join(prefix, 'template.html'),
             "textContent": html
         }})
         // Check that descendents property exists + is an Array 
@@ -204,10 +205,12 @@ module.exports = async function(request, response){
     // right now errors will get swallowed into promise purgatory
     var guiBlocks = await buildTemplateArray(guigraph)
     
-    var figTreeGenetics = {"script":{
+    var guigraphGlobal = {"script":{
         "id":"guigraph",
-        "textContent": `window.guigraph = JSON.parse(\`${JSON.stringify(guigraph).toLiteral()}\`)`
+        "textContent": `window.guigraph = JSON.parse(\`${JSON.stringify(guigraph).toLiteral()}\`)
+                        window.guinames = JSON.parse(\`${JSON.stringify(guiBlocks.names)}\`)`
     }}
+    
     
     var customElementRegistration = {"script":{
         "id": "element-registration",
@@ -223,7 +226,7 @@ module.exports = async function(request, response){
     //console.log()
 
     figTree.head.childNodes = figTree.head.childNodes.concat(environmentGlobal)
-                                                     .concat(figTreeGenetics)
+                                                     .concat(guigraphGlobal)
                                                      .concat(guiBlocks.templates)
                                                      .concat(customElementRegistration)
     // gets called recursively on JSON graph to stream markup to client, response object referenced here

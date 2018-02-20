@@ -1,11 +1,10 @@
 :host {
-  position: relative !important; /* pierce shadowroot what? */
+  position: relative;
   flex-direction: column;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  background: #f0f0f0;  
   clear: both;
   display: block;
   overflow: auto;

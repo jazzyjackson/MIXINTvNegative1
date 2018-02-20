@@ -1,4 +1,4 @@
-class EventioBlock extends ProtoBlock {
+class ActionioBlock extends ProtoBlock {
     /* The messages received from the server could be stdout from a shell command, or 
        JSON returned by a spider program. Any properties of that JSON will be set as
        attribute of this, and observedAttributes lists some special values associated with actions  */
@@ -6,13 +6,12 @@ class EventioBlock extends ProtoBlock {
 
     static get actions(){
         return [
-            {
-                name: "Send Signal",
+            {"Send Signal":{
                 func: this.prototype.sendSig,
                 args: [{select: ["HUP","INT","QUIT","ABRT","KILL","ALRM","TERM","CONT","STOP"]}],
                 default: [() => "KILL"],
                 info: "If the process has not exited on its own, this sends the selected signal to PKILL, targeting the pid of the current process."
-            }
+            }}
         ]
     }
 
@@ -26,43 +25,46 @@ class EventioBlock extends ProtoBlock {
                 }
             },
             {
-                observe: ['error'],
-                respond: function(errorMsg){
+                watch: ['error'],
+                react: function(attributeName, oldValue, newValue){
                     console.error(errorMsg)
                     console.error("EventSource connection closed by remote host, disconnecting")
                 }
             },
             {
-                observe: ["stdout"],
-                respond: function(newValue){
+                watch: ["stdout"],
+                react: function(attributeName, oldValue, newValue){
                     this.child["data-stdout"].textContent += this.tryJSON(newValue) || newValue
                 }
             },
             {
-                observe: ["stderr"],
-                respond: function(newValue){
+                watch: ["stderr"],
+                react: function(attributeName, oldValue, newValue){
                     this.child["data-stderr"].textContent += this.tryJSON(newValue) || newValue
                 }
             },
             {
-                observe: ["query","src"],
-                respond: function(newValue){
+                watch: ["query","src"],
+                react: function(attributeName, oldValue, newValue){
                     switch(this.props.target){
                         // if mode is continuous 
                         case 'beforebegin':
                         case 'beforeend':
                         case 'afterbegin':
                         case 'afterend':
-                            let adjacentElement = new this.constructor({
+                            this.shadowParent.insertAdjacentElement(this.props.target, new this.constructor({
                                 action: this.props.action,
                                 query: this.props.query
-                            })
-                            this.shadowParent.insertAdjacentElement(this.props.target, adjacentElement)
+                            }))
                         case 'parent':
                             this.subscribeToShell.call(this.shadowParent)
                         case 'self': /* self is default, but can be set explicitly if you want */
                         default:
-                            this.subscribeToShell.call(this)
+                            // create new one and replace this with it instead
+                            this.replaceWith(new this.constructor({
+                                action: this.props.action,
+                                query: this.props.query
+                            }))
                     }
                 }
             }
@@ -80,6 +82,8 @@ class EventioBlock extends ProtoBlock {
 
     
     static build(){
+        if(!this.props.action) this.props.action = 'bash' // if not instantiated with an action, default to bash
+        console.log("I look like", this)
         this.child['form'].addEventListener('submit', event => {
             this.props.query = this.child['input'].value // trigger query attribute observer
             this.child['input'].value = '' // reset input to blank
@@ -87,7 +91,8 @@ class EventioBlock extends ProtoBlock {
     }
 
     static destroy(){
-        this.sendSig('KILL')
+        console.log("actionio destroyed")
+        // this.sendSig('KILL')
     }
 
     sendSig(signal){

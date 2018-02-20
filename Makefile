@@ -7,8 +7,8 @@
 # sh adduser switchboard
 export DISABLE_SSL      := true
 export CHATSCRIPT       := /Users/colton.jackson/utilitybot/chatscript
-export POLYROOT         := $(shell pwd)
-export SPIDERROOT       := $(POLYROOT)/spiders
+export APPROOT         := $(shell pwd)
+export SPIDERROOT       := $(APPROOT)/spiders
 export PYTHONPATH       := $(SPIDERROOT)
 export PYTHONUNBUFFERED := true
 export BOT              := shelly
@@ -51,8 +51,8 @@ nokey:
 	env nokeyok=1 node operator
 
 buildbot: 
-	python $(POLYROOT)/spiders/labsdb/makeSpace.py
-	cp -r $(POLYROOT)/personalities/* $(CHATSCRIPT)/RAWDATA/
+	python $(APPROOT)/spiders/labsdb/makeSpace.py
+	cp -r $(APPROOT)/personalities/* $(CHATSCRIPT)/RAWDATA/
 	# send build command to chatscript
 	printf ":build $(BOT)" | node spiders/basic/interpret.js
 
@@ -60,7 +60,7 @@ bootchatscript:
 	# make ChatScript executable
 	chmod +x $(CHATSCRIPT)/BINARIES/$(ChatScriptExecutable)
 	# ChatScript should be started from within the chatscript directory, cd into it and then (;) start chatscript in the background (&)
-	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 logs=$(POLYROOT)/logs users=$(POLYROOT)/logs VPOLYROOT=$(POLYROOT) &
+	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 logs=$(APPROOT)/logs users=$(APPROOT)/logs VAPPROOT=$(APPROOT) &
 
 clean:
 	pkill $(ChatScriptExecutable)
