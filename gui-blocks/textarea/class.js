@@ -1,7 +1,7 @@
 class TextareaBlock extends ProtoBlock {
     constructor(props){super(props)}
 
-    static create(){
+    static build(){
         if(this.props.src && this.props.src.slice(-1) != '/'){
             this.fetchFile(this.props.src)
             // this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely edit the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
@@ -56,16 +56,15 @@ class TextareaBlock extends ProtoBlock {
     }
 
     rm(){
-        return fetch('/?' + encodeURIComponent(`rm ./${this.props.src}`), {
-            method: 'post',
-            credentials: 'same-origin',
-            redirect: 'error'
-        })
-        .then(()=>{
-            this.remove()
-            docu
-        }) // calling this.become with no argument re-creates / re-loads the current block from src
-        .catch(console.error)
+        // return fetch('/rm?' + encodeURIComponent(`${this.props.src}`), {
+        //     method: 'post',
+        //     credentials: 'same-origin',
+        //     redirect: 'error'
+        // })
+        // .then(()=>{
+        //     this.remove()
+        // }) // calling this.become with no argument re-creates / re-loads the current block from src
+        // .catch(console.error)
     }
 
     download(filename){

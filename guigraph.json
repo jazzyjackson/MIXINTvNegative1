@@ -2,7 +2,7 @@
     {"proto": {
         "active": true,
         "descendents": [
-            {"eventio": {
+            {"actionio": {
                 "active": true,
                 "descendents": [
                     {"speechio": false},

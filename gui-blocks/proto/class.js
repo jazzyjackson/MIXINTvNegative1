@@ -15,8 +15,8 @@ class ProtoBlock extends HTMLElement {
         }
         this.readyState = 'loading'
         this.superClassChain.forEach(superclass => {
-            if(superclass.hasOwnProperty('create')){
-                superclass.create.call(this)
+            if(superclass.hasOwnProperty('build')){
+                superclass.build.call(this)
             }
         })
         // if there is a src, be 'interactive' and wait until whatever function is responsible for loading it fires 'load'
@@ -35,7 +35,7 @@ class ProtoBlock extends HTMLElement {
 
 
     // called in order from proto -> descendant. When connected to the DOM, all the init functions are called, then all the ready functions are called
-    static create(){
+    static build(){
         /* not really static, always called with the context of actualy DOM node 
         /* but made static so it can be retrieved from class definition (returned in superclasschain) 
         /* ready sequence for all descendants of proto block 
@@ -273,8 +273,9 @@ class ProtoBlock extends HTMLElement {
                 case 'textContent':
                     node.textContent = value
                     break            
-                case 'addEventListeners':
+                case 'addEventListener':
                     for(var eventName in value){
+                        // could check if value[eventName] is an array of functions to add... 
                         node.addEventListener(eventName, value[eventName])
                     }
                     break
@@ -332,6 +333,8 @@ class ProtoBlock extends HTMLElement {
     // shouldn't be overridden in descendents, unless you really want to ignore inherited attribute change callbacks
 
     inspectOrModify(filename){
+        // i think it'll be cool to do a live edit on the style tag internal to the current node, but then save to the template
+        // at that point if you reinitialize anything that uses it, it'll update from new template
         let filepath = `gui-blocks/${this.tagName.toLowerCase().split('-')[0]}/${filename}`
         // TextBlock.from(filepath)
         // eventually CodeMirrorBlock
@@ -364,6 +367,7 @@ class ProtoBlock extends HTMLElement {
         return new Proxy(props, {
             set: (obj, prop, value) => {
                 value ? this.setAttribute(prop, value) : this.removeAttribute(prop)
+                return true
             },
             get: (target, name) => {
                 return this.getAttribute(name.toLowerCase())
@@ -497,16 +501,29 @@ class ProtoBlock extends HTMLElement {
         }
     }
 
-    postJSON(url, object){
-        return fetch(url, {
-            method: 'POST',
-            redirect: 'error',
+    postFetch(url, queryObject, bodyObject){
+        url = this.resolvePath(url) // get to the bottom of ../../. before anything else
+        /* form a blah=blah&so=on querystring from key value pairs */
+        var querystring = Object.keys(queryObject).map(key => {
+            var value = queryObject[key]
+            return encodeURIComponent(key) + '=' + encodeURIComponent(value)
+        }).join('&')
+
+        /* start out with some default options. error on redirect cuz that means no session */
+        var options = {
+            method: 'post',
             credentials: 'same-origin',
-            body: JSON.stringify(object),
-            headers: {
-                'Accept': 'application/json, text/plain, */*',
-                'Content-Type': 'application/json'
-            }
-        }).then(res => res.json())
+            redirect: 'error'
+        }
+
+        /* if bodyObject isn't undefined, add a JSON body to options */
+        bodyObject && Object.assign(options, {
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(bodyObject)
+        })
+        // could check type of bodyObject, only stringify it if its an object
+        // maybe if its bytes, raw int array or whatever, set content type appropriately
+        // probably reinventing axios or some other API.
+        return fetch(url + '?' + querystring, options)
     }
 }
