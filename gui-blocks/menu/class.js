@@ -118,47 +118,42 @@ class MenuBlock extends ProtoBlock {
             // if you have actionObject.default it better be an array of functions with the same length as actionObject.args
             // args can be an empty array if you want to do a double click to confirm situation
             // but by default if there are no args then func is immediately called
-            if(Array.isArray(actionObject.args) == false){
-                // if there are no arguments, do the thing, return
-                return actionObject.func.call(this)
-            } else {
-                // otherwise we have to build a form and attach a new listener
-                actionObject.args.forEach((argObject, argIndex) => {
-                    console.log("THIS")
-                    console.log(this)
-                    let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
-                    let argNode = document.createElement(formType)
-                    formNode.appendChild(argNode)
-                    switch(formType){
-                        case "input":
-                            argNode.setAttribute('placeholder', argObject[formType])
-                            argNode.setAttribute('tabIndex', 0)
-                            if(actionObject.default && actionObject.default[argIndex]){
-                                argNode.value = actionObject.default[argIndex](this) // pass context
-                            }
-                            break;
-                        case "label":
-                            argNode.textContent = `"${argObject[formType]}"`
-                            argNode.value = argObject[formType]
-                            break;
-                        case "select":
-                            argNode.setAttribute('tabIndex', 0)                    
-                            argObject[formType].forEach(argOption => {
-                                let optionNode = document.createElement('option')
-                                optionNode.setAttribute('value', argOption)
-                                optionNode.textContent = argOption
-                                argNode.appendChild(optionNode)
-                            })
-                            if(actionObject.default && actionObject.default[argIndex]){
-                                argNode.value = actionObject.default[argIndex](this) // pass context
-                            }
-                            break;
-                        default:
-                            console.error("Unrecognized form type", formType)
-                            
-                    }                
-                })
-            }
+            // otherwise we have to build a form and attach a new listener
+            Array.isArray(actionObject.args) && actionObject.args.forEach((argObject, argIndex) => {
+                console.log("THIS")
+                console.log(this)
+                let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
+                let argNode = document.createElement(formType)
+                formNode.appendChild(argNode)
+                switch(formType){
+                    case "input":
+                        argNode.setAttribute('placeholder', argObject[formType])
+                        argNode.setAttribute('tabIndex', 0)
+                        if(actionObject.default && actionObject.default[argIndex]){
+                            argNode.value = actionObject.default[argIndex](this) // pass context
+                        }
+                        break;
+                    case "label":
+                        argNode.textContent = `"${argObject[formType]}"`
+                        argNode.value = argObject[formType]
+                        break;
+                    case "select":
+                        argNode.setAttribute('tabIndex', 0)                    
+                        argObject[formType].forEach(argOption => {
+                            let optionNode = document.createElement('option')
+                            optionNode.setAttribute('value', argOption)
+                            optionNode.textContent = argOption
+                            argNode.appendChild(optionNode)
+                        })
+                        if(actionObject.default && actionObject.default[argIndex]){
+                            argNode.value = actionObject.default[argIndex](this) // pass context
+                        }
+                        break;
+                    default:
+                        console.error("Unrecognized form type", formType)
+                        
+                }                
+            })
             let closeSpan = document.createElement('span')
             closeSpan.textContent = ')'
             newMenuOption.appendChild(nameSpan)
