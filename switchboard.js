@@ -1,9 +1,9 @@
 #!/usr/local/bin/node
 process.platform.includes('win32') && process.exit(console.log("*nix please"))
 var child      = require('child_process')
-var wireworker = require('./wireworker') // returns a class definition, must be called with new
-var keymaker   = require('./keymaker') // returns a new instance, keymaker is a class instance
-var figjam     = require('./figjam')
+var wireworker = require('./imports/wireworker') // returns a class definition, must be called with new
+var keymaker   = require('./imports/keymaker') // returns a new instance, keymaker is a class instance
+var figjam     = require('./imports/figjam')
 var path       = require('path')
 var fs         = require('fs')
 var os         = require('os')
@@ -45,6 +45,8 @@ require(SSL_READY ? 'https' : 'http')
 /************************************* Function definitions to fulfill requests **************************************/
 
 function makeChild(request, response){
+    // future functionality should include a register of ongoing processes
+    // (or is that operator level responsibility? should one identity be able to subscribe to another identities processes? no... I think you should start the proess for yourself, say if you want to tail -f a file, make a new pid...)
     return new wireworker(request, response)
 }
 
@@ -53,6 +55,7 @@ function makeRSS(request, response){
     // if current user has permission to read. so this should expose file mode like OPTIONS does
     response.setHeader('Content-Type', 'application/rss+xml')
     // /feed/rss were the last 2 url parts, pathname is everything up to that.
+    // might be imports/makeRSS.js, fs.listdir -> xml
     response.end('nothing to see here (yet)')
 }
 

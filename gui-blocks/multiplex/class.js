@@ -1,12 +1,22 @@
 class MultiplexBlock extends ProtoBlock {
-    constructor(props){
-        super(props)
-        console.log('constructing multiplex')
-        this.dimensionProp = screen.orientation.type.includes('landscape') ? 'width' : 'height'
-        this.positionProp  = screen.orientation.type.includes('landscape') ? 'left'  : 'top'
+    constructor(props){super(props)}
+
+    static get actions(){
+        // update max show
+    }
+
+    static get reactions(){
+        return [
+            {
+                watch: ['show-start','show-max'],
+                react: this.reCalculateChildren.bind(this)
+            }
+        ]
     }
 
     static build(){
+        this.dimensionProp = screen.orientation.type.includes('landscape') ? 'width' : 'height'
+        this.positionProp  = screen.orientation.type.includes('landscape') ? 'left'  : 'top'
         /* hoist child nodes of custom element INTO the shadowRoot of this */
         // my version of slotting. Should I be using slots for this? 
         // if the only childElement is the style, append a couple of become-blocks
@@ -80,15 +90,6 @@ class MultiplexBlock extends ProtoBlock {
         })
     }
 
-    static get observedAttributes(){
-        return ['show-start','show-max']
-    }
-
-    attributeChangedCallback(){
-        console.log("attribute recalc")
-        this.reCalculateChildren()
-    }
-
     // reCalculateChildren defined by subclasses, vsplit, hsplit, fibonacciplex
     get familysize(){
         /* ignore stylesheets in number of children */
@@ -112,6 +113,12 @@ class MultiplexBlock extends ProtoBlock {
     get showMax(){
         return parseInt(this.getAttribute('show-max'))
     }
+
+    whatChildIsThis(node){
+        /* if node is child of component, return the array index, else -1 */
+        return Array.from(this.shadowRoot.children).indexOf(node)
+    }
+
 
     reCalculateChildren(){
         /* could be multiple styles, next child is title-block, so styleCount + 1 */

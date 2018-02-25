@@ -384,46 +384,20 @@ class ProtoBlock extends HTMLElement {
         setTimeout(()=>node.focus())
     }
 
-    whatChildIsThis(node){
-        /* if node is child of component, return the array index, else -1 */
-        return Array.from(this.shadowRoot.children).indexOf(node)
-    }
-
     resolvePath(pathname){
-        pathname = pathname.trim() // go ahead and get rid of excess whitespace
-        /* just does transforms like 
-            /../../docs/ => /docs/
-            /docs/././downloads/ => /docs/downloads/
-            /docs/../ => /
-        It does so by splitting pathname into parts and iterating over the array
-        for each part, I do a look ahead: 
-            if next part is .., mark this one for deletion (unless its the first part, or this would destroy the leading slash)
-            if this part is .., mark for deletion
-            if this part is ., mark for deletion
-            otherwise leave it alone
-        So "mark" is just "push 'true' to bitmask" which will be used to filter it at the end
-        */
-        let pathParts = pathname.split('/')
-        /* this tilde handling could be upgraded to handle paths relative to tilde
-           but for now I just want the tilde to be a shortcut back to home */
-        /* if pathname is undefined also return document home */
-        if(pathname == '' || pathname == 'undefined' || pathParts.filter(Boolean).slice(-1) == '~'){
-            return env.home + '/'
+        let pathParts = pathname.trim().split('/')
+        // drop any path parts before a tilde, they're irrelevant, and prepend as HOME variable at the front of the array
+        if(pathParts.includes('~')){
+            while(pathParts.includes('~')) pathParts.shift()
+            pathParts.unshift(window.env.HOME)
         }
-        
+        // flag collapsible pathParts for deletion
         let bitmask = pathParts.map((part, index) => {
-            return pathParts[index + 1] == '..' && index != 0
-            || part == '..'
-            || part == '.'
+            // any parts followed by '..', any '..', and any '.' can be dropped from the path, this is a little logic expression to that
+            return (pathParts[index + 1] == '..' & index != 0 | part == '..' | part == '.')
         })
-        // bit mask will be like [false, true, true, false], the true values are the ones we want to filter out, so !invert the bitmask
+        // the true values are the ones we want to filter out, so !invert the bitmask
         return pathParts.filter((e,i) => !bitmask[i]).join('/')
-    }
-
-    object2query(object){
-        return '?' + Object.keys(object)
-                           .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(object[key])}`)
-                           .join('&')
     }
 
     object2node(object){
@@ -483,7 +457,6 @@ class ProtoBlock extends HTMLElement {
         return this.shadowRoot.querySelectorAll(selector)
     }
 
-    
     get readyState(){
         return this._readyState
     }
@@ -499,31 +472,5 @@ class ProtoBlock extends HTMLElement {
         } catch(e) {
             return string
         }
-    }
-
-    postFetch(url, queryObject, bodyObject){
-        url = this.resolvePath(url) // get to the bottom of ../../. before anything else
-        /* form a blah=blah&so=on querystring from key value pairs */
-        var querystring = Object.keys(queryObject).map(key => {
-            var value = queryObject[key]
-            return encodeURIComponent(key) + '=' + encodeURIComponent(value)
-        }).join('&')
-
-        /* start out with some default options. error on redirect cuz that means no session */
-        var options = {
-            method: 'post',
-            credentials: 'same-origin',
-            redirect: 'error'
-        }
-
-        /* if bodyObject isn't undefined, add a JSON body to options */
-        bodyObject && Object.assign(options, {
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(bodyObject)
-        })
-        // could check type of bodyObject, only stringify it if its an object
-        // maybe if its bytes, raw int array or whatever, set content type appropriately
-        // probably reinventing axios or some other API.
-        return fetch(url + '?' + querystring, options)
     }
 }

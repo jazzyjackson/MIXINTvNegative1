@@ -210,10 +210,6 @@ class ShelloutBlock extends ProtoBlock {
         })
     }
 
-    object2query(object){
-
-    }
-
     get propsAsQuery(){
         var object = this.props
         return '?' + Object.keys(object)

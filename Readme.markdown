@@ -1,10 +1,12 @@
-# Poly-Int
-## Polymorphic Interface
+# Mixin Interface
 
-### An extensible and remixable space for cooperating with your network.
+### Mixin't
+( Mik sē ənt )
+
+### An extensible and remixable space for cooperating with your network (with superpowers)
 
 Cooperating may include:
-- Uploading and modifying media on a shared, versioned filesystem
+- Sharing and modifying media on a versioned filesystem
 - Communicating in chatrooms of your own design
 - Building applications and artwork for yourself and others
 
@@ -12,20 +14,44 @@ Your network may include:
 - co-workers and acquaintences
 - transoceanic fiber optics
 - close friends and family
-- chatbot personalities that control computers
 - your local wifi router
+- chatbot personalities that control computers (see convolos.xyz)
 
-Poly-Int is composed of 3 core programs: Switchboard, Operator, and Figjam. Additional functionality is implemented as executables in the _spiders_ directory. 
+Superpowers include:
++ Every file you create or upload can be immediatelly linked
++ create new web components that inherit features from existing blocks
++ any program you write can be called as a REST API
+- any folder on the system can be subscribed to via RSS
+- hot-editing and overwriting stylesheets of any web component
+- options to keep directories and message boards encrypted on disk
+- public key cryptography used to authenticate who created or shared a particular file
+- highly detailed statistics on file and program access + server performance
+- components provided for sharing media playlists, podcast subscriptions, markdown & latex documents, and chatbot interfaces
+- notes, conversations, and web / search traffic can be packaged in a git repository to track all activity involved in a project
+- potentially even the raw data from a/v calls, or compressed to annotated transcripts + expression landmarks can be tracked in a project
+- I really like the possibility of having a call, getting it transcribed, having the opportunity to correct the auto scribe, and then everyone on the call can sign in with their private key to say "I agree that the contents of this transcript are accurate" 
+
+Mixin't is composed of 2 core programs: Switchboard, Operator. Additional functionality is implemented as executables in the _spiders_ directory. 
+
+
 
 ### Switchboard: 
-Switchboard.js is a lightweight node server that provides wide open system access. Make GET requests to download any file on disk, make POST requests to execute shell commands, make PUT requests to upload files, make DELETE requests to delete files. Additionally, you can subscribe to shell commands via server-sent events. Your clientside inteface can attach a callback to events fired every time the invoked program writes to stdio.
+Switchboard.js is a lightweight node server that provides wide open system access. Make GET requests to download any file on disk, make POST requests to execute shell commands, make PUT requests to upload files, make DELETE requests to delete files. Additionally, you can subscribe to shell commands via server-sent events. Your clientside inteface can attach a callback to events fired every time the invoked program writes to stdio. This is meant to facilitate writing novel interfaces with a very short distance to machine access, so you can write programs in any language and pipe the results directly to the web.
+
+__lib/wireworker.js__ is used by Switchboard to launch child processes, and includes a stream transform to format server sent events if requested, or simply pipe stdout to the response object otherwise.
+
+__lib/figjam.js__ is used by Switchboard to stream a requested workspace to the client. configs/guigraph.json is used to open html, css, and js files and deliver the application in a single request.
 
 ### Operator:
-Operator.js is a supervisor node server that provides authentication and system monitoring. The opeartor acts as a reverse-proxy and is able to inspect all requests that are passed on to switchboards for fulfillment. Access control is passed on as much as possible to the underlying *nix operating system. Useradd and groupadd commands are run by the operator to create accounts that can only get/post/put/delete in directories they're meant to access; the switchboard that fulfills each request runs with the `uid` of that user. If a request attempts to, for example, delete system files, *nix will throw an error and the error will be passed back to the client. 
+Operator.js is a supervisor node server that provides authentication and system monitoring. The opeartor acts as a reverse-proxy and is able to inspect all requests that are passed on to switchboards for fulfillment. Access control is passed on as much as possible to the underlying *nix operating system. Useradd and groupadd commands are run by the operator to create accounts that can only get/post/put/delete in directories they're meant to access; the switchboard that fulfills each request runs with the `uid` of that user. If an unpriveledged request attempts to, for example, delete system files, *nix will throw an error and the error will be passed back to the client. 
 
-__Keymaker.js__ and __Bookkeeper.js__ are libraries for use by the operator. Keymaker contains the functions for checking and setting cookies, bookkeeper exports stream transform functions that allow for logging details about every request made to the operator.
+__lib/keymaker.js__ contains the functions for checking and setting cookies, as well as creating keys to give access to all identities.
 
-### Figjam, GUI-Blocks, and GUIGraph
+__lib/bookkeeper.js__ exports stream transform functions that allow for logging details about every request made to the operator.
+
+
+
+### Figjam, Guigraph, and Guiblocks
 Figjam, short for Configuration Jam, reads a nested JSON graph and streams HTML to a client. The configuration graph (or 'figtree') includes a heirarchy of web components - javascript classes that inherit capabilities. A simple textarea class provides methods for overwriting a file and toggling word-wrap, and a table class extends it by loading a csv parsing library and transforming the plain text into an editable html table.
 
 Switchboard and Operator can be used as a REST API to run programs in the spiders directory, and could provide a back-end to any number of interfaces - just drop an index.html in the root of this repository and make a GET request to serve it. 
@@ -183,3 +209,24 @@ requires rebuilding, but becomes part of pre-volley vocabuluary (language parsin
 
 transient (temporary) facts loaded per volley, get loaded after the language parsing
 you can define concepts with fact triples (word member concept), but they have to be permenant facts to be involved in language parsing
+
+Ad Copy
+mixin intrigue
+mixin intimacy
+mixin intention
+mixin intuition
+mixin interplay
+mixin intricacy
+mixin interludes
+mixin intrusions
+mixin interviews
+mixin integration
+mixin intangibles
+mixin intelligence
+mixin interference
+mixin introductions
+mixin intersections
+mixin interjections
+mixin interventions
+mixin introspections
+mixin interpretation

@@ -1,2 +1,0 @@
-RAWDATA/shelly/
-RAWDATA/QUIBBLE/

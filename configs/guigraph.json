@@ -1,6 +1,7 @@
 [
     {"proto": {
         "active": true,
+        "mixin": ["kvetch/kvetch.js"],
         "descendents": [
             {"actionio": {
                 "active": true,
@@ -13,6 +14,7 @@
             {"become": true},
             {"library":{
                 "active": true,
+                "mixin": ["libras3/mixin.js","librassh/mixin.js"],
                 "descendents": [
                     {"textarea": {
                         "active": true,
@@ -51,9 +53,7 @@
                     }}
                 ]
             }},
-            {"menu": {
-                "becomable": false
-            }},
+            {"menu": true},
             {"status": false},
             {"multiplex":{
                 "active": true,

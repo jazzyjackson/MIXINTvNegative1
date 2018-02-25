@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const util = require('util')
-const appRoot = process.env.AUBIHOME || '.' 
+const appRoot = process.env.APPROOT || process.cwd() // I wish this was, like, /usr/bin or something
 
 // resolve after serially resolving promises, unlike Promise.all which executes in parallel
 // used for Depth First recursion on reading graphs of dependencies, async opening files
@@ -33,7 +33,7 @@ let getReadStreamOrNull = filename => new Promise(resolve => {
 })
 /* try to read and parse files in /figs/ directory, or return failure object */
 let parseFig = filename => new Promise(resolve => {
-    fs.readFile(path.join(appRoot, 'figs', filename), (readErr, data) => {
+    fs.readFile(path.join(appRoot, 'figtrees', filename), (readErr, data) => {
         if(readErr){
             resolve({failure: readErr})
         } else try { 
@@ -51,8 +51,6 @@ async function buildTemplateArray(guigraph){
     /* top level of guigraph.json is a json array like 
      * [
      *   { proto: {descendents: [...]},
-     *   { menu: true}
-     *   { multiplex: {descendents: [...]}}
      * ]
      * And to get ready to stream files we need to open files, an async operation
      * So this recurses over the descendents properties, opens files if they exist,
@@ -74,7 +72,7 @@ async function buildTemplateArray(guigraph){
         if(attrObj == false || attrObj.active == false) return null 
         /* - Not every gui-block has js, css, and html associated with it. It may simply be a class.js other blocks inherit from
          * - Responding to asynchronous error events when the file didn't exist was a problem, 
-         *   and Node.js docs recommend responding to error instead of performaing fs.stat to check if a file exists
+         *   and Node.js docs recommend responding to error instead of performaing fs.stat to check if a file exists (Easier to ask for forgiveness than permission, see EAFP vs LBYL)
          * - so getReadStreamOrNull resolves on 'readable' event when file exists, or 'error' if file doesn't exist. 
          * - If file didn't exist, promise resolves to null, so textContent is assigned to null, so nothing gets written to client response
          * */
@@ -133,17 +131,22 @@ async function streamNodes(nodeDescription){
     /* write opening tag */
     this.write(`<${tagName}${attributes}>`)
     /* - if tag name was on the list of void elements, this gets skipped and the next node is streamed
-     * - if you used one of these reserved words for a custom element in guigraph.json, the file won't be read but will be kept open, so don't.
+     * - if you used one of these reserved words for a custom element in guigraph.json, the file won't be read but will be kept open, so don't do it.
      * - textContent for templates will be readStreams via fs.createReadStream
-     * - 
+     * - but its also possible that a figtree included a hardcoded textContent, so fall back to writing 
      * */
-    if(!voidElements.includes(tagName)){
+    if(voidElements.includes(tagName) == false){
         await new Promise(resolve => {
             if(!attrObj.textContent){                
-                resolve() 
+                resolve() /* fine, nothing to do if there's no textContent, resolve */
             } else if(attrObj.textContent.pipe){
+                /* - if it ain't falsey, it's a string or stream, but as long as its not null/undefined,
+                 * - we can safely check if pipe is a method and assume that if it is, we're dealing with a readstream
+                 * - calling pipe will feed the bytes from the file to the response stream, direct to client, resolving & moving to the next file on 'end'
+                 * */
                 attrObj.textContent.on('end', resolve).pipe(this, {
-                    end: false /* resolve when textContent is done, but don't end the response */
+                    /* resolve when textContent is done writing, but don't close the response stream being piped TO, there's more work to do */
+                    end: false 
                 })
             } else {
                 this.write(attrObj.textContent, resolve)                
@@ -161,7 +164,7 @@ async function streamNodes(nodeDescription){
 module.exports = async function(request, response){
     // parse URL for fig path. localhost:3000/figs/aubibrain will return an admin panel, /figs/unkown will return error message, no figs will return default.json
     var urlParts = request.url.split('/')
-    var figIndex = urlParts.indexOf('figs') + 1
+    var figIndex = urlParts.indexOf('figs') + 1 || urlParts.indexOf('figtrees') + 1
     // if figs wasn't an url component, indexOf returns -1, +1 becomes 0, which is falsey, 
     // so figName <- default, otherwise use url component to the rights of /figs/
     var figName = figIndex ? urlParts[figIndex] : 'default'
@@ -183,23 +186,16 @@ module.exports = async function(request, response){
             "textContent": `window.env = JSON.parse(\`${JSON.stringify(process.env).toLiteral()}\`)`
         }
     }
-    /* guiBlockTemplates is going to be an array of {template: {textContent}} objects, where textContent is actually a readStream */
-    /* so you've got an array containing many (like 50 or so) read streams that will be resolved as file content is piped to client */
-
-    //console.log(guiBlockTemplates)
-
-    // guiBlocks.names
-    // guiBlocks.nodeDescriptions
+    /* guiBlockTemplates is going to be an array of {template: {textContent}} objects, where textContent is actually a readStream
+     * so you've got an array containing many (like 50 or so) read streams that will be resolved as file content is piped to client
+     * * */
 
     var guigraph = await new Promise(resolve => {
-        fs.readFile(path.join(appRoot, 'guigraph.json'), (err, data) => {
+        fs.readFile(path.join(appRoot, 'configs', 'guigraph.json'), (err, data) => {
             resolve(JSON.parse(data.toString()))
         })
     })
 
-    console.log("GUIGRAPH")
-    console.log(guigraph)
-        
     // could perform consistency check here if I wanted to have useful error messages
     // make sure top level is an array, make sure I can descend the tree and not run into anything unexpected...
     // right now errors will get swallowed into promise purgatory
@@ -208,7 +204,7 @@ module.exports = async function(request, response){
     var guigraphGlobal = {"script":{
         "id":"guigraph",
         "textContent": `window.guigraph = JSON.parse(\`${JSON.stringify(guigraph).toLiteral()}\`)
-                        window.guinames = JSON.parse(\`${JSON.stringify(guiBlocks.names)}\`)`
+                        window.guinames = JSON.parse(\`${JSON.stringify(guiBlocks.names).toLiteral()}\`)`
     }}
     
     
