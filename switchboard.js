@@ -1,5 +1,5 @@
 #!/usr/local/bin/node
-process.platform.includes('win32') && process.exit(console.log("*nix please"))
+process.platform.includes('win32') && process.exit(console.log("unix please"))
 var child      = require('child_process')
 var wireworker = require('./imports/wireworker') // returns a class definition, must be called with new
 var keymaker   = require('./imports/keymaker') // returns a new instance, keymaker is a class instance
@@ -21,21 +21,21 @@ var MIMEtypes = JSON.parse(fs.readFileSync('mimemap.json'))
 /* check if private key and certificate were valid, start server either way */
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)
-.on('request', function(req,res){ /* ternary tests conditions until success */
-    /* GET requests made from new EventSource (Server Sent Events)          */
+.on('request', function(req,res){ /* ternary tests conditions until success */ 
+    /* get requests made from new EventSource (Server Sent Events)          */
     /event-stream/.test(req.headers.accept)           ? makeChild(req,res)   :
     /* /feed/rss appended to any path will return entries as xml            */
     /\/feed\/rss$/.test(req.url)                     ? makeRSS(req,res)     :
     /* GET requests with trailing slash before optional query string        */
     /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)      :
     req.method == 'POST'                              ? makeChild(req,res)   :
-    req.method == 'OPTIONS'                           ? sendStat(req,res)    :
+    req.method == 'OPTIONS'							  ? sendStat(req,res)    :
     req.method == 'GET'                               ? streamFile(req,res)  :
     req.method == 'PUT'                               ? saveBody(req,res)    :
     req.method == 'DELETE'                            ? deleteFile(req,res)  :
     res.end(req.method + ' ' + req.url + " Doesn't look like anything to me");
 })
-.listen(serverPort)
+.listen(process.argv[2] || 0)
 .on('listening', function(){ 
     console.log(this.address().port) 
     console.log("Started switchboard on port", this.address().port) 

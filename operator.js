@@ -21,7 +21,7 @@ require(SSL_READY ? 'https' : 'http')
         /* if keymaker was unable to identify a request, redirect to prescribed location, presumably a place they can get an magicurl */
         response.writeHead(302, { 'Location': keymaker.authRedirect }) /* this can fail in pretty mysterious ways if authRedirect isn't a valid address */
         response.end()
-    } else if(request.url.includes('magicurl=')){
+    } else if(request.url.includes('ANsid=')){
         /* if a request has an identity but also has magicurl in its querystring, 
          * redirect to requested pathname minus the query string - entirely cosmetic */
         response.writeHead(302, { 'Location': request.url.split('?')[0] })
