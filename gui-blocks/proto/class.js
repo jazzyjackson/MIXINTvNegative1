@@ -85,27 +85,24 @@ class ProtoBlock extends HTMLElement {
     static get actions(){
         return [
             {"remove from window": {
-                filter: false, // could check how many children there are, if there's only one, don't allow removing
                 func: HTMLElement.prototype.remove,
                 info: "Calls this.remove()"
             }},
             {"become": {
-                filter: false,                
                 func: this.prototype.become,
-                args: [{select: this.becomeable}],
+                args: [{select: window.guinames}],
                 default: [ctx => ctx.tagName.split('-')[0].toLowerCase()],
                 info: "Instantiates a new node of the selected type, copying all attributes from this node to the new one."
             }},
             {"inspect or modify": {
                 filter: false,                
                 func: this.prototype.inspectOrModify,
-                args: [{select: ["style.css","class.js","template.html"]}, {select: this.becomeable}],
+                args: [{select: ["style.css","class.js","template.html"]}, {select: window.guinames}],
                 default: [() => "style.css", ctx => ctx.tagName.split('-')[0].toLowerCase()]
             }},
             {"add sibling": {
-                filter: false,
                 func: this.prototype.insertSibling,
-                args: [{select: this.becomeable} ],
+                args: [{select: window.guinames} ],
                 default: [() => "become"]
             }}
             // nested options should be possible,
@@ -385,6 +382,7 @@ class ProtoBlock extends HTMLElement {
     }
 
     resolvePath(pathname){
+        if(!pathname) return ''
         let pathParts = pathname.trim().split('/')
         // drop any path parts before a tilde, they're irrelevant, and prepend as HOME variable at the front of the array
         if(pathParts.includes('~')){

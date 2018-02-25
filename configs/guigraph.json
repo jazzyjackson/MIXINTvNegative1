@@ -1,7 +1,7 @@
 [
     {"proto": {
         "active": true,
-        "mixin": ["kvetch/kvetch.js"],
+        "mixin": ["mixins/kvetch.js/kvetch.js"],
         "descendents": [
             {"actionio": {
                 "active": true,

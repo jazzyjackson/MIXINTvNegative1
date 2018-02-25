@@ -1,3 +1,8 @@
+/* must run inside a shell with expected utilities like groupadd and useradd and ls and all that */
+process.platform.includes('win32') && process.exit(console.log("unix please"))
+/* must have an APPROOT set so everyone knows where to look */
+process.env.APPROOT = process.env.APPROOT || process.cwd()
+
 let http           = require('http') 
 let keymaker       = require('./imports/keymaker')
 let bookkeeper     = require('./imports/bookkeeper')
@@ -98,18 +103,13 @@ function registerSwitch(request){
                 '-u', /* execute switchboard as another user */
                 request.profile.id, /* this user, as a matter of fact */
                 './switchboard.js', /* this file runs as a standalone executable */
-                '0'],{ /* pass 0 to switchboard to request unallocated local port */
+                ],{ 
                 env: Object.assign(request.profile, {
-                    DISABLE_SSL: true,
-                    PYTHONUNBUFFERED: true,
+                    PORT: 0, /* pass 0 to switchboard to request unallocated local port */
                     BOT: process.env.BOT,
                     PATH: process.env.PATH, // PATH gets overwritten by sudo path ??
                     FULLNAME: request.profile.fullName,
                     APPROOT: process.env.APPROOT,
-                    /* hate to block the thread for a millisecond here, but this only happens when a new server is established,
-                        and I want to have these id # to be available for reference on the client side, these get baked into meta tags by figjam.js */
-                    GIDS: child_process.execSync(`sudo -u ${request.profile.id} id -G`).toString().trim(),
-                    UID: child_process.execSync(`sudo -u ${request.profile.id} id -u`).toString().trim(),
                     // HOME: `/id/${request.profile.fullName || 'nobody'}`
                 })
             }) // call for an switchboard on port 0, system will assign available port
@@ -139,7 +139,7 @@ function registerSwitch(request){
 }
 
 // use 4444 for internal or debugging use, right now it will run on root so keymaker and chatscript can access and run things unrestricted - would be nice to lock that down in the future.
-let internalServer = child_process.spawn('./switchboard.js', ['4444'])
+let internalServer = child_process.spawn('./switchboard.js', [], {env: {PORT: 4444}})
 internalServer.stdout.pipe(process.stdout)
 internalServer.stderr.pipe(process.stderr)
 internalServer.on('error', console.error)

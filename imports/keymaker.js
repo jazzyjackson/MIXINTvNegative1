@@ -1,8 +1,10 @@
+let path = require('path')
 /* authorization is two step: magicurl -> valid session?; magiculr -> identity profile */
 /* only the first call is necessary for every request, seshcache keeps a local copy of the identity profile to avoid making unneccessary API calls */
-const seshcache = {} 
+const seshcache = {}
+const appRoot = process.env.APPROOT || process.cwd()
 // read file sync, blocking, happens once at start up
-const keyconfig = JSON.parse(require('fs').readFileSync("keyconfig.json").toString())[process.env.sso || 'localhost']
+const keyconfig = JSON.parse(require('fs').readFileSync(path.join(appRoot,'configs','keyconfig.json')).toString())[process.env.sso || 'localhost']
 
 const agent = require(keyconfig.protocol) /* will be http OR https for SSO agent - tho http is prone to eavesdropping ofc */
 

@@ -24,36 +24,25 @@ class LibraryBlock extends ProtoBlock {
         ]
     }
 
-    mkdir(dirname){
-        return fetch(this.props.src + '?exec=mkdir&args=' + encodeURIComponent(dirname), {
-            method: 'post',
-            credentials: 'same-origin',
-            redirect: 'error'
-        })
-        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
-        .catch(console.error)
-    }
-
-    touch(filename){
-        return fetch(this.props.src + '?exec=touch&args' + encodeURIComponent(filename), {
-            method: 'post',
-            credentials: 'same-origin',
-            redirect: 'error'
-        })
-        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
-        .catch(console.error)        
-    }
-
     static build(){
-        this.setAttribute('src', this.resolvePath(this.props.src || '/'))                        
+        this.props.src = this.resolvePath(this.props.src) || '/'
+        this.child['header-title'].textContent = this.props.src
+        this.props.lastUpdate = Date.now()
+        
         if(/\/$/.test(this.props.src) == false){
-            // if directory block was initialized with a src that didn't end in a slash,
+            // if library block was initialized with a src that didn't end in a slash,
             // find the index of the last slash and slice everything else off
             var lastSlashIndex = this.props.src.split('').reverse().join('').indexOf('/')
-            this.setAttribute('src', this.props.src.slice(0, -lastSlashIndex))
+            this.props.src = this.props.src.slice(0, -lastSlashIndex)
             // /docs/utilities.csv becomes /docs/
         }
-        this.fetchDirectory()
+        /* -a list all in directory(. and ..)
+         * -p if file is directory add trailing slash
+         * -l treat links to directories as directories, or is this -d on ubuntu?
+         * -1 one file per line 
+         * * */
+        kvetch.post(this.props.src + 'ls', {args: '-ap1'})
+        .then(response => response.text())
         .then(listText => {
             this.data = listText
             this.generateIcons()
@@ -85,32 +74,8 @@ class LibraryBlock extends ProtoBlock {
         return "file"
     }
 
-    fetchDirectory(){ 
-        this.props.lastUpdate = Date.now()
-        return this.postFetch(this.props.src + 'ls', {
-            /* 
-            -a list all in directory(. and ..)
-            -p if file is directory add trailing slash
-            -l treat links to directories as directories, or is this -d on ubuntu?
-            -1 one file per line 
-            */
-            args: '-ap1' 
-        })
-        .then(response => response.text())
-    }
-
-    fetchStat(pathname, filename){
-        // send options request for this file, get ownership/permission/size/a/c/mtime/etc back as JSON
-        return fetch(encodeURIComponent(pathname + filename), {
-            method: 'options',
-            credentials: 'same-origin',
-            redirect: 'error'
-        })
-        .then(response => response.json())
-    }
-
     makeMarkup(props){
-        return `<file-block tabindex="0" filetype="${props.type}" title="${props.name}">
+        return `<file-block tabindex="0" content-type="${props.contentType}" title="${props.name}">
                     <file-icon></file-icon>
                     <file-name>${props.name}</file-name>
                 </file-block>`
@@ -124,11 +89,11 @@ class LibraryBlock extends ProtoBlock {
     generateIcons(){
         let folders = this.data.split('\n')
             .filter(name => name.slice(-1) == '/') // filter out anything thats not a directory
-            .map(name => this.makeMarkup({type: "directory", name: name.slice(0,-1)}))
+            .map(name => this.makeMarkup({contentType: "application/library", name: name.slice(0,-1)}))
 
         let files = this.data.split('\n')
             .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => this.makeMarkup({type: this.determineFileType(name), name: name}))
+            .map(name => this.makeMarkup({contentType: "text/plain", name: name})) // text/plain by default... once you STAT you'll get the mime... or I could load mimes client side?
         
         // setting text of HTML creates subtree
         this.child['file-list'].innerHTML = folders.concat(files).join('\n')
@@ -156,6 +121,7 @@ class LibraryBlock extends ProtoBlock {
     }
 
     insertFileDetail(node){
+        // this should grab a template and fill in via data binding... someday someday
         // if there's already a file-detail element, destroy it.
         let oldFileDetail = this.child['file-list'].querySelector('file-detail')
         oldFileDetail && oldFileDetail.remove()
@@ -198,7 +164,8 @@ class LibraryBlock extends ProtoBlock {
             if(node.getAttribute('ino')){
                 resolve()
              } else {
-                this.fetchStat(this.props.src, node.getAttribute('title'))
+                kvetch.options(this.props.src + node.getAttribute('title'))
+                .then(response => response.json())
                 .then(stat => {
                     for(var item in stat){
                         node.setAttribute(item, stat[item])
@@ -207,35 +174,17 @@ class LibraryBlock extends ProtoBlock {
                 .then(resolve)
             }
         })
-
-    }
-
-    get blockFromFileType(){
-        /* this is probably not great. Blocks should register themselves to a global map */
-        /* I am a codemirror block and I am for code files */
-        /* I am a video block and I am for videos */
-        return {
-            directory: DirectoryBlock,
-            table: TableBlock,
-            // image: ImageBlock,
-            // audio: AudioBlock,
-            // video: VideoBlock,
-            file: TextareaBlock,
-            markdown: ShowdownBlock,
-            code: CodemirrorBlock,
-            // geometry: TextareaBlock
-        }
     }
 
     openFileFrom(node){
-        var trailingSlash = node.getAttribute('filetype') == 'directory' ? '/' : ''
+        var contentType = node.getAttribute('content-type')
+        var trailingSlash = contentType == 'application/library' ? '/' : ''
         var newSource = this.props.src + node.getAttribute('title') + trailingSlash
         
         document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
-        
-        var fileBlock = this.blockFromFileType[node.getAttribute('filetype')]
-        fileBlock == DirectoryBlock ? this.replaceWith(new fileBlock({src: newSource}))
-                                    : this.insertAdjacentElement('afterend', new fileBlock({ src: newSource }))
+        // here's where I would search mime for an ideal block to open file
+        contentType == 'application/library' ? this.replaceWith(new LibraryBlock({src: newSource}))
+                                             : this.insertAdjacentElement('afterend', new TextareaBlock({ src: newSource }))
         // this is kind of a dumb hack to prevent any animations from starting from position left: 0
         // don't be visible until 'nextTick' of event loop, assuming any style applied via mutation observer get applied before starting an animation
     }
@@ -244,6 +193,18 @@ class LibraryBlock extends ProtoBlock {
     I'll have to remember this clever code where I think it was a sort of ternary, or a || || break through thing that lit up whether an rwx applied to you based on what group you're in and the ownership of that group. I don't know if it will ever look as good as when I first came up with it.
 
     */
+    
+    mkdir(dirname){
+        return kvetch.post(this.props.src + 'mkdir', {args: dirname})
+        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .catch(console.error)
+    }
+
+    touch(filename){
+        return kvetch.post(this.props.src + 'touch', {args: filename})
+        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
+        .catch(console.error)        
+    }
 
     octal2symbol(filestat){
         // bit shifting magic to extract read write execute permission for owner, group, and world

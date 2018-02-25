@@ -1,0 +1,3 @@
+[submodule "mixins/kvetch.js"]
+	path = mixins/kvetch.js
+	url = https://github.com/jazzyjackson/kvetch.js

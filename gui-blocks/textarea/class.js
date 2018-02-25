@@ -2,6 +2,7 @@ class TextareaBlock extends ProtoBlock {
     constructor(props){super(props)}
 
     static build(){
+        // actually if there's no this.props.src by now I want to open a pop up library block to choose / create one. that's be so neat.
         if(this.props.src && this.props.src.slice(-1) != '/'){
             this.fetchFile(this.props.src)
             // this.textarea.setAttribute('disabled',true) /* this is a choice, I like the idea of making you explicitely edit the file instead of accidentally deleting stuff and noticing it has unsaved changes later... */
@@ -11,6 +12,9 @@ class TextareaBlock extends ProtoBlock {
             this.header = this.props.src
             // oh yeah new file can just be "this.become(text-area)" or "this.insertSibling(new TextareaBlock({src: this.props.src})"
         }
+        this.props.src = this.resolvePath(this.props.src) || '/'
+        this.child['header-title'].textContent = this.props.src
+        this.props.lastUpdate = Date.now()
     }
 
 
@@ -98,12 +102,8 @@ class TextareaBlock extends ProtoBlock {
             return null // exit overwrite function if it's not OK
         }
 
-        fetch(source.split('/').map(encodeURIComponent).join('/'), {
-            method: 'put',
-            credentials: 'same-origin', 
-            redirect: 'error',
-            body: this.data
-        }).then(console.log).catch(console.error) 
+        kvetch.put(source, null, this.data)
+              .then(console.log).catch(console.error) 
         // .then fetch post git add $source && git commit -m "prompt(what should the message be" ? maybe something like this
 
         // lol it would be kinda cool to pinwheel the X while things are happening, but it might be kinda annoying
@@ -112,11 +112,7 @@ class TextareaBlock extends ProtoBlock {
 
     fetchFile(source){
         this.props = {lastUpdate: Date.now()} 
-        fetch(source.split('/').map(encodeURIComponent).join('/'), {
-            method: 'get',
-            credentials: 'same-origin',
-            redirect: 'error' 
-        })
+        kvetch.get(source)
         .then(response => response.text())
         .then(text => {
             this.data = text

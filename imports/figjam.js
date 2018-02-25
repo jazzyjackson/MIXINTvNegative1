@@ -104,6 +104,19 @@ async function buildTemplateArray(guigraph){
             "code": path.join(prefix, 'template.html'),
             "textContent": html
         }})
+        
+                /* check that mixins property is set to be an array so it's safe to forEach it */
+        if(Array.isArray(attrObj.mixin)){
+            attrObj.mixin.asyncForEach(async filepath => {
+                // overwrite each filename with a readStream
+                mixin = await getReadStreamOrNull(path.join(appRoot, filepath))
+                mixin && templates.push({"script": {
+                    "mixin-via": tagName.camelify(),
+                    "code": path.join(appRoot, filepath),
+                    "textContent": mixin
+                }})
+            })
+        }
         // Check that descendents property exists + is an Array 
         if(Array.isArray(attrObj.descendents)){
             // and recursively call this function to append all the templates in order

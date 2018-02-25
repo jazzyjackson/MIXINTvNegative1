@@ -9,7 +9,9 @@ class MultiplexBlock extends ProtoBlock {
         return [
             {
                 watch: ['show-start','show-max'],
-                react: this.reCalculateChildren.bind(this)
+                react: function(attributeName, oldValue, newValue){
+                    this.reCalculateChildren()
+                }
             }
         ]
     }
