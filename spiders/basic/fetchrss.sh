@@ -1,1 +1,0 @@
-# wouldn't it be cool if a script curl'd an rss feed and pushed results back to client?
