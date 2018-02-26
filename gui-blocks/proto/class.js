@@ -14,11 +14,15 @@ class ProtoBlock extends HTMLElement {
             return this.dispatchEvent(new Event('reconnect'))
         }
         this.readyState = 'loading'
-        this.superClassChain.forEach(superclass => {
-            if(superclass.hasOwnProperty('build')){
-                superclass.build.call(this)
-            }
-        })
+        try {
+            this.superClassChain.forEach(superclass => {
+                if(superclass.hasOwnProperty('build')){
+                    superclass.build.call(this)
+                }
+            })
+        } catch(err) {
+            // this.shadowRoot.innerHTML = <menu-block></menu-block><footer></footer>
+        }
         // if there is a src, be 'interactive' and wait until whatever function is responsible for loading it fires 'load'
         // if, for instance, src is set on an img tag in shadowRoot, the load event will have to be retargeted to the host element
         // if there's no source
@@ -31,6 +35,14 @@ class ProtoBlock extends HTMLElement {
         this.superClassChain.forEach(superclass => {
             superclass.destroy && superclass.destroy.call(this)
         })
+        // document.body.childElementCount || document.body.appendChild(new BecomeBlock)
+        // what happens if you delete the last node on the screen?
+        // maybe you have a document background and that's okay to look at until you refresh... no functionality unless someone puts it there tho...
+        // maybe check the document root, if there's nothing there... become become? 
+        // event listener for double click to create menu?
+        // hmm... maybe the background can always make a menu block fixed at the location of click...
+        // maybe set up that right click expectation...  message (hold ctrl to use regular right click)
+        // or long press
     }
 
 
@@ -267,8 +279,8 @@ class ProtoBlock extends HTMLElement {
     }
     // {"div":{"id":"example", "textContent":"something like this"}} => <div id="example"> something like this </div>
     createElementFromObject(object){
-        let tagName = Object.keys(object)[0]
-        let attrObj = object[tagName]
+        let [ tagName, attrObj ] = Object.entries(object)[0]
+
         let node = document.createElement(tagName)
         for(var attribute in attrObj){
             let newValue = attrObj[attribute]

@@ -24,8 +24,7 @@ class MenuBlock extends ProtoBlock {
                 style: {top: this.shadowParent.child.header.getClientRects()[0].height + 'px'},
                 childNodes: this.shadowParent.inheritedActions.map(actionTuple => {
 
-                    var actionName = Object.keys(actionTuple)[0]
-                    var actionObject = actionTuple[actionName]
+                    var [ actionName, actionObject ] = Object.entries(actionTuple)[0]
         
                     if(actionObject.filter === false) return null // skip building list item if filter returns false
                     else return {'li':{
@@ -67,8 +66,7 @@ class MenuBlock extends ProtoBlock {
                     click: event => event.stopPropagation() // capture form clicks so they don't fire "destroyMenu() higher up"
                 },
                 childNodes: actionObject.args && actionObject.args.map((argObject, argIndex) => {
-                    let formType = Object.keys(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
-                    let formValue = argObject[formType]
+                    let [formType, formValue] = Object.entries(argObject)[0] // each arg option is expected to have a single key. If javascript had tuples I'd use those.
                     let argNode = {[formType]: {}}
                     let argAttributes = argNode[formType] // grab reference to object...
 
