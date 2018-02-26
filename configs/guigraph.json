@@ -1,11 +1,11 @@
 [
     {"proto": {
         "active": true,
-        "mixin": ["mixins/kvetch.js/kvetch.js"],
-        "descendents": [
+        "mixins": ["kvetch.js/kvetch.js"],
+        "progeny": [
             {"actionio": {
                 "active": true,
-                "descendents": [
+                "progeny": [
                     {"speechio": false},
                     {"formsio": false},
                     {"duplexio": false}
@@ -13,12 +13,13 @@
             }},
             {"become": true},
             {"library":{
+                "mime": "application/library",
+                "mixins": ["libras3/mixin.js","librassh/mixin.js"],
                 "active": true,
-                "mixin": ["libras3/mixin.js","librassh/mixin.js"],
-                "descendents": [
+                "progeny": [
                     {"textarea": {
                         "active": true,
-                        "descendents": [
+                        "progeny": [
                             {"codemirror": {
                                 "active": false,
                                 "mime": "text/*"
@@ -35,19 +36,19 @@
                     }},
                     {"image": {
                         "active": false,
-                        "mime": ["image/*"]
+                        "mime": "image/*"
                     }},
                     {"video": {
                         "active": false,
-                        "mime": ["video/*"]
+                        "mime": "video/*"
                     }},
                     {"audio": {
                         "active": false,
-                        "mime": ["audio/*"],
+                        "mime": "audio/*",
                         "descendants":[
                             {"mixedmedia": {
                                 "active": false,
-                                "mime": ["audio/x-mpequrl"]
+                                "mime": "audio/x-mpequrl"
                             }}
                         ]
                     }}
@@ -57,7 +58,7 @@
             {"status": false},
             {"multiplex":{
                 "active": true,
-                "descendents": [
+                "progeny": [
                     {"fibonacciplex": false},
                     {"panelplex": false},
                     {"tackleplex": false},
