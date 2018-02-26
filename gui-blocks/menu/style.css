@@ -11,6 +11,7 @@
   padding: 4px;
   cursor: pointer;
   box-sizing: content-box;
+  overflow: visible;
 }
 
 :host:after {
@@ -71,6 +72,7 @@ li:hover, li:focus {
   border-left: 3px solid cornflowerblue;
 }
 
+
 li:focus::after {
   content: '⏎';
   color: cornflowerblue;
@@ -78,12 +80,25 @@ li:focus::after {
 }
 
 /*direct descendents of form should have more obvious focus highligting */
-form > *:focus {
-  border-left: 3px solid cornflowerblue;
+
+input, option, select {
+  background: transparent;
+  border: none;
+  color: white;
+  text-align: right;
+}
+option {
+  color: initial;
+}
+
+form input:focus {
+  outline: none;
+  border-bottom: 2px solid cornflowerblue;
 }
 
 form {
   display: inline-block;
+  margin-bottom: 0;
 }
 
 form > *:not(:last-child)::after{
