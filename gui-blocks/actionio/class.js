@@ -22,25 +22,15 @@ class ActionioBlock extends ProtoBlock {
                 react: function(){
                     this.dispatchEvent(new Event('load')) // also sets this.readyState = 'complete', fires readyStateChange
                     this.shell.close()
+                    this.readyState = 'complete'
                 }
             },
             {
-                watch: ['error'],
+                watch: ['stdout','stderr','error'],
                 react: function(attributeName, oldValue, newValue){
+                    this.child["data-" + attributeName].textContent += newValue
                     console.error(errorMsg)
                     console.error("EventSource connection closed by remote host, disconnecting")
-                }
-            },
-            {
-                watch: ["stdout"],
-                react: function(attributeName, oldValue, newValue){
-                    this.child["data-stdout"].textContent += this.tryJSON(newValue) || newValue
-                }
-            },
-            {
-                watch: ["stderr"],
-                react: function(attributeName, oldValue, newValue){
-                    this.child["data-stderr"].textContent += this.tryJSON(newValue) || newValue
                 }
             },
             {
@@ -73,10 +63,18 @@ class ActionioBlock extends ProtoBlock {
 
 
 
-    subscribeToShell(bashObject){
-        this.shell.addEventListener('error', err => {
-            console.error(err)
-            this.setAttribute('error', err)
+    subscribeToShell(){
+        // optional extant shell allows a newly minted block via become gets all the event listeners reattached
+        // if(optExtantShell) getEventListeners(optExtantShell).forEach(func func.removeEventListeners....)
+        var pathname = this.props.action || ''
+        var querystring = '?args=' + encodeURIComponent(this.props.query)
+        
+        this.shell = new EventSource(pathname + querystring, { withCredentials: true })
+        this.constructor.observedAttributes.forEach(attr => {
+            this.shell.addEventListener(attr, event => {
+                console.log(event)
+                this.setAttribute(attr, event.data)
+            })
         })
     }
 

@@ -1,6 +1,6 @@
 #!/usr/local/bin/node
-var wireworker = require('./imports/wireworker') // returns a class definition, must be called with new
-var figjam     = require('./imports/figjam')
+var wireworker = require('wireworker') // returns a class definition, must be called with new
+var figjam     = require('figjam')
 var child      = require('child_process')
 var path       = require('path')
 var url        = require('url')
@@ -37,10 +37,14 @@ require('http').createServer(function(req,res){ /* ternary tests conditions unti
 var MIMEtypes = JSON.parse(fs.readFileSync(path.join(process.env.APPROOT,'configs','mimemap.json')))
 
 function getContentType(filepath){
-    var extension = /\.([a-z0-9]+)$/i.exec(filepath)
+    var extension = /\.([a-z0-9]+)(?=\?|$)/i.exec(decodeURI(filepath))
     // if regex returns null, MIMEtypes[null] returns undefined, no problem
     var extensionMatch = extension && extension[1].toLowerCase()
     return MIMEtypes[extensionMatch] || MIMEtypes['default']
+}
+
+function decodeURL(encodedpath){
+    return decodeURI(url.parse(encodedpath).pathname)
 }
 
 /************************************* Function definitions to fulfill requests **************************************/
@@ -62,12 +66,10 @@ function makeRSS(request, response){
 
 function streamFile(request, response){
     // check if the URL includes any file extensions that require a MIME type to be specified in Content-Type header
-    var {pathname} = url.parse(request.url)
-
-    var ContentType = getContentType(pathname)    
-    response.setHeader('Content-Type', ContentType)
+    response.setHeader('Content-Type', getContentType(request.url))
     // open and pipe the file, or throw back error (maybe file doesn't exist, var client know with a 500!)
-    fs.createReadStream(decodeURI(pathname))
+    
+    fs.createReadStream(decodeURL(request.url))
     .on('error', function(err){
         response.writeHead(500)
         response.end( JSON.stringify(err)) 
@@ -76,36 +78,31 @@ function streamFile(request, response){
 
 function saveBody(request, response){
     /* might automatically launch git commit here... */
-    var {pathname} = url.parse(request.url)
-    
-    request.pipe(fs.createWriteStream(decodeURI(pathname)), 'utf8')
+    request.pipe(fs.createWriteStream(decodeURL(request.url)), 'utf8')
     .on('finish', function(){
         response.writeHead(201)
         response.end()
     }).on('error', function(err){
         response.writeHead(500)
-        response.end( JSON.stringify(err)) 
+        response.end(JSON.stringify(err)) 
     })
 }
 
 function deleteFile(request, response){
-    var {pathname} = url.parse(request.url)
-
-    fs.unlink(decodeURI(pathname), function(err){ 
+    fs.unlink(decodeURL(request.url), function(err){ 
         response.writeHead( err ? 500 : 204); 
         response.end(JSON.stringify(err))
     })
 }
 
 function sendStat(request,response){
-    var {pathname} = url.parse(request.url)
-    var ContentType = getContentType(pathname)
-    response.setHeader('Content-Type', ContentType)
-    // maybe this could check if size is minimum block size on system and then find out whether or not its a directory and set contenttype = application/directory or something
-    // stat.size = process.
-    fs.stat(decodeURI(pathname), function(err, stat){
-        stat && Object.assign(stat, {ContentType})
-        response.writeHead( err ? 500 : 200); 
+    response.setHeader('Content-Type', 'application/json')
+    
+    fs.stat(decodeURL(request.url), function(err, stat){
+        stat && Object.assign(stat, {
+            'Content-Type': stat.isDirectory() ? 'application/library' : getContentType(request.url)
+        })
+        response.writeHead( err ? 500 : 200), 
         response.end(JSON.stringify(err || stat))
     })
 }

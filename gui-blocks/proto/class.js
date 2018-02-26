@@ -355,12 +355,6 @@ class ProtoBlock extends HTMLElement {
         // open TextBlock from the source code, might be class.js
     }
 
-    checksForServerError(response){
-        /* append to any fetch to throw 500 messages to the catch block */
-        return response.ok ? response : response.text().then(msg => {throw new Error(response.status == 302 ? 'Your cookie is no good anymore. Please refresh the page to log in.' : msg)})
-    }
-
-  
     set props(data){
         if(!data) return data // exit in the case of this.props = this.options, but options was undefined
         if(typeof data != 'object') throw new Error("Set props requires an object to update from")
