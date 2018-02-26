@@ -9,3 +9,7 @@ Or, alternatively, the codemirror can have a target convoshell to send updates o
 Before saving to disk - you have your local 'last-gat' time, check if there's a newer version on disk. If there is, git checkout editmerge, git merge master, send the conflict back to codemirror, parse the <<<<>>>>, and ask to re-save. On the next PUT, check if merge is complete and merge back to original branch...
 
 git gat get got gut
+gat -> git status
+get -> git pull
+got -> git log
+gut -> git push
