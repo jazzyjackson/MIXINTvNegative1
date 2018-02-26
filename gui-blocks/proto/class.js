@@ -120,19 +120,25 @@ class ProtoBlock extends HTMLElement {
                 watch: ["error"],
                 react: function(attributeName, oldValue, newValue){
                     if(this.child['footer'] == undefined) return console.error(newValue)
-                    let newMsg = document.createElement('error-message')
-                    newMsg.textContent = newValue
+                    let newMsg = this.createElementFromObject({
+                        "error-message": {
+                            textContent: newValue
+                        }
+                    })
                     this.child['footer'].appendChild(newMsg)
                     /* hide error message after one second, allow css animations to occur */
                     setTimeout(()=>newMsg.classList.add('dismissed'), 5000)
                 }
             },
             {
-                watch: ["alert"],
+                watch: ["finish"],
                 react: function(attributeName, oldValue, newValue){
-                    if(this.child['footer'] == undefined) return alert(alertMsg) // maybe alert if no footer?
-                    let newMsg = document.createElement('success-message')
-                    newMsg.textContent = alertMsg
+                    if(this.child['footer'] == undefined) return console.log(newValue) // maybe alert if no footer?
+                    let newMsg = this.createElementFromObject({
+                        "success-message": {
+                            textContent: newValue
+                        }
+                    })
                     this.child['footer'].appendChild(newMsg)
                     /* hide error message after one second, allow css animations to occur */
                     setTimeout(()=> newMsg.classList.add('dismissed'), 2500)
@@ -276,9 +282,13 @@ class ProtoBlock extends HTMLElement {
                         node.addEventListener(eventName, value[eventName])
                     }
                     break
+                case 'style': 
+                    if(value && value.constructor == String) node.style = value
+                    if(value && value.constructor == Object) Object.assign(node.style, value)
+                    break
                 case 'childNodes':
-                    value.forEach(child => {
-                        node.appendChild(this.createElementFromObject(child))
+                    value.filter(Boolean).forEach(child => {
+                        node.appendChild(child instanceof Element ? child : this.createElementFromObject(child))
                     })
                     break
                 default: 
@@ -396,23 +406,6 @@ class ProtoBlock extends HTMLElement {
         })
         // the true values are the ones we want to filter out, so !invert the bitmask
         return pathParts.filter((e,i) => !bitmask[i]).join('/')
-    }
-
-    object2node(object){
-        let tagName = Object.keys(object)[0]
-        let attrObj = object[tagName]
-        let node = document.createElement(tagName)
-        for(var attr in attrObj){
-            switch(attr){
-                case 'textContent':
-                    node.textContent = attrObj[attr]; break;
-                case 'childNodes':
-                    attrObj[attr].forEach(childObj => node.appendChild(object2node(childObj))); break;
-                default:
-                    node.setAttribute(attr, attrObj[attr]);
-            }
-        }
-        return node
     }
 
     // getters and setters for common interface

@@ -19,24 +19,43 @@ class MenuBlock extends ProtoBlock {
         })
 
         this.shadowParent.addEventListener('blur', event => {
-            if(event.relatedTarget){
-                // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
-                this.destroyMenu()
-            }
+            // if relatedTarget property exists, that means focus has left this block entirely, go ahead and deactivate menu
+            event.relatedTarget && this.destroyMenu()
         })
         
-        this.shadowParent.addEventListener('ready', () => {
-            // if parentNode was passed an autofocus prop, the attribute will be truthy, don't focus on parent
-            this.shadowParent.getAttribute('autofocus') || this.shadowParent.focus()
+        this.shadowParent.addEventListener('readyStateChange', () => {
+            // if parentNode was passed an autofocus prop, the attribute will be truthy
+            this.shadowParent.readyState == 'complete' && this.shadowParent.props.autofocus && this.shadowParent.focus()
         })
     }
 
     createMenu(){
-        if(this.props.active) throw new Error("You managed to call createMenu when a menu was already active. Hit 'esc' to destroy menu.")
+        if(this.props.active) return null /* just exit if we're already active */
         this.setAttribute('active','true')
-        let newListElement = this.appendActionList(this.shadowParent.inheritedActions)
-        newListElement.style.top = this.shadowParent.child['header'].getClientRects()[0].height + 'px' 
-        // set visibility hidden, appendActionList, check height of action list, set height to 0, set visibilility to visibile, set height to measured height, set height to null. this animates it but then releases the restriction
+        this.shadowRoot.appendChild(this.createElementFromObject({
+            ul: {
+                style: {top: this.shadowParent.child['header'].getClientRects()[0].height + 'px'},
+                childNodes: this.shadowParent.inheritedActions.map(actionTuple => {
+
+                    var actionName = Object.keys(actionTuple)[0]
+                    var actionObject = actionTuple[actionName]
+        
+                    if(actionObject.filter === false) return null // skip building list item if filter returns false
+        
+                    let actionCaller = this.createActionFor.call(this.shadowParent, actionObject)
+                    return {'li':{
+                        textContent: actionName,
+                        class: actionObject.class || '',
+                        style: actionObject.style || '',
+                        tabIndex: 0,
+                        addEventListener: {
+                            click: actionCaller,
+                            keydown: actionCaller
+                        }
+                    }}
+                })
+            }
+        }))
     }
 
     destroyMenu(){
@@ -44,45 +63,6 @@ class MenuBlock extends ProtoBlock {
         this.removeAttribute('active') // so this.props.active is undefined, falsey
         var list = this.shadowRoot.querySelector('ul')
         list && list.remove()
-    }
-
-    appendActionList(actionArray){
-        /*receives an array of my shoehorned tuple of either type:
-        actionName(string): actionObject(object)
-        or:
-        actionName(string): actionArray(array)
-        if each 'tuple' is of the former, then we add an LI of that name and a listener that can turn it into an action-invoker
-        else we add an LI, append a '...' and add a listener that can call appendActionList on the LI
-        
-        The unfortunate thing is that javascript doesn't have tuples, so instead I have objects with a single key,
-        so I access the actionName with Object.keys(action)[0] and the item with 
-        but first, make a UL and appendChild from whatever "this" is, then construct those LIs
-        */
-        var list = document.createElement('ul')
-        actionArray.forEach(actionTuple => {
-            console.log("actionObject", actionObject)
-            var actionName = Object.keys(actionTuple)[0]
-            var actionObject = actionTuple[actionName]
-            if(actionObject.filter === false) return null // skip building list item if filter returns false
-            var actionItem = document.createElement('li')
-            actionItem.textContent = actionName
-            actionItem.className = actionObject.class
-            actionItem.style = actionObject.style
-            actionItem.setAttribute('tabIndex', 0)
-            if(Array.isArray(actionObject)){
-                actionItem.textContent += '...'
-                // event listener will be like this.appendActionList.call(actionItem, action)
-            } else {
-                // createActionFor returns a function that mutates the LI and invokes function references by actionObject.func 
-                let actionCaller = this.createActionFor.call(this.shadowParent, actionObject)
-                actionItem.addEventListener('click', actionCaller)
-                actionItem.addEventListener('keydown', actionCaller)
-                // event listener like makeActionCaller, enclose a reference to actionItem but replace it with actionCaller
-            }
-            list.appendChild(actionItem)
-        })
-        this.shadowRoot.appendChild(list)
-        return list
     }
 
     createActionFor(actionObject){
