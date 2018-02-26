@@ -4,19 +4,19 @@ class LibraryBlock extends ProtoBlock {
     static get actions(){
         return [
             {"download archive": {
-                func: this.prototype.archive,
-                args: [{input: "pathname"}],
-                default: [ctx => ctx.getAttribute('src')],
+                func: this.prototype.bashAndBecome,
+                args: [{label: "zip -r"}, {input: "pathname"}],
+                default: [null, ctx => ctx.getAttribute('src')],
                 info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
             }},
             {"new directory": {
-                func: this.prototype.mkdir,
-                args: [{input: "directory name"}],
-                default: [ctx => Date.now()],
+                func: this.prototype.bashAndBecome,
+                args: [{label: "mkdir"},{input: "directory name"}],
+                default: [null, ctx => Date.now()],
                 info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
             }},
             {"new file": {  
-                func: this.prototype.touch,
+                func: this.prototype.bashAndBecome,
                 args: [{input: "filename"}],
                 default: [ctx => Date.now() + '.txt'],
                 info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
@@ -191,19 +191,15 @@ class LibraryBlock extends ProtoBlock {
     /*
     OH YEAH that's what I was really sad I deleted
     I'll have to remember this clever code where I think it was a sort of ternary, or a || || break through thing that lit up whether an rwx applied to you based on what group you're in and the ownership of that group. I don't know if it will ever look as good as when I first came up with it.
-
+    basically take octal2symbol array, get the owner of the node, the group of the node, what groups your id is in, and what your uid is, and then say,
+    Find out if you can read the file: is world readable? true : is group readable and are you part of the group ? true : is owner readable 
     */
-    
-    mkdir(dirname){
-        return kvetch.post(this.props.src + 'mkdir', {args: dirname})
+    bashAndBecome(exec, arg){
+        return kvetch.post(this.props.src + exec, {args: dirname})
+        // maybe disable interactivity for this brief moment before reloading... maybe a good time to flip a class to fade out...
+        // ... this.become() will trigger a new ls -> re-render, which should have its own sort of flexbox animation....
         .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
         .catch(console.error)
-    }
-
-    touch(filename){
-        return kvetch.post(this.props.src + 'touch', {args: filename})
-        .then(()=>{ this.become() }) // calling this.become with no argument re-creates / re-loads the current block from src
-        .catch(console.error)        
     }
 
     octal2symbol(filestat){

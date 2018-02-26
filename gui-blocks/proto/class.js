@@ -271,28 +271,33 @@ class ProtoBlock extends HTMLElement {
         let attrObj = object[tagName]
         let node = document.createElement(tagName)
         for(var attribute in attrObj){
-            let value = attrObj[attribute]
+            let newValue = attrObj[attribute]
             switch(attribute){
                 case 'textContent':
-                    node.textContent = value
+                    node.textContent = newValue
                     break            
                 case 'addEventListener':
-                    for(var eventName in value){
-                        // could check if value[eventName] is an array of functions to add... 
-                        node.addEventListener(eventName, value[eventName])
+                    for(var eventName in newValue){
+                        // could check if newValue[eventName] is an array of functions to add... 
+                        node.addEventListener(eventName, newValue[eventName])
                     }
                     break
                 case 'style': 
-                    if(value && value.constructor == String) node.style = value
-                    if(value && value.constructor == Object) Object.assign(node.style, value)
+                    if(newValue && newValue.constructor == String) node.style = newValue
+                    if(newValue && newValue.constructor == Object) Object.assign(node.style, newValue)
                     break
                 case 'childNodes':
-                    value.filter(Boolean).forEach(child => {
+                    Array.isArray(newValue) && newValue.filter(Boolean).forEach(child => {
                         node.appendChild(child instanceof Element ? child : this.createElementFromObject(child))
                     })
                     break
+                case 'value':
+                    // special case for form nodes where setting the value 'attribute' should set the value of the form
+                    node.value = newValue
+                    // break dont break, no harm in setting value property and value attribute
+                    // select options want value attributes I guess?
                 default: 
-                    node.setAttribute(attribute, value)
+                    node.setAttribute(attribute, newValue)
             }
         }
         return node
