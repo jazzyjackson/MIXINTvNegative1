@@ -98,12 +98,10 @@ function registerSwitch(request){
             // now this identity will have a home folder just for them, so 
             // find the sudo environment and stick python path in there.
             let switchboard = child_process.spawn('sudo', [
-                'PYTHONPATH=' + process.env.PYTHONPATH, // PATH gets overwritten by sudo path ??
-                '-E', /* keep environment variables */
                 '-u', /* execute switchboard as another user */
                 request.profile.id, /* this user, as a matter of fact */
-                './switchboard.js', /* this file runs as a standalone executable */
-                ],{ 
+                'switchboard', /* this file runs as a standalone executable */
+                ],{
                 env: Object.assign(request.profile, {
                     PORT: 0, /* pass 0 to switchboard to request unallocated local port */
                     BOT: process.env.BOT,
