@@ -4,8 +4,8 @@ process.platform.includes('win32') && process.exit(console.log("unix please"))
 process.env.APPROOT = process.env.APPROOT || process.cwd()
 
 let http           = require('http') 
-let keymaker       = require('./imports/keymaker')
-let bookkeeper     = require('./imports/bookkeeper')
+let keymaker       = require('keymaker')
+let bookkeeper     = require('bookkeeper')
 let child_process  = require('child_process')
 
 var keycert = {
