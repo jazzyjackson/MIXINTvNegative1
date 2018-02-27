@@ -38,7 +38,6 @@ require(SSL_READY ? 'https' : 'http')
         // if that key returns undefined, then invoke asynchronous registerSwitchboard for new id
         let promise2serve = switchboards[request.profile.id] || (switchboards[request.profile.id] = registerSwitch(request))
         let proxyDestination = await promise2serve
-        // if(proxyDestination){
         request.pipe(watchRequest).pipe(http.request({
             hostname: proxyDestination.hostname,
             port: proxyDestination.port,
@@ -50,9 +49,6 @@ require(SSL_READY ? 'https' : 'http')
             response.writeHeader(proxyResponse.statusCode, proxyResponse.headers)
             proxyResponse.pipe(watchResponse).pipe(response)
         }))
-        // } else {
-        //     bookkeeper.logError('operator','promise2serve resolved to undefined value!')
-        // }
     }
 })
 /* if port is unspecified in environment (env PORT=3000 node operator), then start on default secure or unsecure ports 443 / 80 */
@@ -109,7 +105,7 @@ function registerSwitch(request){
                     PATH: process.env.PATH, // PATH gets overwritten by sudo path ??
                     FULLNAME: request.profile.fullName,
                     APPROOT: process.env.APPROOT,
-                    // HOME: `/id/${request.profile.fullName || 'nobody'}`
+                    HOME: process.env.HOME
                 })
             }) // call for an switchboard on port 0, system will assign available port
             switchboard.stdout.on('data', port => {

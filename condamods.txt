@@ -1,0 +1,6 @@
+RUN echo "Defaults secure_path = /opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+    >> /etc/sudoers.d/secureMod \
+    && echo 'Defaults env_keep += "PYTHONPATH PORT"' >> /etc/sudoers.d/secureMod \
+    && echo '%everyone ALL=(ALL) NOPASSWD: /usr/bin/condavision' >> /etc/sudoers.d/secureMod \
+    && echo '%everyone ALL=(ALL) NOPASSWD: /usr/bin/condavision3' >> /etc/sudoers.d/secureMod \
+    && chmod 440 /etc/sudoers.d/secureMod

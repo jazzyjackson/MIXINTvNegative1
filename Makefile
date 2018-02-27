@@ -1,28 +1,35 @@
 export nokeyok := 1 # for now
-# could check if I'm on windows, do bin /
-export INSTALL_PREFIX := /usr/
-export PORT := 4545
-
-echo-env:
-	env
-
-up:
-	make install start
+export PORT := 3000
 
 install:
 	sudo chmod +x ./switchboard.js
-	# T is necessary for Ubuntu Windows Subsystem, takes target name as name, not directory
-	cp "$(shell pwd)/switchboard.js" /usr/local/bin/switchboard
-	# git submodule init
-	# git submodule update
+	git submodule init
+	git submodule update
 	# should probably link local node_modules with global modules
 	# add operator to path until I can make the service start / pause / stop business
 	# link stuff to /usr/share, /usr/lib and so on so operator can be used anywhere
 	# would be very cool if HOME directory in switchboard environment is whereever you started it
 	# convenient, "start an operator here" menu option, now everything is on the local net! dream come true
 
-start:
-	node operator
+docker:
+	docker build --tag mixint:debian .
+
+docker-run:
+	docker run -p 3000:3000 -p 4444:4444 mixint:debian
+
+docker-live:
+	# -v is 'mount volume' to reflect live changes to gui-blocks and
+	docker rm $(shell docker ps -a -q) || true
+	docker run -p 3000:3000 -p 4444:4444 -it \
+	-v $(shell pwd)/gui-blocks/:/gui-blocks/:ro \
+	-v $(shell pwd)/spiders/:/spiders/:ro \
+	aubi:one /bin/bash
+
+docker-clean:
+	# I guess this might not work if the stop command exits on a container that is already stopped, and fails to stop subsequent containers...
+	docker stop $(shell docker ps -a -q) || true
+	docker rm $(shell docker ps -a -q) || true
+	docker rmi `docker images -f "dangling=true" -q`
 
 yourself-at-home:
 	printf everyone,$(groups) | xargs -d ',' -n 1 groupadd -f # take comma seperated list of groups and make sure they exist
