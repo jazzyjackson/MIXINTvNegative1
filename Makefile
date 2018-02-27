@@ -1,67 +1,32 @@
-# TODO: if there is no chatscript folder, git clone. 
-# detect MacChatScript/LinuxChatScript/ChatScript
-# ./chatscript/BINARIES/ChatScript buildfiles=./personalities/
-# node operator >> ./logs/operator.log &
+export nokeyok := 1 # for now
+export PORT := 4545
+up:
+	make install start
 
-#create user and group switchboard, add switchboard to admin group, add switchboard to sudoers so it can also adduser and chmod things
-# sh adduser switchboard
-export DISABLE_SSL      := true
-export CHATSCRIPT       := /Users/colton.jackson/utilitybot/chatscript
-export APPROOT         := $(shell pwd)
-export SPIDERROOT       := $(APPROOT)/spiders
-export PYTHONPATH       := $(SPIDERROOT)
-export PYTHONUNBUFFERED := true
-export BOT              := shelly
+install:
+	sudo chmod +x ./switchboard.js
+	ln -s $(pwd)/switchboard.js /usr/local/bin/switchboard
+	git submodule init
+	git submodule update
+	# should probably link local node_modules with global modules
+	# add operator to path until I can make the service start / pause / stop business
+	# link stuff to /usr/share, /usr/lib and so on so operator can be used anywhere
+	# would be very cool if HOME directory in switchboard environment is whereever you started it
+	# convenient, "start an operator here" menu option, now everything is on the local net! dream come true
 
-ifeq ($(shell uname), Darwin)
-	# mac has to use scripts that replicate adduser and groupadd functionality
-	export ChatScriptExecutable := ChatScript
-	export adduser = $(shell pwd)/spiders/basic/adduser-osx.sh
-	export groupadd = $(shell pwd)/spiders/basic/groupadd-osx.sh
-else
-	# else we can use build in adduser and groupadd utilities
-	export ChatScriptExecutable := LinuxChatScript64
-	export adduser = adduser
-	export groupadd = groupadd
-endif
-
-default:
-	make bootchatscript buildbot nokey
-
-chownership:
-	# create operator user and operator group
-	# create basic group, add operator, all new users will be added to this group and whatever roles they come with
-	# iterate through spiders folder and change ownership to group of same name as folder 
-	# sudo $(adduser) 
-	chmod +x spiders/basic/interpret.js
-	chmod +x ./switchboard.js
+start:
+	node operator
 
 yourself-at-home:
-	# create user
-	# add user to groups
-	#all users need to be able to 
-	#basic files will be chgroup'd to basic group and chmod'd rwxr-x--- 750,
-	#basic directories will be basic group but chmod'd to rwx--x--- 710, files inside can be read, but directory can not be listed
-	# basicFiles=figtrees/,gui-blocks/,guidebook/,spiders/basic/,figjam.js,operator.js,readme.markdown,
-	#admin files will be chgroup'd to admin group and chmod'd rwxrwx--- 770
-	# adminFiles=logs/,personalities/,spiders/*,*
-	# $(adduser) = which adduser || spiders/basic/adduser-osx.sh
-
-nokey: 	
-	env nokeyok=1 node operator
-
-buildbot: 
-	python $(APPROOT)/spiders/labsdb/makeSpace.py
-	cp -r $(APPROOT)/personalities/* $(CHATSCRIPT)/RAWDATA/
-	# send build command to chatscript
-	printf ":build $(BOT)" | node spiders/basic/interpret.js
-
-bootchatscript:
-	# make ChatScript executable
-	chmod +x $(CHATSCRIPT)/BINARIES/$(ChatScriptExecutable)
-	# ChatScript should be started from within the chatscript directory, cd into it and then (;) start chatscript in the background (&)
-	cd $(CHATSCRIPT)/BINARIES/; ./$(ChatScriptExecutable) userfacts=500 logs=$(APPROOT)/logs users=$(APPROOT)/logs VAPPROOT=$(APPROOT) &
-
-clean:
-	pkill $(ChatScriptExecutable)
-	rm logs/*.txt
+	printf everyone,$(groups) | xargs -d ',' -n 1 groupadd -f # take comma seperated list of groups and make sure they exist
+	# check if user exists, if not, add them as member of their own group
+	id -u $(identity) || useradd --comment $(fullname) $(identity) # /etc/login.defs has "USERGROUPS_ENAB yes" so user will get a group with their own name
+	# set groups according to groups property on request
+	# this should correspond with 'roles' array from auth server
+	# if you need to update this property, kill that users switchboard (TODO: window on leave could send disconnect POST?)
+	# next time make yourself-at-home is run their groups are updated
+	usermod -G everyone,$(groups) $(identity) || true ### groups $(identity) to find which groups identity is a member of
+	# mkdir -p id/$(fullname)
+	# ln -s Readme.markdown id/$(fullname)/Readme.markdown || :
+	# chown $(identity):$(identity) id/$(fullname)
+	# chmod 770 id/$(fullname) # umask??
