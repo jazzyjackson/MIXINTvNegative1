@@ -1,7 +1,7 @@
 /* must run inside a shell with expected utilities like groupadd and useradd and ls and all that */
 process.platform.includes('win32') && process.exit(console.log("unix please"))
 /* must have an APPROOT set so everyone knows where to look */
-process.env.APPROOT = process.env.APPROOT || process.cwd()
+process.env.APP_HOME = process.env.APP_HOME || process.cwd()
 
 let http           = require('http') 
 let keymaker       = require('keymaker')
@@ -104,7 +104,7 @@ function registerSwitch(request){
                     BOT: process.env.BOT,
                     PATH: process.env.PATH, // PATH gets overwritten by sudo path ??
                     FULLNAME: request.profile.fullName,
-                    APPROOT: process.env.APPROOT,
+                    APP_HOME: process.env.APP_HOME,
                     HOME: process.env.HOME
                 })
             }) // call for an switchboard on port 0, system will assign available port

@@ -9,7 +9,7 @@ var os         = require('os')
 /* try to read key and certificate from disk and enable HTTPS if true     */
 var keycert    = new Object /* optionally: {key: filename, cert: filename}  */
 /* useful thing about environment variables is they get figjammed to client side global 'window.env' */
-process.env.APPROOT = process.env.APPROOT || process.cwd()
+process.env.APP_HOME = process.env.APP_HOME || process.cwd()
 process.env.groups = process.getgroups()
 process.env.identity = process.getuid()
 
@@ -34,7 +34,7 @@ require('http').createServer(function(req,res){ /* ternary tests conditions unti
 /************************************* Get Content Type via mimemap.json **************************************/
 
 /* load all possible content types into object so I can retrieve file extensions as a hash and set header */
-var MIMEtypes = JSON.parse(fs.readFileSync(path.join(process.env.APPROOT,'configs','mimemap.json')))
+var MIMEtypes = JSON.parse(fs.readFileSync(path.join(process.env.APP_HOME,'configs','mimemap.json')))
 
 function getContentType(filepath){
     var extension = /\.([a-z0-9]+)(?=\?|$)/i.exec(decodeURI(filepath))

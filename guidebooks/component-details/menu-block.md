@@ -24,4 +24,20 @@ provides methods `makeMenu` and `destroyMenu` which perform top level constructi
 
 But there has to be an abstraction already to create th
 
+-----------------
+
+so, certain style applies just to :host-context(header-block)
+
+and if its not header-block, you get insertSibling, become...
+
+how about proto is the same...
+if a block has no template... maybe use MenuBlock instead? why not?
+
+try {
+    
+}
+
+if there's an error... insert that footer too so there's a place for error messages to hide...
+
+
 

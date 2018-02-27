@@ -13,10 +13,12 @@ RUN apt-get update -y \
     && n latest
 
 # modify the sudoers file so when switchboards are spawned, environment is maintained
-RUN echo 'Defaults env_keep += "PYTHONPATH PORT"' >> /etc/sudoers.d/secureMod \
+RUN echo 'Defaults env_keep += "PYTHONPATH PORT BOT FULLNAME  "' >> /etc/sudoers.d/secureMod \
     && chmod 440 /etc/sudoers.d/secureMod
 
-ARG APP_HOME='/opt/'
+RUN mkdir -p /opt/mixint/
+ARG APP_HOME='/opt/mixint/'
+ENV APP_HOME $APP_HOME
 COPY . $APP_HOME
 WORKDIR $APP_HOME
 

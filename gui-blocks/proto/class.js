@@ -475,4 +475,24 @@ class ProtoBlock extends HTMLElement {
             return string
         }
     }
+
+    errorMsg(errorStringOrObject){
+
+    }
+
+    alertMsg(alertStringOrObject, heading = 'Good News', color = '#00da00'){
+
+    }
 }
+
+/*
+    ProtoBlock.prototype.errorMsg = function errorMsg(errorString){
+        mixint.createElement({'alert-msg':{
+            style: { color },
+            textContent: alertString,
+            childNodes: [{
+                
+            }]
+        }})
+    }
+*/

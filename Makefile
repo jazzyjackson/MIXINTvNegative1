@@ -5,6 +5,7 @@ install:
 	sudo chmod +x ./switchboard.js
 	git submodule init
 	git submodule update
+	cd gui-blocks/codemirror/assets && npm i && npm build
 	# should probably link local node_modules with global modules
 	# add operator to path until I can make the service start / pause / stop business
 	# link stuff to /usr/share, /usr/lib and so on so operator can be used anywhere
