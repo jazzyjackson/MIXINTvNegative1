@@ -21,7 +21,7 @@
                         "active": true,
                         "progeny": [
                             {"codemirror": {
-                                "active": false,
+                                "active": true,
                                 "mime": "text/*"
                             }},
                             {"table": {
@@ -29,7 +29,7 @@
                                 "mime": "text/csv"
                             }},
                             {"showdown": {
-                                "active": false,
+                                "active": true,
                                 "mime": "text/markdown"
                             }}
                         ]
