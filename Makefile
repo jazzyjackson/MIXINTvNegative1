@@ -1,13 +1,20 @@
 export nokeyok := 1 # for now
+# could check if I'm on windows, do bin /
+export INSTALL_PREFIX := /usr/
 export PORT := 4545
+
+echo-env:
+	env
+
 up:
 	make install start
 
 install:
 	sudo chmod +x ./switchboard.js
-	ln -s $(pwd)/switchboard.js /usr/local/bin/switchboard
-	git submodule init
-	git submodule update
+	# T is necessary for Ubuntu Windows Subsystem, takes target name as name, not directory
+	cp "$(shell pwd)/switchboard.js" /usr/local/bin/switchboard
+	# git submodule init
+	# git submodule update
 	# should probably link local node_modules with global modules
 	# add operator to path until I can make the service start / pause / stop business
 	# link stuff to /usr/share, /usr/lib and so on so operator can be used anywhere
