@@ -3,19 +3,25 @@ class LibraryBlock extends ProtoBlock {
 
     static get actions(){
         return [
+            {"update source": {
+                func: HTMLElement.prototype.setAttribute,
+                args: [{label: "src"}, {input: ["full pathname"]}],
+                default: [null, ctx => "~"],
+                info: "effectively cd a.k.a. change directory"
+            }},
             {"download archive": {
                 func: this.prototype.bashAndBecome,
-                args: [{label: "zip -r"}, {input: "pathname"}],
+                args: [{label: "zip -r"}, {input: "full pathname"}],
                 default: [null, ctx => ctx.getAttribute('src')],
                 info: "Sends a POST command to create archive the current directory. Archive is written to /TMP and when the POST resolves, a download tag is created and clicked for you, downloading the archive directly from disk"
             }},
             {"new directory": {
                 func: this.prototype.bashAndBecome,
-                args: [{label: "mkdir"},{input: "directory name"}],
+                args: [{label: "mkdir"},{input: "new directory name"}],
                 default: [null, ctx => Date.now()],
-                info: "Sends the 'touch' command to create a new file, if you have permission to do so in this directory"
+                info: "Sends the 'mkdir' command to create a new directory, if you have permission to do so in this directory"
             }},
-            {"new file": {  
+            {"new file": {
                 func: this.prototype.bashAndBecome,
                 args: [{input: "filename"}],
                 default: [ctx => Date.now() + '.txt'],
@@ -24,30 +30,44 @@ class LibraryBlock extends ProtoBlock {
         ]
     }
 
-    static build(){
-        this.props.src = this.resolvePath(this.props.src) || '/'
-        this.child['header-title'].textContent = this.props.src
-        this.props.lastUpdate = Date.now()
-        
-        if(/\/$/.test(this.props.src) == false){
-            // if library block was initialized with a src that didn't end in a slash,
-            // find the index of the last slash and slice everything else off
-            var lastSlashIndex = this.props.src.split('').reverse().join('').indexOf('/')
-            this.props.src = this.props.src.slice(0, -lastSlashIndex)
-            // /docs/utilities.csv becomes /docs/
-        }
-        /* -a list all in directory(. and ..)
-         * -p if file is directory add trailing slash
-         * -l treat links to directories as directories, or is this -d on ubuntu?
-         * -1 one file per line 
-         * * */
-        kvetch.post(this.props.src + 'ls', {args: '-ap1'})
-        .then(response => response.text())
-        .then(listText => {
-            this.data = listText
-            this.generateIcons()
-        })
+    static get reactions(){
+        return [
+            {
+                watch: ['src'],
+                react: function(attributeName, oldValue, newValue){
+                    console.log("dealing with", newValue)
+                    if(newValue == oldValue) return null // ignore 
+                    if(/\/$/.test(newValue) == false){
+                        var lastSlashIndex = newValue.split('').reverse().join('').indexOf('/')
+                        if(lastSlashIndex) this.props.src = newValue.slice(0, -lastSlashIndex)
+                        else alert("bad pathname, sending you home"), this.props.src = '~'
+                    } else {
+                        this.props.lastUpdate = Date.now()
+                        this.fetchFileList(newValue)
+                        .then(this.iconsFromFiles.bind(this))
+                        // also a good place to start background animation
+                    }
+                }
+            },{
+                watch: ['listMode'],
+                react: function(){
+                    // the attribute will change the style of all the fileblocks
+                    // actually I might not even need to do antyhing here
+                    // maybe ask if the user wants to fetch 100+ file stats
+                    // thinking of letting many stat operations happen at once...
+                    // maybe as an event source to get partical data back
+                    // otherwise I hate the idea even of just waiting on 100 stat calls and then getting one object back
+                    // fill the data in as fast as you can, but one at a time, just so I can see your progress.
+                }
+            }
+        ]
+    }
 
+    static build(){
+        this.props.src = this.resolvePath(this.props.src || '~' || '/')
+        console.log('source is', this.props.src)
+        console.log('the path has been resolved')
+        // reflow fileDetail on resize! could use a debouce, but its not a big deal
         this.addEventListener('resize', () => {
             this.lastActive && this.insertFileDetail(this.lastActive)
         })
@@ -56,92 +76,130 @@ class LibraryBlock extends ProtoBlock {
         })
     }
 
-
     archive(source){
         // fetch('/xz etc')
     }
 
-    determineFileType(filename){
-        let forExtension = /[.-\w]+\.(\w+$)/i
-        let extension = filename.match(forExtension)
-        if(!extension) return "file" // exit with generic "file" if no regex result
-        extension = extension[1].toLowerCase() // extract match from regex result
-        for(var format in this.knownFormats){
-            if(this.knownFormats[format].includes(extension)){
-                return format
+    buildIcon(props){
+        return this.createElementFromObject({
+            "file-block": {
+                tabIndex: 0,
+                contentType: props.contentType,
+                title: props.name,
+                childNodes: [
+                    {"file-icon":{}}, // this could possibly just be a before pseudo element, but flexbox flow is easier for me if this actually exists
+                    {"file-name":{
+                        textContent: props.name
+                    }}
+                ],
+                addEventListener: {
+                    focus: event => {
+                        let fileDetail = this.insertFileDetail(event.target) // listens for load                  
+                        this.fetchFileDetail(event.target).then(stats => {
+                            event.target.stats = stats
+                            event.target.dispatchEvent(new Event('load'))
+                        })
+                    },
+                    dblClick: event => {
+                        this.openFileFrom(node)
+                    }, 
+                    keydown: event => {
+                        event.key == 'Enter' && this.openFileFrom(node)
+                    }
+                }
             }
-        }
-        return "file"
-    }
-
-    makeMarkup(props){
-        return `<file-block tabindex="0" content-type="${props.contentType}" title="${props.name}">
-                    <file-icon></file-icon>
-                    <file-name>${props.name}</file-name>
-                </file-block>`
+        })
     }
 
     makeDateString(zulutime){
+        if(!zulutime) return '...' // waiting for date
         let dateObj = new Date(zulutime)
         return dateObj.toLocaleTimeString() + ' ' + dateObj.toDateString() 
     }
 
-    generateIcons(){
+    iconsFromFiles(lsResult){
+        this.data = lsResult // stash plain text in hidden TextArea, could be retrieved or linked or modified without internet.
+        this.child['header-title'].textContent = this.props.src
+        while(this.child['file-list'].childElementCount){
+            this.child['file-list'].firstChild.remove()
+        }
+        // oof, this is kind of hardcoding the order of files... need to maybe have a list of concat algorithms availble to select... folders first? by date? Alphanumeric? ASCIInumeric?
+        // you could combine this into a single filter map pretty easily, but I wanted to iterate and get folders, then iterate and get a second list of files, and this seems the obvious way to do that
         let folders = this.data.split('\n')
-            .filter(name => name.slice(-1) == '/') // filter out anything thats not a directory
-            .map(name => this.makeMarkup({contentType: "application/library", name: name.slice(0,-1)}))
+            .filter(line => line && line.slice(-1) == '/') // ends with /
+            .map(line => this.buildIcon({
+                ino: parseInt(line), 
+                name: line.slice(line.indexOf(' ')).slice(1,-1), // drop leading space, drop trailing slash
+                contentType: "application/library"
+            }))
 
         let files = this.data.split('\n')
-            .filter(name => name && name.slice(-1) != '/') // filter out directories and empty lines
-            .map(name => this.makeMarkup({contentType: "text/plain", name: name})) // text/plain by default... once you STAT you'll get the mime... or I could load mimes client side?
+            .filter(line => line && line.slice(-1) != '/') // does not end with /
+            .map(name => this.buildIcon({
+                contentType: null, // don't know the contentType yet, will have to wait for stat. could at least figure out socket / FIFO by changing this.lsArgs
+                name: line.slice(line.indexOf(' ')).trim(), // drop leading space
+            }))
         
         // setting text of HTML creates subtree
-        this.child['file-list'].innerHTML = folders.concat(files).join('\n')
-        // and then I attach event listeners to all the nodes that exist all of a sudden
-        Array.from(this.child['file-list'].querySelectorAll('file-block'), node => {
-            node.details = node.querySelector('file-details')
-            /* dblclick doesn't register for iphone, and focus will shift position in the middle of a dblclick */
-            /* so I think I'll have to move the 'focus' css to a cusotm attribute, and determine whether to apply  */
-            /* that attribute on click (so, with a delay in anticipation of a double click), using a timeout mechanism */
-            node.addEventListener('focus', () => {
-                this.fetchFileDetail(node)
-                    .then(()=>{
-                        this.insertFileDetail(node)
-                    })
-            })
-            node.addEventListener('dblclick', () => {
-                this.openFileFrom(node)
-            })
-            node.addEventListener('keydown', event => {
-                if(event.key == 'Enter'){
-                    this.openFileFrom(node)
-                }
-            })
+        folders.concat(files).forEach(node => {
+            this.child['file-list'].appendChild(node)
         })
     }
 
     insertFileDetail(node){
-        // this should grab a template and fill in via data binding... someday someday
-        // if there's already a file-detail element, destroy it.
-        let oldFileDetail = this.child['file-list'].querySelector('file-detail')
-        oldFileDetail && oldFileDetail.remove()
-        let newFileDetail = document.createElement('file-detail')
-        newFileDetail.setAttribute('filetype', node.getAttribute('filetype'))
-        let href = this.props.src + node.getAttribute('title')
-        newFileDetail.innerHTML = `   
-            <data-name>${node.getAttribute('title')}</data-name>            
-            <data-mode>${this.octal2symbol(node.getAttribute('mode'))}</data-mode>
-            <data-atime>${this.makeDateString(node.getAttribute('atime'))}</data-atime>
-            <data-mtime>${this.makeDateString(node.getAttribute('mtime'))}</data-mtime>
-            <data-size>${node.getAttribute('size')} bytes</data-size>
-            <footer>source:
-                <a tabindex="-1" title="Click to download" download="${node.getAttribute('title')}" href="${href}">${href}</a>
-            </footer>`.trim()
+        // store a reference to a selected file-block so this function can be called 
+        this.lastActive = node
+        this.waitingForFetch = node
+        if(node.stats == undefined){
+            node.stats = {} // make it empty so the HTML template will render 'undefined'
+            node.addEventListener('load', () => {
+                // call insert again once the data is gathered
+                // continue rendering undefined file details in the meantime
+                // you'll still have name, source, and file download link
+                this.insertFileDetail(node)
+            },{once: true})
+        } else {
+            loading = false
+            Object.entries(node.stats).map(entry => {
+                node.setAttribute(...entry)
+            })
+        }
+        
+        // render everything empty... statObj will be undefined, until its not...
+        // and if update isn't set, the css sort of grays it all out
 
+        // this should grab a template and fill in via data binding... someday someday
+        let oldFileDetail = this.shadowRoot.getElementById('file-detail')
+        oldFileDetail && oldFileDetail.remove()
+
+        let newFileDetail = this.createElementFromObject({
+            'file-detail': {
+                contentType: node.getAttribute('contenttype'),
+                childNodes: [
+                    {'data-name': {textContent: node.getAttribute('title')}},
+                    {'data-mode': {textContent: this.octal2symbol(statObj.mode)}},
+                    {'data-atime': {textContent: this.makeDateString(statObj.atime)}},
+                    {'data-mtime': {textContent: this.makeDateString(statObj.mtime)}},
+                    {'data-ctime': {textContent: this.makeDateString(statObj.ctime)}},
+                    {'data-size': {textContent: this.formatBytes(statObj.size)}},
+                    {footer: {childNodes: [
+                        {span: {textContent: 'source: '}},
+                        {a: {
+                            tabIndex: -1,
+                            title: "Click to download",
+                            download: node.getAttribute('title'),
+                            href: this.props.src + node.getAttribute('title'),
+                            textContent: this.props.src + node.getAttribute('title')
+                        }}
+                    ]}}
+                ]
+            }
+        })
         // get list of children of file-list
         let fileblocks = Array.from(this.child['file-list'].children)
         let nth = fileblocks.indexOf(node)
         // slice off all the blocks preceding the focused node
+
         let nodeLeft = node.getClientRects()[0].left
         // iterate through the file-block nodes after the nth node
         for(var block of fileblocks.slice(nth + 1)){
@@ -156,24 +214,6 @@ class LibraryBlock extends ProtoBlock {
             this.child['file-list'].appendChild(newFileDetail)                            
         }
 
-        this.lastActive = node
-    }
-
-    fetchFileDetail(node){
-        return new Promise(resolve => {
-            if(node.getAttribute('ino')){
-                resolve()
-             } else {
-                kvetch.options(this.props.src + node.getAttribute('title'))
-                .then(response => response.json())
-                .then(stat => {
-                    for(var item in stat){
-                        node.setAttribute(item, stat[item])
-                    }
-                })
-                .then(resolve)
-            }
-        })
     }
 
     openFileFrom(node){
@@ -183,6 +223,8 @@ class LibraryBlock extends ProtoBlock {
         
         document.getSelection().empty() // doubleclicking shouldn't select text. maybe this breaks expected behavior, but you can still select and click and drag            
         // here's where I would search mime for an ideal block to open file
+        // this will be the part where I check guiblocks for mime, exact match first, fall back to half match...
+
         contentType == 'application/library' ? this.replaceWith(new LibraryBlock({src: newSource}))
                                              : this.insertAdjacentElement('afterend', new TextareaBlock({ src: newSource }))
         // this is kind of a dumb hack to prevent any animations from starting from position left: 0
@@ -205,7 +247,8 @@ class LibraryBlock extends ProtoBlock {
     octal2symbol(filestat){
         // bit shifting magic to extract read write execute permission for owner, group, and world
         // adapted from https://github.com/mmalecki/mode-to-permissions/blob/master/lib/mode-to-permissions.js
-        return [
+        if(!filestat) return ['.........']
+        else return [
             filestat >> 6 & 4      ? 'r' : '-',
             filestat >> 6 & 2      ? 'w' : '-',
             filestat >> 6 & 1      ? 'x' : '-',
@@ -216,5 +259,16 @@ class LibraryBlock extends ProtoBlock {
             filestat << 6 >> 6 & 2 ? 'w' : '-',
             filestat << 6 >> 6 & 1 ? 'x' : '-',
         ].join('')
+    }
+
+    //OK this one I ripped off stackoverflow: http://stackoverflow.com/questions/15900485/correct-way-to-convert-size-in-bytes-to-kb-mb-gb-in-javascript#18650828
+    formatBytes(bytes,decimals) {
+        if(Number.isNaN(parseInt(bytes))) return '... Bytes'
+        if(bytes == 0) return '0 Byte';
+        var k = 1000; // or 1024 for binary
+        var dm = decimals + 1 || 3;
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 }

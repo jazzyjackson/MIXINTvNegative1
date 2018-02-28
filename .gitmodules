@@ -1,3 +1,9 @@
 [submodule "gui-mixins/kvetch.js"]
 	path = gui-mixins/kvetch.js
 	url = https://github.com/jazzyjackson/kvetch.js.git
+[submodule "gui-mixins/libras3"]
+	path = gui-mixins/libras3
+	url = https://github.com/jazzyjackson/libras3.git
+[submodule "gui-mixins/mixinCreateElement"]
+	path = gui-mixins/mixinCreateElement
+	url = https://github.com/jazzyjackson/mixinCreateElement.git

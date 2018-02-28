@@ -1,7 +1,7 @@
 [
     {"proto": {
         "active": true,
-        "mixins": ["kvetch.js/kvetch.js"],
+        "mixins": ["kvetch.js/kvetch.js","mixinCreateElement/mixin.js"],
         "progeny": [
             {"actionio": {
                 "active": true,

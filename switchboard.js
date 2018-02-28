@@ -44,6 +44,8 @@ function getContentType(filepath){
 }
 
 function decodeURL(encodedpath){
+    // I like the idea of doing resolvePath here, as well
+    // so I can handle requests with ~....
     return decodeURI(url.parse(encodedpath).pathname)
 }
 
@@ -100,7 +102,11 @@ function sendStat(request,response){
     
     fs.stat(decodeURL(request.url), function(err, stat){
         stat && Object.assign(stat, {
-            'Content-Type': stat.isDirectory() ? 'application/library' : getContentType(request.url)
+            'Content-Type': stat.isFile()      ? getContentType(request.url) :
+                            stat.isDirectory() ? 'application/library'       :
+                            stat.isFIFO()      ? 'application/FIFO'          :
+                            stat.isSocket()    ? 'application/socket'        :
+                            /* otherwise...   */ 'application/unknown'
         })
         response.writeHead( err ? 500 : 200), 
         response.end(JSON.stringify(err || stat))

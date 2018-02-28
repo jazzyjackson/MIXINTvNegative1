@@ -22,9 +22,9 @@ docker-live:
 	# -v is 'mount volume' to reflect live changes to gui-blocks and
 	docker rm $(shell docker ps -a -q) || true
 	docker run -p 3000:3000 -p 4444:4444 -it \
-	-v $(shell pwd)/gui-blocks/:/gui-blocks/:ro \
-	-v $(shell pwd)/spiders/:/spiders/:ro \
-	aubi:one /bin/bash
+	-v $(shell pwd)/gui-blocks/:/opt/mixint/gui-blocks/:ro \
+	-v $(shell pwd)/spiders/:/opt/mixint/spiders/:ro \
+	mixint:debian /bin/bash
 
 docker-clean:
 	# I guess this might not work if the stop command exits on a container that is already stopped, and fails to stop subsequent containers...

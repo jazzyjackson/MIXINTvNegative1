@@ -14,7 +14,7 @@ class ShowdownBlock extends TextareaBlock {
         ]).then(()=>{
             this.converter = new showdown.Converter(this.showdownOptions)
             this.child['showdown-container'].innerHTML = this.converter.makeHtml(this.data)
-            this.child['textarea'].style.display = 'none'
+            this.child.textarea.style.display = 'none'
         })
     }
 }
