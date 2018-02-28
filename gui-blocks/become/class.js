@@ -2,7 +2,7 @@ class BecomeBlock extends ProtoBlock {
     constructor(props){super(props)}
 
     static build(){        
-        this.child['block-list'].appendChild(this.createElementFromObject({
+        this.child['block-list'].appendChild(mixint.createElement({
             ul: { 
                 childNodes: window.guinames.map(block => ({
                     "li": {

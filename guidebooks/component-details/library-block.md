@@ -15,7 +15,10 @@ call fetchFileList with the source then generateIcons.
 you may overwrite  the fetchFileList method
 just pay attention to what generateIcons expects right now. to use output of ls -api1, I expect new line terminated pairs of inode + filename with a trailing slash to indicate directory or not maybe ideally you would feed it an array of objects...
 
-## fetchFileList
+## generateIcons(lsResults)
+
+
+## fetchFileList()
 kvetch.post(this.props.src/ls?args=-api1)
 -> plain text of file list
 
@@ -25,6 +28,6 @@ kvetch.post(this.props.src/ls?args=-api1)
 -1 one file per line 
 -i print inode first
 
-## fetchFileDe
+## fetchFileDetails()
 kvetch.options(this.props.src + title)
 -> json object of file stats

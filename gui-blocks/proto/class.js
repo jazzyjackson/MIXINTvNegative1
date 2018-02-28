@@ -65,33 +65,15 @@ class ProtoBlock extends HTMLElement {
         // clone contents of html template for this block
         var template = document.querySelector(`template[marksup="${this.constructor.name}"]`)
         this.shadowRoot.appendChild(template.content.cloneNode(true))
+        this.shadowParent = this.getRootNode().host
         // allow instant reference to any uniquely named child (descriptive custom tags are encouraged) as this.child[tagname]
         // basically as a shortcut as this.shadowRoot.querySelector('tagname') for brevity and reducing lookups
         this.child = Array.from(this.shadowRoot.querySelectorAll('*'), child => {
-            /* Give each child a proxy setter so attributes can be assigned with this.child.img.props syntax */
-            child.props = new Proxy({}, {
-                get: (target, name) => {
-                    return child.getAttribute(name.toLowerCase())
-                },
-                set: function(obj, prop, value){
-                    // set attribute only if the value is truthy.
-                    // this might give you something unexpected if you try to set it to false,
-                    // but if you want the string false then set child.props.attr to "false", not false, "false" is truthy
-                    value ? child.setAttribute(prop, value) : child.removeAttribute(prop)
-                    return true // success
-                }
-            })
             /* enhanced object literal dynamically names object keys */            
             return {[child.tagName.toLowerCase()]: child}
             /* from an array of objects, reduce to one object of all keys */
         }).reduce((a,b) => Object.assign(a,b),{})
         // set a reference to this elements parent, if there's a shadowRoot between here and there
-        this.shadowParent = this.getRootNode().host
-        this.addEventListener('load', () => {
-            // console.log("LOOOAAAAD")
-            // console.log(this)
-            // alert(`${this.tagName} has finished loading`)
-        })
     }
 
     /* get actions that should be exposed to menu block from this class */
@@ -133,7 +115,7 @@ class ProtoBlock extends HTMLElement {
                 watch: ["error"],
                 react: function(attributeName, oldValue, newValue){
                     if(this.child['footer'] == undefined) return console.error(newValue)
-                    let newMsg = this.createElementFromObject({
+                    let newMsg = mixint.createElement({
                         "error-message": {
                             textContent: newValue
                         }
@@ -147,7 +129,7 @@ class ProtoBlock extends HTMLElement {
                 watch: ["finish"],
                 react: function(attributeName, oldValue, newValue){
                     if(this.child['footer'] == undefined) return console.log(newValue) // maybe alert if no footer?
-                    let newMsg = this.createElementFromObject({
+                    let newMsg = mixint.createElement({
                         "success-message": {
                             textContent: newValue
                         }
@@ -218,7 +200,8 @@ class ProtoBlock extends HTMLElement {
                 // console.log("calling!", reaction.react.toString())
                 reaction.react.call(this, attributeName, oldValue, newValue)
             } else {
-                this.addEventListener('DOMContentLoaded', function(){
+                this.addEventListener('DOMContentLoaded', function(event){
+                    event.stopPropagation() // should only fire listeners on this exact node, not its parents
                     reaction.react.call(this, attributeName, oldValue, newValue)
                 }, {once: true})
             }
@@ -279,42 +262,42 @@ class ProtoBlock extends HTMLElement {
         return newBlock
     }
     // {"div":{"id":"example", "textContent":"something like this"}} => <div id="example"> something like this </div>
-    createElementFromObject(object){
-        let [ tagName, attrObj ] = Object.entries(object)[0]
+    // createElementFromObject(object){
+    //     let [ tagName, attrObj ] = Object.entries(object)[0]
 
-        let node = document.createElement(tagName)
-        for(var attribute in attrObj){
-            let newValue = attrObj[attribute]
-            switch(attribute){
-                case 'textContent':
-                    node.textContent = newValue
-                    break            
-                case 'addEventListener':
-                    for(var eventName in newValue){
-                        // could check if newValue[eventName] is an array of functions to add... 
-                        node.addEventListener(eventName, newValue[eventName])
-                    }
-                    break
-                case 'style': 
-                    if(newValue && newValue.constructor == String) node.style = newValue
-                    if(newValue && newValue.constructor == Object) Object.assign(node.style, newValue)
-                    break
-                case 'childNodes':
-                    Array.isArray(newValue) && newValue.filter(Boolean).forEach(child => {
-                        node.appendChild(child instanceof Element ? child : this.createElementFromObject(child))
-                    })
-                    break
-                case 'value':
-                    // special case for form nodes where setting the value 'attribute' should set the value of the form
-                    node.value = newValue
-                    // break dont break, no harm in setting value property and value attribute
-                    // select options want value attributes I guess?
-                default: 
-                    node.setAttribute(attribute, newValue)
-            }
-        }
-        return node
-    }
+    //     let node = document.createElement(tagName)
+    //     for(var attribute in attrObj){
+    //         let newValue = attrObj[attribute]
+    //         switch(attribute){
+    //             case 'textContent':
+    //                 node.textContent = newValue
+    //                 break            
+    //             case 'addEventListener':
+    //                 for(var eventName in newValue){
+    //                     // could check if newValue[eventName] is an array of functions to add... 
+    //                     node.addEventListener(eventName, newValue[eventName])
+    //                 }
+    //                 break
+    //             case 'style': 
+    //                 if(newValue && newValue.constructor == String) node.style = newValue
+    //                 if(newValue && newValue.constructor == Object) Object.assign(node.style, newValue)
+    //                 break
+    //             case 'childNodes':
+    //                 Array.isArray(newValue) && newValue.filter(Boolean).forEach(child => {
+    //                     node.appendChild(child instanceof Element ? child : mixint.createElement(child))
+    //                 })
+    //                 break
+    //             case 'value':
+    //                 // special case for form nodes where setting the value 'attribute' should set the value of the form
+    //                 node.value = newValue
+    //                 // break dont break, no harm in setting value property and value attribute
+    //                 // select options want value attributes I guess?
+    //             default: 
+    //                 node.setAttribute(attribute, newValue)
+    //         }
+    //     }
+    //     return node
+    // }
 
     attachGlobalScript(filename){
         // this appear to resolve somehat prematurely... but its on load so ????
@@ -368,31 +351,31 @@ class ProtoBlock extends HTMLElement {
         // open TextBlock from the source code, might be class.js
     }
 
-    set props(data){
-        if(!data) return data // exit in the case of this.props = this.options, but options was undefined
-        if(typeof data != 'object') throw new Error("Set props requires an object to update from")
-        Object.keys(data).forEach(key => {
-            // handle depth-1 nested objects, if a prop is an object, stringify it, I can parse it when I see it change like all the rest in attributeChangedCallback
-            this.setAttribute(key, typeof data[key] == 'object' ? JSON.stringify(data[key]) : data[key])
-        })
-        return this.props
-    }
+    // set props(data){
+    //     if(!data) return data // exit in the case of this.props = this.options, but options was undefined
+    //     if(typeof data != 'object') throw new Error("Set props requires an object to update from")
+    //     Object.keys(data).forEach(key => {
+    //         // handle depth-1 nested objects, if a prop is an object, stringify it, I can parse it when I see it change like all the rest in attributeChangedCallback
+    //         this.setAttribute(key, typeof data[key] == 'object' ? JSON.stringify(data[key]) : data[key])
+    //     })
+    //     return this.props
+    // }
 
-    get props(){
-        /* an ugly way to coerce a NamedNodeMap (attributes) into a normal key: value object. 
-        Use ES6 enhanced object literals to eval node.name as a key, so you have an array of objects (instead of attribute) and then you can just roll it up with reduce */
-        let props = Array.from(this.attributes, attr => ({[attr.name]: attr.value}))
-                         .reduce((a, n) => Object.assign(a, n)) // You would think you could do .reduce(Object.assign), but assign is variadic, and reduce passes the original array as the 4th argument to its callback, so you would get the original numeric keys in your result if you passed all 4 arguments of reduce to Object.assign. So, explicitely pass just 2 arguments, accumulator and next.
-        return new Proxy(props, {
-            set: (obj, prop, value) => {
-                value ? this.setAttribute(prop, value) : this.removeAttribute(prop)
-                return true
-            },
-            get: (target, name) => {
-                return this.getAttribute(name.toLowerCase())
-            }
-        })
-    }
+    // get props(){
+    //     /* an ugly way to coerce a NamedNodeMap (attributes) into a normal key: value object. 
+    //     Use ES6 enhanced object literals to eval node.name as a key, so you have an array of objects (instead of attribute) and then you can just roll it up with reduce */
+    //     let props = Array.from(this.attributes, attr => ({[attr.name]: attr.value}))
+    //                      .reduce((a, n) => Object.assign(a, n)) // You would think you could do .reduce(Object.assign), but assign is variadic, and reduce passes the original array as the 4th argument to its callback, so you would get the original numeric keys in your result if you passed all 4 arguments of reduce to Object.assign. So, explicitely pass just 2 arguments, accumulator and next.
+    //     return new Proxy(props, {
+    //         set: (obj, prop, value) => {
+    //             value ? this.setAttribute(prop, value) : this.removeAttribute(prop)
+    //             return true
+    //         },
+    //         get: (target, name) => {
+    //             return this.getAttribute(name.toLowerCase())
+    //         }
+    //     })
+    // }
 
     insertSibling(node){
         if(typeof node == 'string'){

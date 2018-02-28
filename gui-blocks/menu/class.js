@@ -19,7 +19,7 @@ class MenuBlock extends ProtoBlock {
         if(this.props.active) return null /* just exit if we're already active */
         else this.setAttribute('active','true')
 
-        this.actionList = this.createElementFromObject({
+        this.actionList = mixint.createElement({
             ul: {
                 style: {top: this.shadowParent.child.header.getClientRects()[0].height + 'px'},
                 childNodes: this.shadowParent.inheritedActions.map(actionTuple => {
@@ -61,7 +61,7 @@ class MenuBlock extends ProtoBlock {
             if(event.type == 'keydown' && event.key != 'Enter') return null // ignore nonEnter key events
             event.preventDefault(), event.stopPropagation()
             /* creates a form node with all the placeholder / defaults / options as described in the argObject         */
-            let formNode = this.createElementFromObject({form: {
+            let formNode = mixint.createElement({form: {
                 addEventListener: {
                     click: event => event.stopPropagation() // capture form clicks so they don't fire "destroyMenu() higher up"
                 },
@@ -96,7 +96,7 @@ class MenuBlock extends ProtoBlock {
                 })
             }})
             /* creates a li object to wrap around the form */
-            let newMenuOption = this.createElementFromObject({
+            let newMenuOption = mixint.createElement({
                 li: {
                     tabIndex: 0,
                     childNodes: [

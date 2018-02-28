@@ -80,7 +80,7 @@ class LibraryBlock extends ProtoBlock {
     }
 
     buildIcon(props){
-        return this.createElementFromObject({
+        return mixint.createElement({
             "file-block": {
                 tabIndex: 0,
                 contentType: props.contentType,
@@ -150,7 +150,6 @@ class LibraryBlock extends ProtoBlock {
     insertFileDetail(node){
         // store a reference to a selected file-block so this function can be called 
         this.lastActive = node
-        this.waitingForFetch = node
         if(node.stats == undefined){
             node.stats = {} // make it empty so the HTML template will render 'undefined'
             node.addEventListener('load', () => {
@@ -160,21 +159,18 @@ class LibraryBlock extends ProtoBlock {
                 this.insertFileDetail(node)
             },{once: true})
         } else {
-            loading = false
             Object.entries(node.stats).map(entry => {
                 node.setAttribute(...entry)
             })
+            this.readyState = 'complete'
         }
-        
-        // render everything empty... statObj will be undefined, until its not...
-        // and if update isn't set, the css sort of grays it all out
-
         // this should grab a template and fill in via data binding... someday someday
         let oldFileDetail = this.shadowRoot.getElementById('file-detail')
         oldFileDetail && oldFileDetail.remove()
 
-        let newFileDetail = this.createElementFromObject({
+        let newFileDetail = mixint.createElement({
             'file-detail': {
+                id: 'file-detail',
                 contentType: node.getAttribute('contenttype'),
                 childNodes: [
                     {'data-name': {textContent: node.getAttribute('title')}},
@@ -200,7 +196,6 @@ class LibraryBlock extends ProtoBlock {
         let fileblocks = Array.from(this.child['file-list'].children)
         let nth = fileblocks.indexOf(node)
         // slice off all the blocks preceding the focused node
-
         // iterate through the file-block nodes after the nth node
         for(var block of fileblocks.slice(nth + 1)){
             var nodeRect = node.getClientRects()[0]
