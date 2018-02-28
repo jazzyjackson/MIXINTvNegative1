@@ -83,7 +83,7 @@ class LibraryBlock extends ProtoBlock {
         return mixint.createElement({
             "file-block": {
                 tabIndex: 0,
-                contentType: props.contentType,
+                'content-type': props['content-type'],
                 title: props.name,
                 childNodes: [
                     {"file-icon":{}}, // this could possibly just be a before pseudo element, but flexbox flow is easier for me if this actually exists
@@ -93,19 +93,21 @@ class LibraryBlock extends ProtoBlock {
                 ],
                 addEventListener: {
                     focus: event => {
-                        let fileDetail = this.insertFileDetail(event.target) // listens for load                  
-                        kvetch.options(this.props.src + event.target)
+                        console.log(event)
+                        let selectedNodes = event.target
+                        let fileDetail = this.insertFileDetail(selectedNodes) // listens for load                  
+                        kvetch.options(this.props.src + selectedNodes.props.title)
                         .then(stats => stats.json())
-                        .then(stats => {
-                            event.target.stats = stats
-                            event.target.dispatchEvent(new Event('load'))
+                        .then(stats => { // have to closure dat context so selectedNodes exists on callback
+                            selectedNodes.stats = stats
+                            selectedNodes.dispatchEvent(new Event('load'))
                         })
                     },
                     dblClick: event => {
-                        this.openFileFrom(node)
+                        this.openFileFrom(event.target)
                     }, 
                     keydown: event => {
-                        event.key == 'Enter' && this.openFileFrom(node)
+                        event.key == 'Enter' && this.openFileFrom(event.target)
                     }
                 }
             }
@@ -128,16 +130,18 @@ class LibraryBlock extends ProtoBlock {
         // you could combine this into a single filter map pretty easily, but I wanted to iterate and get folders, then iterate and get a second list of files, and this seems the obvious way to do that
         let folders = this.data.split('\n')
             .filter(line => line && line.slice(-1) == '/') // ends with /
+            .map(line => line.trim())
             .map(line => this.buildIcon({
-                ino: parseInt(line), 
+                ino: parseInt(line),
                 name: line.slice(line.indexOf(' ')).slice(1,-1), // drop leading space, drop trailing slash
-                contentType: "application/library"
+                "content-type": "application/library"
             }))
 
         let files = this.data.split('\n')
             .filter(line => line && line.slice(-1) != '/') // does not end with /
+            .map(line => line.trim())
             .map(line => this.buildIcon({
-                contentType: null, // don't know the contentType yet, will have to wait for stat. could at least figure out socket / FIFO by changing this.lsArgs
+                "content-type": null, // don't know the contentType yet, will have to wait for stat. could at least figure out socket / FIFO by changing this.lsArgs
                 name: line.slice(line.indexOf(' ')).trim(), // drop leading space
             }))
         
@@ -171,7 +175,7 @@ class LibraryBlock extends ProtoBlock {
         let newFileDetail = mixint.createElement({
             'file-detail': {
                 id: 'file-detail',
-                contentType: node.getAttribute('contenttype'),
+                'content-type': node.getAttribute('content-type'),
                 childNodes: [
                     {'data-name': {textContent: node.getAttribute('title')}},
                     {'data-mode': {textContent: this.octal2symbol(node.stats.mode)}},
