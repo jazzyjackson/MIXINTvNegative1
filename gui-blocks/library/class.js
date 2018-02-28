@@ -43,7 +43,8 @@ class LibraryBlock extends ProtoBlock {
                         else alert("bad pathname, sending you home"), this.props.src = '~'
                     } else {
                         this.props.lastUpdate = Date.now()
-                        this.fetchFileList(newValue)
+                        kvetch.post(newValue + 'ls', {args: '-api1'})
+                        .then(files => files.text())
                         .then(this.iconsFromFiles.bind(this))
                         // also a good place to start background animation
                     }
@@ -65,8 +66,6 @@ class LibraryBlock extends ProtoBlock {
 
     static build(){
         this.props.src = this.resolvePath(this.props.src || '~' || '/')
-        console.log('source is', this.props.src)
-        console.log('the path has been resolved')
         // reflow fileDetail on resize! could use a debouce, but its not a big deal
         this.addEventListener('resize', () => {
             this.lastActive && this.insertFileDetail(this.lastActive)
@@ -95,7 +94,9 @@ class LibraryBlock extends ProtoBlock {
                 addEventListener: {
                     focus: event => {
                         let fileDetail = this.insertFileDetail(event.target) // listens for load                  
-                        this.fetchFileDetail(event.target).then(stats => {
+                        kvetch.options(this.props.src + event.target)
+                        .then(stats => stats.json())
+                        .then(stats => {
                             event.target.stats = stats
                             event.target.dispatchEvent(new Event('load'))
                         })
@@ -135,7 +136,7 @@ class LibraryBlock extends ProtoBlock {
 
         let files = this.data.split('\n')
             .filter(line => line && line.slice(-1) != '/') // does not end with /
-            .map(name => this.buildIcon({
+            .map(line => this.buildIcon({
                 contentType: null, // don't know the contentType yet, will have to wait for stat. could at least figure out socket / FIFO by changing this.lsArgs
                 name: line.slice(line.indexOf(' ')).trim(), // drop leading space
             }))
@@ -177,11 +178,11 @@ class LibraryBlock extends ProtoBlock {
                 contentType: node.getAttribute('contenttype'),
                 childNodes: [
                     {'data-name': {textContent: node.getAttribute('title')}},
-                    {'data-mode': {textContent: this.octal2symbol(statObj.mode)}},
-                    {'data-atime': {textContent: this.makeDateString(statObj.atime)}},
-                    {'data-mtime': {textContent: this.makeDateString(statObj.mtime)}},
-                    {'data-ctime': {textContent: this.makeDateString(statObj.ctime)}},
-                    {'data-size': {textContent: this.formatBytes(statObj.size)}},
+                    {'data-mode': {textContent: this.octal2symbol(node.stats.mode)}},
+                    {'data-atime': {textContent: this.makeDateString(node.stats.atime)}},
+                    {'data-mtime': {textContent: this.makeDateString(node.stats.mtime)}},
+                    {'data-ctime': {textContent: this.makeDateString(node.stats.ctime)}},
+                    {'data-size': {textContent: this.formatBytes(node.stats.size)}},
                     {footer: {childNodes: [
                         {span: {textContent: 'source: '}},
                         {a: {
@@ -200,20 +201,20 @@ class LibraryBlock extends ProtoBlock {
         let nth = fileblocks.indexOf(node)
         // slice off all the blocks preceding the focused node
 
-        let nodeLeft = node.getClientRects()[0].left
         // iterate through the file-block nodes after the nth node
         for(var block of fileblocks.slice(nth + 1)){
-            if(block.getClientRects()[0].left <= nodeLeft){
+            var nodeRect = node.getClientRects()[0]
+            if(!nodeRect) break
+            if(block.getClientRects()[0].left <= nodeRect.left){
                 // if we hit a block that is farther to the left than focused node, insert this before it
                 this.child['file-list'].insertBefore(newFileDetail, block)
-                break;
+                break
             }
         }
         // if, after looping through all the blocks, I did not find a new home for newFileDetail, tack it on to the end
         if(!newFileDetail.parentElement){
             this.child['file-list'].appendChild(newFileDetail)                            
         }
-
     }
 
     openFileFrom(node){

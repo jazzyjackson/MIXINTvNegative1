@@ -116,12 +116,10 @@ class TextareaBlock extends ProtoBlock {
         .then(response => response.text())
         .then(text => {
             this.data = text
-        })
-        .then(() => {
-            this.dispatchEvent(new Event('load'))
+            this.readyState = 'complete'
         })
         .catch(error => {
-            this.props = {error}
+            this.props.error = error
             this.data = error
         })
     }

@@ -20,7 +20,6 @@ class ActionioBlock extends ProtoBlock {
             {
                 watch: ["exit-code","exit-signal","error"],
                 react: function(){
-                    this.dispatchEvent(new Event('load')) // also sets this.readyState = 'complete', fires readyStateChange
                     this.shell.close()
                     this.readyState = 'complete'
                 }

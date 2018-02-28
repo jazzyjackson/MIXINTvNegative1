@@ -21,14 +21,15 @@ class ProtoBlock extends HTMLElement {
                 }
             })
         } catch(err) {
+            console.error(err)
             // this.shadowRoot.innerHTML = <menu-block></menu-block><footer></footer>
         }
+        // done loading initial HTML template, you can now call atributeChangedCallbacks and son on...
+        this.dispatchEvent(new Event('DOMContentLoaded'))        
         // if there is a src, be 'interactive' and wait until whatever function is responsible for loading it fires 'load'
         // if, for instance, src is set on an img tag in shadowRoot, the load event will have to be retargeted to the host element
-        // if there's no source
+        // if there's no source, then we're done here.
         this.readyState = this.props.src ? 'interactive' : 'complete'
-        // this deviates from the document standard, where readyStateChange->complete fires BEFORE load, here load will fire and trigger readyStateChange. sorry.
-        this.addEventListener('load', () => { this.readyState = 'complete' })      
     }
 
     disconnectedCallback(){
@@ -217,7 +218,7 @@ class ProtoBlock extends HTMLElement {
                 // console.log("calling!", reaction.react.toString())
                 reaction.react.call(this, attributeName, oldValue, newValue)
             } else {
-                this.addEventListener('load', function(){
+                this.addEventListener('DOMContentLoaded', function(){
                     reaction.react.call(this, attributeName, oldValue, newValue)
                 }, {once: true})
             }
@@ -449,6 +450,9 @@ class ProtoBlock extends HTMLElement {
         this._readyState = newValue
         this.setAttribute('readystate', newValue) // make css easy for blocks that are loading resources 
         this.dispatchEvent(new Event('readyStateChange'))
+        if(newValue == 'complete'){
+            this.dispatchEvent(new Event('load'))
+        }
     }
 
     /* override these HTMLElement functions with ones that query the shadow children instead of the lit children */ 
@@ -491,7 +495,7 @@ class ProtoBlock extends HTMLElement {
             style: { color },
             textContent: alertString,
             childNodes: [{
-                
+
             }]
         }})
     }
