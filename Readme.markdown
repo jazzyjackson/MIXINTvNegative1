@@ -12,7 +12,7 @@ MIXINT is unique in providing a framwork for building custom applications while 
 - Code / Markdown editor with live preview
 - http agent (test API or construct http requests a la curl)
 - library (a.k.a. file explorer)
-- crontab editor
+- crontab editor for process scheduling
 - identity and group editor
 - file access and cpu usage logs & analytics viewer
 
