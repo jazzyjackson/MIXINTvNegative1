@@ -18,7 +18,9 @@ MIXINT is unique in providing a framwork for building custom applications while 
 
 
 ## Internet Connection Optional
-Collaborative editing tools are great, until you're collaborating on a farm with flakey internet. (Will have to blog about my Open Source Ecology experience.) MIXINT gives chatrooms and shared folders to teams sitting around the same table, even with zero configuration. You can start MIXINT on one machine and give your neighbors an address to sign on.
+Collaborative editing tools are great, until you're collaborating on a farm with flakey internet. (Will have to blog about my Open Source Ecology experience.) MIXINT gives chatrooms and shared folders to teams sitting around the same table, even with zero configuration. You can start MIXINT on one machine and give your neighbors an address to sign on. 
+
+Since calendars, chatrooms, and documents are just files in directories, you can use git or rsync to work offline. Keep a globally accessible cloud server online for $5/month, and back your work up when you have a good connection. Otherwise, anyone on the same local network can still collaborate in whatever directories you store on your own machine.
 
 ## Configurable Footprints
 Having detailed access logs is important for managing a server: it allows you to check what files are being accessed by whom, and it allows you to monitor usage and load over time to hint at whether your server has enough power to serve your team's needs.
