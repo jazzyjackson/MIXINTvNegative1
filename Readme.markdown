@@ -1,232 +1,71 @@
-# Mixin Interface
+# MIXINT
+## ReMIXable INTerface for data subscription, archival, and conversations of your own design.
 
-### Mixin't
-( Mik sē ənt )
+MIXINT is a free (as in freedom) server and web application allowing owners, groups, and the world to publish and subscribe to each other's file directories. Calendar events, chat messages, RSS subscriptions, and documents are organized in plain text formats on a shared file system controlled by you (or your friendly neighborhood sysdamin). JSON and markdown files can be presented by custom elements or linked to directly. The stylesheets and source code to any component of the workspace is only a few clicks away, so MIXINT can be customized and extended without downtime. 
 
-### An extensible and remixable space for cooperating with your network (with superpowers)
+## No Assembly Required
+MIXINT is unique in providing a framwork for building custom applications while being useful out-of-the-box. In addition, tools for editing the source code of the server, creating new API endpoints, and customizing the stylesheets of all components are provided. Components bundled with v0:
 
-Cooperating may include:
-- Sharing and modifying media on a versioned filesystem
-- Communicating in chatrooms of your own design
-- Building applications and artwork for yourself and others
+- chatroom
+- calendar
+- RSS Feed for news or podcasts
+- Code / Markdown editor with live preview
+- http agent (test API or construct http requests a la curl)
+- library (a.k.a. file explorer)
+- crontab editor
+- identity and group editor
+- file access and cpu usage logs & analytics viewer
 
-Your network may include:
-- co-workers and acquaintences
-- transoceanic fiber optics
-- close friends and family
-- your local wifi router
-- chatbot personalities that control computers (see convolos.xyz)
 
-Superpowers include:
-+ Every file you create or upload can be immediatelly linked
-+ create new web components that inherit features from existing blocks
-+ any program you write can be called as a REST API
-- any folder on the system can be subscribed to via RSS
-- hot-editing and overwriting stylesheets of any web component
-- options to keep directories and message boards encrypted on disk
-- public key cryptography used to authenticate who created or shared a particular file
-- highly detailed statistics on file and program access + server performance
-- components provided for sharing media playlists, podcast subscriptions, markdown & latex documents, and chatbot interfaces
-- notes, conversations, and web / search traffic can be packaged in a git repository to track all activity involved in a project
-- potentially even the raw data from a/v calls, or compressed to annotated transcripts + expression landmarks can be tracked in a project
-- I really like the possibility of having a call, getting it transcribed, having the opportunity to correct the auto scribe, and then everyone on the call can sign in with their private key to say "I agree that the contents of this transcript are accurate" 
+## Internet Connection Optional
+Collaborative editing tools are great, until you're collaborating on a farm with flakey internet. (Will have to blog about my Open Source Ecology experience.) MIXINT gives chatrooms and shared folders to teams sitting around the same table, even with zero configuration. You can start MIXINT on one machine and give your neighbors an address to sign on.
 
-Mixin't is composed of 2 core programs: Switchboard, Operator. Additional functionality is implemented as executables in the _spiders_ directory. 
+## Configurable Footprints
+Having detailed access logs is important for managing a server: it allows you to check what files are being accessed by whom, and it allows you to monitor usage and load over time to hint at whether your server has enough power to serve your team's needs.
 
+However, the owner of a service having more information than clients of a service can lead to distrust: how can I know my picture is really deleted? How do I know if the service provider is tracking my IP address? By default, MIXINT allows everyone in the community to see this information so they can trust that they know what it's recording.
 
+## Being Shallow Ain't So Bad
+MIXINT wants to be understood. Not only is there a focus on front end code being auditable (harkening back to web 1.0 days where a quick 'view source' would tell you everything you needed to know, you can click + modify:style/class/template to read the source), everything that happens has a visible effect on the back end machine: a file is created, a program returns its output, or a file watch is executed - and very little  happens in between. Because the server allows arbitrary bash commands, you can find out exactly what program is running to return a response - then fire off a GET request to read the source code of that program. 
 
-### Switchboard: 
-Switchboard.js is a lightweight node server that provides wide open system access. Make GET requests to download any file on disk, make POST requests to execute shell commands, make PUT requests to upload files, make DELETE requests to delete files. Additionally, you can subscribe to shell commands via server-sent events. Your clientside inteface can attach a callback to events fired every time the invoked program writes to stdio. This is meant to facilitate writing novel interfaces with a very short distance to machine access, so you can write programs in any language and pipe the results directly to the web.
+For example, the chatroom is not running any particular protocol or built on top of a database. You choose a chatroom component and point its 'src' attribute to any 
+Any 'topic' can contain any number of relevant attachments and sidechain conversations (subtopics are merely subdirectories, and contain their own )
 
-__lib/wireworker.js__ is used by Switchboard to launch child processes, and includes a stream transform to format server sent events if requested, or simply pipe stdout to the response object otherwise.
+This is unique among conversation platforms: to create private sidechain conversations in the context of the larger topic. People who can read messages in one topic can see that subtopics exist, but may be denied read permissions if the owner of that subtopic makes it private. See "Working with owners, groups, and the world"
 
-__lib/figjam.js__ is used by Switchboard to stream a requested workspace to the client. configs/guigraph.json is used to open html, css, and js files and deliver the application in a single request.
+## All You See is a Mirror
+MIXINT has an archive-first policy. Articles and media fetches from RSS feeds are stored on disk, sharing links to images and video creates a backup for offline viewing. 
 
-### Operator:
-Operator.js is a supervisor node server that provides authentication and system monitoring. The opeartor acts as a reverse-proxy and is able to inspect all requests that are passed on to switchboards for fulfillment. Access control is passed on as much as possible to the underlying *nix operating system. Useradd and groupadd commands are run by the operator to create accounts that can only get/post/put/delete in directories they're meant to access; the switchboard that fulfills each request runs with the `uid` of that user. If an unpriveledged request attempts to, for example, delete system files, *nix will throw an error and the error will be passed back to the client. 
+As feeds can be followed across domains, a server only has to serve its community and the other servers that follow your server - not everyone in the world that wants to view a video.
 
-__lib/keymaker.js__ contains the functions for checking and setting cookies, as well as creating keys to give access to all identities.
+Why should the creator of a video get to "disable comments" ? Sure, if its their platform... but I'm somehow not allowed to copy the video, and also not allowed to comment on the page? 
 
-__lib/bookkeeper.js__ exports stream transform functions that allow for logging details about every request made to the operator.
+## Roadmap
 
+### 2018 Conceptualization
 
+Stabilizing naming conventions, component API, and initial style + Guides.
 
-### Figjam, Guigraph, and Guiblocks
-Figjam, short for Configuration Jam, reads a nested JSON graph and streams HTML to a client. The configuration graph (or 'figtree') includes a heirarchy of web components - javascript classes that inherit capabilities. A simple textarea class provides methods for overwriting a file and toggling word-wrap, and a table class extends it by loading a csv parsing library and transforming the plain text into an editable html table.
+The major blind spot for me is coming up with a strategy for package management, especially for sharing new web components. Maybe NPM can bootstrap this, but I want to investigate more git/IPFS/decentralized means to import new functionality.
 
-Switchboard and Operator can be used as a REST API to run programs in the spiders directory, and could provide a back-end to any number of interfaces - just drop an index.html in the root of this repository and make a GET request to serve it. 
+### 2019 Monitization
 
-ɡo͞oē ɡraf
+I'm keen to understand the integration of Keybase and Stellar: an identity authentication service and a pre-mined token that uses standard public key cryptography to make transactions without any proof-of-work burning a pound of coal.
 
-TODO: Currently the javascript is streamed back embedded in the HTML, which doesn't provide any opportunity for the client to cache the javascript. Additionally, I'm assuming clients are using an 'evergreen' browser that is up to date on the latest web standards. However, many browsers will require polyfill for shadow DOM, custom elements, and babelification of es6. So on the next rewrite, I would like to write the javascript to a separate file, name it with a hash of its contents, and stream back HTML that loads the javascript separately. This initial HTML could also include a bit of javascript to run feature detection and load polyfill files before loading the application javascript. 
+[Keybase](https://keybase.io) is quickly becoming the de facto platform for ensuring a file was created by its alleged author. This approaches the problem that I consider most insanity-inducing in the 21st century: the in-flight modification of audio, images, and streaming video. Deciding what sources we trust and having public key authentication become second nature is essential for understanding what's real in pulling information down from the cloud. I have it in mind to tie in openssl utilities to do this manually, but keybase has a fully-authenticated-file-system in production - it just needs its interface... remixed ;)
 
+[Stellar](https://stellar.org) is approaching a problem as old as the internet: can't we just divvy up a dollar between the 20 podcasts we're subscribed to? Can we create HTTP endpoints that demand a penny to serve the request? (Or how about a database export that demands a dollar for bandwidth?) Stellar may allow these micro-transactions where credit card processing fees and infrastruction proved prohibitive.
 
-## Spiders
+### 2020 Federalization
 
-When you start Poly-Int on your machine, you're given a link that makes it accessible to anyone on the same network. If you're hosted in the cloud, or have an ISP that allows incoming connections on ports 80 and 443, the whole world is the same network. Otherwise, your shared online space is available on your local network whether or not you have a connection to the world-wide-web.
+Once basic functionality is implemented for a single machine, different strategies for load balancing, localization, and content discovery will be investigated. Built into proof-of-concept are components for following remote feeds via RSS or Git, and I expect this to facilitate distribution of media without too much load on individual servers, if participants in this project boot up their own servers to redistribute media to their own communities. But this is a risk, and how Diaspora* died: too much effort to set up a new node --> tragedy of the commons very quickly.
 
-Any file you upload, any document or program you write, is immediately available on the network (available to whoever has access to the machine).
+However, it would be ideal if members of a community could contribute their storage to redundant backups and their bandwidth to additional capacity for serving strangers.
 
-When connected to a Poly-Int, you're served a graph of web-components that can be modified with code and content you write yourself. 
+------
 
-Alongside acting as a file server, Poly-Int can execute programs in response to web requests in the vein of cgi scripts or amazon lambda functions. The complete functionality is provided by 4 programs: the operator, the switchboard, the keymaker, and figjam. Connectors to interface with chatbots and 3rd party services are provided as spiders. Spiders and Chatbot personalities can be collaboratively edited and shared. 
+Move away from data farming
 
-TODO: Given convoshells, directories, and codemirrors, you can browse and modify files while having a conversation (with humans or bots). You can say what you want, build it / get help building it, execute it, say how it works, talk about the code with it highlighted, and the natural language engine will be recording all that activity, able to inspect the code as it changed over the course of a conversation, it will have a record of what stack overflow threads you read while working on a git commit and be able to pull out snippets that were helpful to you
+toward an information permaculture
 
-
-# Starting Poly-Int
-```
-git clone https://github.com/jazzyjackson/poly-int.git
-cd poly-int
-make nokey
-```
-To start operator before setting up a user authentication strategy, just navigate to the root of the repo in a terminal and type the "make nokey", which will start an operator on port 3000 by default.
-
-Once you add localhost, qa, and prod authentication schemes to keyconfig.json you can run "make localhost" or "make prod" etc to run make and start the server for those auth schemes.
-
-git clone ...
-make mini: to run without downloading anything else, total size < 1MB
-make useful: to download useful external projects: showdown for rendering markdown files, codemirror for editing code, papa parse for working with csv and tabular data. Less than 10MB.
-make whole: clone the ChatScript project, including an entire local instance of Wordnet, an English dictionary and meaning-map. Uncompressed ~ 1GB
-
-If you're running behind a load balancer or reverse proxy already and want all the internal requests to be HTTP, you can set an environment variable to "DISABLE_SSL" and neither switchboard nor operator will check for certificate files.
-
-# Working with Owners, Groups, and the World with operator.js
-
-Many collaboration and file sharing tools require all participants to register an account with the service where they can choose what other accounts have access to their files - these accounts are managed by a web server that provides an authentication and access scheme of its own. I wanted to avoid re-implementing access control in my own application when *nix operating systems have sophisticated permissions capabilities built-in. 
-
-Operator.js is my implementation of a reverse-proxy service that authenticates web requests and fulfills the requests by passing them to a nodejs microserver. An instance of switchboard.js is launched as a child process of operator.js, and it's called with `sudo -u` to run the microserver process as the identity associated with an incoming web request.
-
-In this way, whatever permissions granted to a *nix id determine what files and programs can be accessed via web request associated with that identity (via cookie) 
-
-On *nix systems, every file/program/directory has true/false values for whether it can be read, overwritten, and run as an executable program. In human-readable (or 'symbolic') form this is expressed as 'rwx' for read-write-execute. 
-These rwx permissions can be different for the creator of the file (called the __owner__), a __group__ (lists of particular identities that should be allowed to access the file), and __world__, sometimes called __other__, meaning, everybody else (including the special identity *nobody*).
-
-# Magic URLs and cookies with Keyconfig and Keymaker.js
-
-Operator.js handles creating accounts and proxying requests to the right child process, but before it can do that it needs to know who the incoming request belongs to. Keymaker.js includes some regex to check for a session ID in the cookie and the url. If it has a record of who the key belongs to, it attached that idetity to the request object and returns it to operator to be proxy'd to its personal switchboard.
-
-
-# Switchboard.js
-Switchboard.js routes your network requests in one of seven ways:
-
-- a subscription can be made to a process, so that asynchronous data can be handled as an event stream via Server Sent Events API (SSE)
-- A GET request to a directory (ending in '/') is returned by generating the workspace/web application described by a 'figtree'
-- an OPTIONS request performs a `stat` call and returns an object containing inode, ctime, atime, permission and ownership information
-- A GET request to a file path will stream the file from disk to the caller
-- a PUT request to a file path will stream data from a caller to the operator's disk
-- a POST request creates a child process in a shell of its own and pipes the stdio between the operator and caller (aka server and client)
-- a DELETE request does what you expect
-
-
- ```js
-/* check if private key and certificate were read properly and start server with or without SSL  */ 
-require(SSL_READY ? 'https' : 'http')
-.createServer(SSL_READY && {key: key, cert: cert})
-.on('request', function(req,res){  
-    /* recursive ternary tests conditions until success */
-    /event-stream/.test(req.headers.accept)           ? subscribe2events(req,res) :
-    /\/(?=\?|$)/.test(req.url) && req.method == 'GET' ? figjam(req,res)           :
-    req.method == 'OPTIONS'							  ? sendStat(req,res)         :
-    req.method == 'GET'                               ? streamFile(req,res)       :
-    req.method == 'PUT'                               ? saveBody(req,res)         :
-    req.method == 'POST'                              ? streamSubProcess(req,res) :
-    req.method == 'DELETE'                            ? deleteFile(req,res)       :
-    res.end(req.method + ' ' + req.url + " Doesn't look like anything to me")     ;
-})
-```
- _See annotated code in guide/operator.js_
-
-
-### FigJam.js
-A configuration graph (figtree for short) describes the layout of a workspace, which arranges HTML custom elements in the window and describes the attributes for each element. One attribute might be a source to pull content from (img, link, audio, and video tags make use of this already to load media; custom elements may be programmed to accept any filetype) - so the content of a workspace is kept separate from the presentation layer.
-
-This figtree can exist as a file kept for different participants and projects, or it can be passed into the URL as a query string, producing your requested layout and content without having to keep the file on the server.
-
-Try out some example workspaces:
-- [coltenj.com/?fig=markdownEditor.json](coltenj.com/?fig=markdownEditor.json)
-- [coltenj.com/?fig=chatInStyle.json](coltenj.com/?fig=chatInStyle.json)
-- [coltenj.com/?figurl=head%shell%init=welcome.txts;lkasjdf;lkjsadf](coltenj.com/?figurl=head%shell%init=welcome.txts;lkasjdf;lkjsadf)
-
-Take a look at the configuration file by simply requesting it:
-- [coltenj.com/figtrees/markdownEditor.json](coltenj.com/figtrees/markdownEditor.json)
-- [coltenj.com/figtrees/chatInStyle.json](coltenj.com/figtrees/chatInStyle.json)
-
-### Compatibility
-The intention is for the backend server to work the same on any system with NodeJS > 0.10.0, when the streams interface was upgraded to do more than just pipe. This is to facilitate switchboard.js being able to inspect the streams its proxying. If you you'll be accessing operator.js directly, I think it will work even on older installations, but all the repo's I've seen so far have at least 0.10.0.
-
-I was writing lost of fancy promisified / async / await code that required Node 8+, but was disappointed with the effort it takes to upgrade Node on older linux distros, ARM architectures, and android devices. So making the code a little uglier to be compatible with the ANCIENT (2014 lol) version of nodeJS was prioritized. 
-
-you can also set an environment flag called "retrograde" to serve an html/css/js document that doesn't use any new features from the past 10 years if you want to target Internet Explorer 6 and son on.
-
-# other ways of putting it 
-Polymorphic Interface is a
-...file for making files
-...chatroom for making chatroom
-...program for making programs
-...website for making websites
-...server for making servers
-...art for making art
-...chatbot for making chatbots
-
-The logical conclusion of chunked response streams and custom elements. I can pull the data necessary to build elements on the fly and then pull up whatever content I want from any source.
-
-I also want to avoid re-implementing functioanlity that's been built into unix machines for decades. So I'm using bash builtins, coreutils, and the features of the TCP/IP stack whenever I can.
-
-Public and Private chat channels a la Slack can be replicated by appending messages to a file and using tail 
-
-Filesharing a la DropBox can be replicated with a 'file manager' element of your choosing and PUTing and GETing files and writing/reading to disk.
-
-Adding events to a personal calendar has been built into unix since the 70s. 
-
-My perspective is that interfaces are pretty easy to copy, and they're the part that makes a difference in what capabilites your computer gives you. The hard part of replicating all these services is the web server part - and especially serving thousands to millions of requests per day, and building software that can accomdate dozens to hundreds of full time contributors. The frameworks that accomodate these use cases require specialization and present a barrier to entry to learning how to build applications.
-
-Poly Interpreter aims to provide an interactive timeshare application to dozens to hundreds of participants per day, not millions, so I get to have a much smaller, easier to inspect codebase with the intention of being modifiable by individuals, whether hacking away at stylesheets to make it look the way you want, or bolting on new functionality in web assembly, I want to make it obvious how everything works, so you can get it to work for you.
-
-poly interpreter is a self-modifying environment for the iterative design of containerized applications
-
-any language can be used to perform back-end logic
-tying in back end api's from the front-end is as easy as POSTing a command
-
-### operator.js
-### switchboard.js
-### figjam.js
-
-### keymaker.js
-### bookkeeper.js
-
-### gui-blocks
-### guide
-### logs
-### spiders
-
-Adding functionality:
-Functionality may come in the form of a program in any language kept in the spiders directory, to be executed on command for any user, or as new definitions for custom components, or a combination thereof: custom elements that rely on some back end functionality.
-
-# defining stuff via concepts
-~concept something [word word word]
-requires rebuilding, but becomes part of pre-volley vocabuluary (language parsing)
-
-transient (temporary) facts loaded per volley, get loaded after the language parsing
-you can define concepts with fact triples (word member concept), but they have to be permenant facts to be involved in language parsing
-
-Ad Copy
-mixin intrigue
-mixin intimacy
-mixin intention
-mixin intuition
-mixin interplay
-mixin intricacy
-mixin interludes
-mixin intrusions
-mixin interviews
-mixin integration
-mixin intangibles
-mixin intelligence
-mixin interference
-mixin introductions
-mixin intersections
-mixin interjections
-mixin interventions
-mixin introspections
-mixin interpretation
+------
