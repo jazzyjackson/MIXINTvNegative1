@@ -1,4 +1,4 @@
-from debian
+from debian:10
 MAINTAINER Colten Jackson <cjackson@mixint.xyz>
 
 RUN apt-get update -y \
