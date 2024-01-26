@@ -3,7 +3,7 @@ process.platform.includes('win32') && process.exit(console.log("unix please"))
 /* must have an APPROOT set so everyone knows where to look */
 process.env.APP_HOME = process.env.APP_HOME || process.cwd()
 
-let http           = require('./http') 
+let http           = require('http') 
 let keymaker       = require('./keymaker')
 let bookkeeper     = require('./bookkeeper')
 let child_process  = require('child_process')
