@@ -4,17 +4,26 @@ process.platform.includes('win32') && process.exit(console.log("unix please"))
 process.env.APP_HOME = process.env.APP_HOME || process.cwd()
 
 let http           = require('http') 
-let keymaker       = require('./keymaker')
-let bookkeeper     = require('./bookkeeper')
+let keymaker       = require('keymaker')
+let bookkeeper     = require('bookkeeper')
 let child_process  = require('child_process')
+
+console.log(bookkeeper)
 
 var keycert = {
     key: process.env.KEYPATH, // file path to key file
     cert: process.env.CERTPATH, // file path to cert file
 }
+
+console.log(keycert)
+
 /* if key and cert don't exist, trySSL returns false, server starts as HTTP */
 var SSL_READY = keymaker.trySSL(keycert)
+
+console.log("SSL", SSL_READY)
+
 let switchboards = new Object
+
 /* check if private key and certificate were read properly and start server  */ 
 require(SSL_READY ? 'https' : 'http')
 .createServer(SSL_READY && keycert)

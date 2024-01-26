@@ -43,8 +43,12 @@ class LibraryBlock extends ProtoBlock {
                         else alert("bad pathname, sending you home"), this.props.src = '~'
                     } else {
                         this.props.lastUpdate = Date.now()
-                        kvetch.post(newValue + 'ls', {args: '-api1'})
-                        .then(files => files.text())
+                        kvetch.post(newValue + 'ls', {argv: '-1api'}) // how do I define plain text vs json here?
+                        .then(files => {
+                            let text = files.text()
+                            console.log(text)
+                            return text
+                        })
                         .then(this.iconsFromFiles.bind(this))
                         // also a good place to start background animation
                     }
@@ -104,6 +108,7 @@ class LibraryBlock extends ProtoBlock {
                         })
                     },
                     dblClick: event => {
+                        console.log("DBL", event.target)
                         this.openFileFrom(event.target)
                     }, 
                     keydown: event => {
@@ -126,6 +131,7 @@ class LibraryBlock extends ProtoBlock {
         while(this.child['file-list'].childElementCount){
             this.child['file-list'].firstChild.remove()
         }
+
         // oof, this is kind of hardcoding the order of files... need to maybe have a list of concat algorithms availble to select... folders first? by date? Alphanumeric? ASCIInumeric?
         // you could combine this into a single filter map pretty easily, but I wanted to iterate and get folders, then iterate and get a second list of files, and this seems the obvious way to do that
         let folders = this.data.split('\n')
@@ -136,6 +142,8 @@ class LibraryBlock extends ProtoBlock {
                 name: line.slice(line.indexOf(' ')).slice(1,-1), // drop leading space, drop trailing slash
                 "content-type": "application/library"
             }))
+
+
 
         let files = this.data.split('\n')
             .filter(line => line && line.slice(-1) != '/') // does not end with /
