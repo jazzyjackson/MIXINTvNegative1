@@ -1,14 +1,13 @@
 from debian:10
 MAINTAINER Colten Jackson <cjackson@mixint.xyz>
 
-RUN apt-get update -y \
-    && apt-get install -y git curl man make sudo gcc g++ build-essential
+RUN apt-get update -y
+RUN apt-get install -y git curl man make sudo gcc g++ build-essential
 
-RUN curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -    
+# RUN curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -    
 
 # install nodejs / npm / n / latest node
-RUN apt-get update -y \
-    && apt-get install -y npm nodejs \
+RUN apt-get install -y npm nodejs \
     && npm i -g n \
     && n latest
 

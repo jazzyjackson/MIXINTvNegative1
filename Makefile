@@ -2,7 +2,6 @@ export nokeyok := 1 # for now
 export PORT := 3000
 
 install:
-	sudo chmod +x ./switchboard.js
 	git submodule init
 	git submodule update
 	cd gui-blocks/codemirror/assets && npm i && npm build

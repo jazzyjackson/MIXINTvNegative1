@@ -28,20 +28,16 @@
   transition: .25s transform;
 }
 
-:host-context(:focus):host:after{
-  background-color: cornflowerblue;  
-}
-
 /* cover the entirety of the host with a clickable region */
 /* the visual element of the menu, the ul, does not take up all this space, but click events anywhere in the host will now fire on this menu block, which will close the menu */
-:host-context([active]):host {
+:host([active]):host {
   width: 100%;
   height: 100%;
   padding: 0;
   margin: 0;
 }
 
-:host-context([active]):host:after {
+:host([active]):host:after {
   transform: rotate(45deg);
   background-color: cornflowerblue;
 }

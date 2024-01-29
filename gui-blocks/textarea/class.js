@@ -49,7 +49,8 @@ class TextareaBlock extends ProtoBlock {
                 func: HTMLElement.prototype.setAttribute,
                 args: [{label: "whitespace"},{select: ["wrap","no wrap"]}],
                 default: [() => "whitespace", ctx => {
-                    return ctx.getAttribute("whitespace") == "wrap" ? "no wrap" : "wrap"
+                    console.log("CTX", ctx)
+                    return (ctx.getAttribute("whitespace") == "wrap" ? "no wrap" : "wrap")
                 }]
             }},
             {"delete from disk": {

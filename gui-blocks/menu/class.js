@@ -89,12 +89,16 @@ class MenuBlock extends ProtoBlock {
                         default:
                             console.error("Unrecognized form type", formType)
                     }
-                    if(actionObject.default && actionObject.default[argIndex] instanceof Function){
-                        argNode.value = actionObject.default[argIndex](this) // pass context
-                    }
                     return argNode
                 })
             }})
+            console.log(formNode)
+            // once the form is an HTML element I can set defaults by 'value'
+            actionObject.args && actionObject.args.map((_, argIndex) => {
+                if(actionObject.default && actionObject.default[argIndex] instanceof Function){
+                    formNode.childNodes[argIndex].value = actionObject.default[argIndex](this) // pass context
+                }
+            })
             /* creates a li object to wrap around the form */
             let newMenuOption = mixint.createElement({
                 li: {
